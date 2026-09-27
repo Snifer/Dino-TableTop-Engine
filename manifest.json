@@ -1,0 +1,10 @@
+{
+  "id": "dino-tabletop-engine",
+  "name": "Dino Tabletop Engine",
+  "version": "0.1.0",
+  "minAppVersion": "0.15.0",
+  "description": "Dino Tabletop Engine: un VTT (tablero virtual) dentro de Obsidian con campañas, mapas (imagen o dibujados), tokens con barra de vida, puntos de interés, contadores y bestiario, vinculables a notas via YAML.",
+  "author": "Snifer - Bastión del Dinosaurio",
+  "authorUrl": "https://www.youtube.com/@SniferL4bs",
+  "isDesktopOnly": false
+}

@@ -1,0 +1,475 @@
+.dte-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.dte-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.dte-zoom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.dte-empty {
+  padding: 24px;
+  opacity: 0.7;
+  text-align: center;
+}
+
+.dte-board-wrap {
+  flex: 1;
+  overflow: auto;
+  background: var(--background-secondary);
+  position: relative;
+}
+
+.dte-board-inner {
+  position: relative;
+  display: inline-block;
+  transform-origin: top left;
+}
+
+.dte-map-img {
+  display: block;
+  max-width: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.dte-token {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  text-align: center;
+}
+
+.dte-token:active {
+  cursor: grabbing;
+}
+
+.dte-token-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.dte-hpbar-outer {
+  width: 100%;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 3px;
+}
+
+.dte-hpbar-inner {
+  height: 100%;
+  transition: width 0.15s ease;
+}
+
+.dte-token-label {
+  font-size: 10px;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  border-radius: 3px;
+  padding: 0 3px;
+  margin-top: 2px;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.dte-hint {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 8px;
+}
+
+/* --- Contadores --- */
+.dte-counters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  justify-content: center;
+  margin-top: 2px;
+  max-width: 120px;
+}
+
+.dte-counter-badge {
+  font-size: 9px;
+  line-height: 1.4;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 0 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dte-counter-badge:hover {
+  background: var(--background-modifier-hover);
+}
+
+.dte-counter-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.dte-counter-input-name {
+  flex: 2;
+}
+.dte-counter-input-value,
+.dte-counter-input-max {
+  flex: 1;
+  width: 60px;
+}
+
+/* --- Puntos de interés --- */
+.dte-poi {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  text-align: center;
+}
+.dte-poi:active { cursor: grabbing; }
+
+.dte-poi-mark {
+  width: 100%;
+  height: 100%;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(45deg);
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  background: var(--background-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  font-size: 14px;
+}
+.dte-poi-mark > * { transform: rotate(-45deg); }
+
+.dte-poi-label {
+  font-size: 10px;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  border-radius: 3px;
+  padding: 0 3px;
+  margin-top: 2px;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* --- Bestiario --- */
+.dte-bestiary-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.dte-bestiary-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.dte-bestiary-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dte-bestiary-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.dte-bestiary-name {
+  font-weight: 600;
+}
+
+.dte-bestiary-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* --- Panel flotante de nota vinculada --- */
+.dte-panels-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+}
+
+.dte-note-panel {
+  position: absolute;
+  width: 340px;
+  max-width: 90vw;
+  height: 300px;
+  max-height: 70vh;
+  min-width: 220px;
+  min-height: 160px;
+  resize: both;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dte-note-panel-dragging {
+  opacity: 0.85;
+}
+
+.dte-note-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: var(--background-secondary);
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+
+.dte-note-panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.dte-note-panel-header-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.dte-note-panel-toggle {
+  font-size: 11px;
+  padding: 2px 8px;
+}
+
+.dte-note-panel-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.dte-note-panel-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.dte-note-panel-preview {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.dte-note-panel-textarea {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  border: none;
+  resize: none;
+  padding: 8px;
+  font-family: var(--font-monospace, monospace);
+  font-size: 12px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+
+/* --- Mapa dibujado (canvas) --- */
+.dte-map-canvas {
+  display: block;
+  user-select: none;
+}
+
+/* --- Modal de dibujo --- */
+.modal.dte-drawing-modal {
+  width: 92vw;
+  max-width: 1300px;
+  height: 90vh;
+}
+.modal.dte-drawing-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.dte-drawing-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+  margin-bottom: 6px;
+}
+
+.dte-drawing-toolbar button.dte-tool-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.dte-drawing-canvas-wrap {
+  flex: 1;
+  overflow: auto;
+  background: var(--background-secondary);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.dte-drawing-canvas {
+  max-width: 100%;
+  height: auto;
+  cursor: crosshair;
+  touch-action: none;
+  border: 1px solid var(--background-modifier-border);
+}
+
+/* --- Íconos de Custom Font / RPG-Awesome --- */
+.dte-token-circle i,
+.dte-bestiary-thumb i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.dte-poi-mark i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.dte-icon-suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px;
+}
+
+/* --- Ajustes / About Card --- */
+.dte-settings-about-box {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dte-settings-about-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+}
+
+.dte-settings-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #d97706;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dte-settings-about-desc p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.dte-settings-warning-card {
+  background: rgba(217, 119, 6, 0.12);
+  border-left: 4px solid #d97706;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text-normal);
+}
+
+.dte-settings-author-row {
+  font-size: 13px;
+}
+
+.dte-settings-buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.dte-btn-youtube {
+  background: #cc0000 !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  border: none;
+}
+
+.dte-btn-youtube:hover {
+  background: #ff0000 !important;
+}
+
+.dte-btn-secondary {
+  background: var(--interactive-normal);
+  color: var(--text-normal);
+}
+

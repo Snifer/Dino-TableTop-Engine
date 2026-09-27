@@ -1,0 +1,20 @@
+{
+  "name": "dino-tabletop-engine",
+  "version": "1.0.0",
+  "description": "Dino Tabletop Engine \u2014 tablero de juego virtual para Obsidian",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.19.0",
+    "obsidian": "latest",
+    "typescript": "^5.4.0"
+  }
+}
