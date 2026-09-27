@@ -1,6 +1,6 @@
-# Dino Tabletop Engine 🦖🎲
+# Dino Tabletop Engine 
 
-[![Version](https://img.shields.io/badge/version-1.0.0--alpha-orange.svg)](manifest.json)
+[![Version](https://img.shields.io/badge/version-0.1.0--alpha-orange.svg)](manifest.json)
 [![Obsidian](https://img.shields.io/badge/Obsidian-%3E%3D%200.15.0-7C3AED.svg)](https://obsidian.md)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![YouTube](https://img.shields.io/badge/YouTube-Bastion%20del%20Dinosaurio-red.svg?logo=youtube)](https://www.youtube.com/@SniferL4bs)
@@ -39,7 +39,7 @@
   - Al hacer clic en un POI vinculado, se abre una ventana flotante arrastrable y redimensionable para previsualizar o editar la nota en markdown en tiempo real.
 
 - ⚔️ **Soporte de Fuentes de Íconos (RPG-Awesome):**
-  - Integra por defecto la biblioteca [RPG-Awesome](https://github.com/nagoshiashumari/Rpg-Awesome) vía CDN o mediante archivos CSS locales en tu bóveda.
+  - Integra por defecto la biblioteca [RPG-Awesome](https://github.com/nagoshiashumari/Rpg-Awesome) vía CDN o mediante archivos CSS locales en tu bóveda. (Modo en prueba)
   - Catálogo interactivo con buscador visual (*fuzzy search*) para seleccionar íconos de armas, monstruos, hechizos, cofres, fogatas y más.
 
 - 🐉 **Bestiario Integrado:**
@@ -117,7 +117,7 @@ El proyecto está organizado en módulos limpios dentro de `src/`:
 
 ---
 
-### 🦖 Créditos y Autoría
+### 🦖 Crédito
 
 - Desarrollado por **Snifer - Bastión del Dinosaurio**.
 - Canal de YouTube: [Snifer - Bastión del Dinosaurio](https://www.youtube.com/@SniferL4bs)
@@ -235,7 +235,7 @@ The codebase is organized into clean TypeScript modules under `src/`:
 
 ---
 
-### 🦖 Credits & Authorship
+### 🦖 Credits 
 
 - Developed by **Snifer - Bastión del Dinosaurio**.
 - YouTube Channel: [Snifer - Bastión del Dinosaurio](https://www.youtube.com/@SniferL4bs)

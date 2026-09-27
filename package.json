@@ -1,14 +1,15 @@
 {
   "name": "dino-tabletop-engine",
-  "version": "1.0.0",
-  "description": "Dino Tabletop Engine \u2014 tablero de juego virtual para Obsidian",
+  "version": "0.1.0",
+  "description": "Dino Tabletop Engine — tablero de juego virtual para Obsidian",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
-    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "lint": "tsc -noEmit -skipLibCheck"
   },
   "keywords": [],
-  "author": "",
+  "author": "Snifer - Bastión del Dinosaurio",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.0.0",
