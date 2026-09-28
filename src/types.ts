@@ -72,6 +72,52 @@ export interface CombatData {
   combatants: CombatantData[];
 }
 
+// ─── Card Module ──────────────────────────────────────────────────────────
+
+export interface CardDefinition {
+  id: string;
+  name: string;
+  frontImage: string | null;
+  /** Overrides deck-level backImage when set */
+  backImage: string | null;
+  copies: number;
+  linkedNote: string | null;
+}
+
+export type CardRotationMode = 'normal' | 'updown' | 'foursides' | 'custom';
+
+export interface DeckData {
+  id: string;
+  name: string;
+  /** Default back image for every card in this deck */
+  backImage: string | null;
+  rotationMode: CardRotationMode;
+  /** Used only when rotationMode === 'custom' */
+  customAngles: number[];
+  cards: CardDefinition[];
+  /** Ordered list of instanceIds currently in the draw pile */
+  drawPile: string[];
+  /** Ordered list of instanceIds in the discard pile */
+  discardPile: string[];
+}
+
+/**
+ * A card placed on a specific map.
+ * instanceId format: `${cardDefId}-${copyIndex}` (unique per deck).
+ */
+export interface CardOnTable {
+  instanceId: string;
+  deckId: string;
+  cardId: string;
+  x: number;   // percentage 0-100
+  y: number;   // percentage 0-100
+  rotation: number; // 0 | 90 | 180 | 270
+  faceUp: boolean;
+  z: number;   // stacking order
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+
 export interface MapData {
   name: string;
   imagePath: string | null;
@@ -79,6 +125,7 @@ export interface MapData {
   tokens: TokenData[];
   pois: POIData[];
   combat?: CombatData | null;
+  cardsOnTable?: CardOnTable[];
 }
 
 export interface DrawPoint {
@@ -139,6 +186,8 @@ export interface DinoSettings {
   campaigns: Record<string, CampaignData>;
   currentCampaignId: string | null;
   bestiary: Record<string, BestiaryEntry>;
+  /** Global deck definitions + draw/discard state */
+  decks: Record<string, DeckData>;
   enableCustomFont: boolean;
   customFontCssUrl: string;
   customFontPrefix: string;
@@ -155,6 +204,7 @@ export const DEFAULT_SETTINGS: DinoSettings = {
   campaigns: {},
   currentCampaignId: null,
   bestiary: {},
+  decks: {},
   enableCustomFont: true,
   customFontCssUrl: DEFAULT_CUSTOM_FONT_CSS,
   customFontPrefix: 'ra',

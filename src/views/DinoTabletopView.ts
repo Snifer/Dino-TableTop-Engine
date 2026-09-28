@@ -35,6 +35,7 @@ import { BestiaryListModal } from '../modals/BestiaryModals';
 import { ModulesModal } from '../modals/ModulesModal';
 import { moduleRegistry } from '../modules/registry';
 import { CombatTrackerPanel, AdjustConditionModal, AddConditionModal } from '../modules/combatTracker';
+import { CardsPanel, findCardByInstanceId, resolveBackImage } from '../modules/cards';
 
 export class DinoTabletopView extends ItemView {
   plugin: any;
@@ -43,6 +44,7 @@ export class DinoTabletopView extends ItemView {
   panelsLayer: HTMLElement;
   notePanels: Record<string, NotePanelHandle>;
   combatPanel: CombatTrackerPanel | null;
+  cardsPanel: CardsPanel | null;
 
   constructor(leaf: WorkspaceLeaf, plugin: any) {
     super(leaf);
@@ -50,6 +52,7 @@ export class DinoTabletopView extends ItemView {
     this.zoom = 1;
     this.notePanels = {};
     this.combatPanel = null;
+    this.cardsPanel = null;
   }
 
   getViewType(): string {
@@ -71,9 +74,8 @@ export class DinoTabletopView extends ItemView {
 
   async onClose(): Promise<void> {
     if (this.metaListener) this.app.metadataCache.offref(this.metaListener);
-    if (this.combatPanel) {
-      this.combatPanel.destroy();
-    }
+    if (this.combatPanel) this.combatPanel.destroy();
+    if (this.cardsPanel) this.cardsPanel.destroy();
     if (this.panelsLayer) this.panelsLayer.remove();
   }
 
@@ -172,6 +174,28 @@ export class DinoTabletopView extends ItemView {
     container.addClass('dte-root');
 
     this.renderHeader(container);
+
+    // ── Manage persistent panels based on enabled modules ──
+    const data = this.getData();
+    if (moduleRegistry.isEnabled(data, 'cards')) {
+      if (!this.cardsPanel) {
+        this.cardsPanel = new CardsPanel(
+          this.app,
+          this.plugin,
+          this.panelsLayer,
+          () => {
+            const m = this.getCurrentMap();
+            const boardInner = this.containerEl.querySelector('.dte-board-inner') as HTMLElement | null;
+            if (boardInner && m) this.renderCardsLayer(boardInner, m);
+          },
+        );
+      } else {
+        this.cardsPanel.build();
+      }
+    } else if (this.cardsPanel) {
+      this.cardsPanel.destroy();
+      this.cardsPanel = null;
+    }
 
     const camp = this.getCurrentCampaign();
     if (!camp) {
@@ -551,11 +575,158 @@ export class DinoTabletopView extends ItemView {
     for (const token of map.tokens) {
       this.renderToken(inner, map, token);
     }
+    this.renderCardsLayer(inner, map);
 
     if (savedScroll) {
       wrap.scrollLeft = savedScroll.left;
       wrap.scrollTop = savedScroll.top;
     }
+  }
+
+  renderCardsLayer(boardInner: HTMLElement, map: MapData): void {
+    // Remove existing card elements
+    boardInner.querySelectorAll('.dte-card-on-table').forEach((el) => el.remove());
+    const data = this.getData();
+    if (!moduleRegistry.isEnabled(data, 'cards')) return;
+    const cards = map.cardsOnTable ?? [];
+    const sorted = [...cards].sort((a, b) => a.z - b.z);
+    for (const card of sorted) {
+      this.renderCardOnTable(boardInner, map, card);
+    }
+  }
+
+  renderCardOnTable(boardInner: HTMLElement, map: MapData, card: import('../types').CardOnTable): void {
+    const data = this.getData();
+    const deck = data.decks[card.deckId];
+    const cardDef = deck ? findCardByInstanceId(deck, card.instanceId) : undefined;
+
+    const el = boardInner.createDiv({ cls: 'dte-card-on-table' });
+    el.style.left = card.x + '%';
+    el.style.top = card.y + '%';
+    el.style.transform = `translate(-50%, -50%) rotate(${card.rotation}deg)`;
+    el.style.zIndex = String(card.z + 10);
+
+    // Card face
+    const face = el.createDiv({ cls: 'dte-card-face' });
+    const showFront = card.faceUp && cardDef?.frontImage;
+    const showBack = !card.faceUp;
+    const backImgPath = deck ? resolveBackImage(deck, cardDef) : null;
+
+    if (showFront && cardDef?.frontImage) {
+      const af = this.app.vault.getAbstractFileByPath(cardDef.frontImage);
+      if (af instanceof TFile) {
+        face.createEl('img', {
+          cls: 'dte-card-img',
+          attr: { src: this.app.vault.getResourcePath(af) },
+        });
+      }
+    } else if (showBack && backImgPath) {
+      const af = this.app.vault.getAbstractFileByPath(backImgPath);
+      if (af instanceof TFile) {
+        face.createEl('img', {
+          cls: 'dte-card-img',
+          attr: { src: this.app.vault.getResourcePath(af) },
+        });
+      } else {
+        face.createEl('div', { cls: 'dte-card-placeholder', text: '🃏' });
+      }
+    } else {
+      face.createEl('div', {
+        cls: 'dte-card-placeholder',
+        text: card.faceUp ? (cardDef?.name ?? '?') : '🃏',
+      });
+    }
+
+    // Label
+    if (card.faceUp && cardDef?.name) {
+      el.createEl('div', { cls: 'dte-card-label', text: cardDef.name });
+    }
+
+    // Drag
+    let dragging = false;
+    let moved = false;
+    let startX = 0;
+    let startY = 0;
+
+    el.addEventListener('pointerdown', (e: PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dragging = true;
+      moved = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      el.setPointerCapture(e.pointerId);
+    });
+
+    el.addEventListener('pointermove', (e: PointerEvent) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+      const inner = boardInner;
+      const rect = inner.getBoundingClientRect();
+      card.x = clamp(((e.clientX - rect.left) / rect.width) * 100, 1, 99);
+      card.y = clamp(((e.clientY - rect.top) / rect.height) * 100, 1, 99);
+      el.style.left = card.x + '%';
+      el.style.top = card.y + '%';
+    });
+
+    el.addEventListener('pointerup', async (e: PointerEvent) => {
+      dragging = false;
+      if (moved) {
+        await this.plugin.saveSettings();
+        return;
+      }
+      // Click: context menu
+      const menu = new Menu();
+      menu.addItem((item) =>
+        item
+          .setTitle(card.faceUp ? 'Voltear (boca abajo)' : 'Voltear (boca arriba)')
+          .setIcon('refresh-cw')
+          .onClick(async () => {
+            card.faceUp = !card.faceUp;
+            await this.plugin.saveSettings();
+            this.renderCardsLayer(boardInner, map);
+          })
+      );
+      menu.addItem((item) =>
+        item
+          .setTitle('Rotar 90°')
+          .setIcon('rotate-cw')
+          .onClick(async () => {
+            card.rotation = (card.rotation + 90) % 360;
+            await this.plugin.saveSettings();
+            this.renderCardsLayer(boardInner, map);
+          })
+      );
+      menu.addItem((item) =>
+        item
+          .setTitle('Descartar')
+          .setIcon('trash')
+          .onClick(async () => {
+            if (!deck) return;
+            map.cardsOnTable = (map.cardsOnTable ?? []).filter(
+              (c) => c.instanceId !== card.instanceId,
+            );
+            deck.discardPile.push(card.instanceId);
+            await this.plugin.saveSettings();
+            this.renderCardsLayer(boardInner, map);
+            this.cardsPanel?.build();
+          })
+      );
+      menu.addItem((item) =>
+        item
+          .setTitle('Traer al frente')
+          .setIcon('arrow-up')
+          .onClick(async () => {
+            const maxZ = (map.cardsOnTable ?? []).reduce((m, c) => Math.max(m, c.z), 0);
+            card.z = maxZ + 1;
+            await this.plugin.saveSettings();
+            this.renderCardsLayer(boardInner, map);
+          })
+      );
+      menu.showAtMouseEvent(e as unknown as MouseEvent);
+    });
   }
 
   /* ---------------- Puntos de interés ---------------- */

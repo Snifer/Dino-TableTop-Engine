@@ -367,6 +367,73 @@ select.dte-select:focus,
   z-index: 60;
 }
 
+/* Shared floating panel base */
+.dte-panel {
+  position: absolute;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m, 8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 61;
+  min-width: 200px;
+}
+
+.dte-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  gap: 6px;
+}
+
+.dte-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-normal);
+}
+
+.dte-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.dte-panel-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: var(--radius-s, 4px);
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: all 0.12s ease;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dte-panel-btn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
 .dte-note-panel {
   position: absolute;
   width: 340px;
@@ -1054,4 +1121,422 @@ select.dte-select:focus,
   z-index: 10;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   CARDS MODULE — Floating Panel
+   ═══════════════════════════════════════════════════════════ */
 
+.dte-cards-panel {
+  min-width: 240px;
+  max-width: 320px;
+}
+
+.dte-cards-header {
+  cursor: grab;
+  user-select: none;
+}
+
+.dte-cards-icon {
+  font-size: 14px;
+}
+
+.dte-cards-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.dte-cards-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 12px 0;
+  margin: 0;
+}
+
+/* Deck row inside panel */
+.dte-cards-deck-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-radius: var(--radius-s, 6px);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.dte-cards-deck-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dte-cards-deck-name {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-normal);
+}
+
+.dte-cards-deck-count {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.dte-cards-deck-btns {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.dte-cards-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.dte-cards-btn:hover:not(:disabled) {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
+
+.dte-cards-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.dte-cards-btn-draw {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+  font-weight: 600;
+}
+
+.dte-cards-btn-draw:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARDS MODULE — Deck Manager Modal
+   ═══════════════════════════════════════════════════════════ */
+
+.dte-deck-manager-modal {
+  width: 760px;
+  max-width: 95vw;
+}
+
+.dte-deck-manager-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 16px;
+  min-height: 420px;
+}
+
+.dte-deck-manager-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-right: 1px solid var(--background-modifier-border);
+  padding-right: 12px;
+}
+
+.dte-deck-manager-empty,
+.dte-deck-manager-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 12px 0;
+  margin: 0;
+}
+
+.dte-deck-manager-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: var(--radius-s, 6px);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.12s ease;
+}
+
+.dte-deck-manager-item:hover {
+  background: var(--background-secondary);
+  border-color: var(--background-modifier-border);
+}
+
+.dte-deck-manager-item.is-active {
+  background: rgba(var(--interactive-accent-rgb, 100, 100, 255), 0.15);
+  border-color: var(--interactive-accent);
+}
+
+.dte-deck-manager-item-name {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.dte-deck-manager-item-count {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.dte-deck-manager-new-btn {
+  margin-top: 4px;
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px dashed var(--background-modifier-border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.12s ease;
+}
+
+.dte-deck-manager-new-btn:hover {
+  border-color: var(--interactive-accent);
+  color: var(--interactive-accent);
+}
+
+.dte-deck-manager-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  max-height: 520px;
+  padding-right: 4px;
+}
+
+.dte-deck-editor-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+/* Card list inside editor */
+.dte-deck-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.dte-deck-card-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 4px 0;
+}
+
+.dte-deck-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-s, 6px);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.dte-deck-card-preview {
+  width: 40px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: var(--radius-s, 4px);
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--background-primary);
+}
+
+.dte-deck-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dte-deck-card-no-img {
+  font-size: 20px;
+}
+
+.dte-deck-card-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dte-deck-card-name-input {
+  width: 100%;
+  font-size: 12px;
+  padding: 3px 6px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+
+.dte-deck-card-copies-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dte-deck-card-copies-input {
+  width: 48px;
+  padding: 2px 4px;
+  font-size: 11px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+
+.dte-deck-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.dte-deck-card-btn {
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+}
+
+.dte-deck-card-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+.dte-deck-card-btn-del {
+  color: var(--text-error, #e74c3c);
+}
+
+.dte-deck-card-btn-del:hover {
+  background: rgba(231, 76, 60, 0.12);
+  border-color: var(--text-error, #e74c3c);
+}
+
+.dte-deck-add-card-btn {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px dashed var(--background-modifier-border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.12s ease;
+  margin-bottom: 4px;
+}
+
+.dte-deck-add-card-btn:hover {
+  border-color: var(--interactive-accent);
+  color: var(--interactive-accent);
+}
+
+.dte-deck-rebuild-btn {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.12s ease;
+}
+
+.dte-deck-rebuild-btn:hover {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARDS MODULE — Cards on the Board
+   ═══════════════════════════════════════════════════════════ */
+
+.dte-card-on-table {
+  position: absolute;
+  width: 70px;
+  cursor: grab;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.45));
+  transition: filter 0.15s ease;
+}
+
+.dte-card-on-table:hover {
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6));
+}
+
+.dte-card-on-table:active {
+  cursor: grabbing;
+}
+
+.dte-card-face {
+  width: 70px;
+  height: 98px;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: var(--background-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.18s ease, border-color 0.15s ease;
+}
+
+.dte-card-on-table:hover .dte-card-face {
+  border-color: var(--interactive-accent);
+  transform: translateY(-2px);
+}
+
+.dte-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.dte-card-placeholder {
+  font-size: 28px;
+  text-align: center;
+  color: var(--text-muted);
+  padding: 4px;
+}
+
+.dte-card-label {
+  font-size: 9px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.65);
+  border-radius: 3px;
+  padding: 1px 4px;
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  backdrop-filter: blur(3px);
+}
