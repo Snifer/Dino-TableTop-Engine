@@ -5,15 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-09-28
+
+### 🇬🇧 English
+
+#### Added
+- **Floating Initiative & Combat Tracker Module:**
+  - **Persistent Floating Panel:** Dedicated draggable and minimizable tracker window anchored inside `panelsLayer` so combat state and turn order remain uninterrupted across board re-renders.
+  - **Protected Close:** Security confirmation prompt to prevent accidental closing during active combat sessions.
+  - **Turn & Round Progression:** Round counter, previous/next turn controls with turn indicator (`▶`), and dynamic pulsing glow outline (`.dte-token-active-turn`) on the active combatant's map token.
+  - **Combatant Management:** Interactive initiative badge with direct click-to-edit and automatic descending sort, color-coded mini HP bars with single-click `DamageModal` triggers and frontmatter YAML sync, batch token importer modal, and standalone manual combatant creator.
+- **Status Conditions & Effects System:**
+  - **Preset Conditions Grid:** Instant 1-click addition of common TTRPG conditions (🧪 Poisoned, 🔥 Burning, 🛡️ Shielded, ⚡ Stunned, 👁️ Blinded, 💤 Asleep, 🕸️ Restrained, ✨ Blessed, 💀 Cursed, 🎯 Marked, 👻 Invisible, 🩸 Bleeding).
+  - **Custom Effects:** Create custom conditions with custom names, icons/emojis, and round duration (or indefinite `∞`).
+  - **Automated Round Countdown:** Advancing turns automatically counts down active conditions for the combatant ending their turn, auto-clears expired effects, and sends Obsidian notifications.
+  - **Full Map Token & Editor Integration:** Assign and manage conditions on any map token even outside of combat via the token right-click context menu (`+ Effect / Condition`), the `TokenEditModal` conditions editor, or clicking directly on the token's interactive status badges on the board.
+
+#### Fixed
+- **Floating Panel Pointer Events & Dragging:** Resolved UI click passthrough on floating panels by ensuring `pointer-events: auto` and isolated drag capture strictly to panel headers.
+
+---
+
+### 🇪🇸 Español
+
+#### Añadido
+- **Módulo Rastreador de Combate e Iniciativa Flotante:**
+  - **Panel Flotante Persistente:** Ventana arrastrable y minimizable alojada en `panelsLayer` para mantener intacto el estado del combate sin destruirse durante los re-renderizados del tablero.
+  - **Protección de Cierre:** Confirmación de seguridad para evitar cerrar accidentalmente el panel a mitad de un combate activo.
+  - **Progresión de Turnos y Rondas:** Contador de rondas, botones de turno anterior/siguiente (`▶`) y efecto visual de resplandor pulsante (`.dte-token-active-turn`) en el token activo del mapa.
+  - **Gestión de Combatientes:** Badge de iniciativa editable con reordenamiento automático descendente, mini barras de vida con colores dinámicos y apertura de `DamageModal` sincronizada con YAML, selector por lote de tokens del mapa y creación de combatientes manuales.
+- **Sistema de Condiciones y Efectos de Estado:**
+  - **Catálogo de Estados Predefinidos:** Asignación rápida con 1 click de condiciones clásicas (🧪 Envenenado, 🔥 En llamas, 🛡️ Escudo, ⚡ Aturdido, 👁️ Cegado, 💤 Dormido, 🕸️ Inmovilizado, ✨ Bendición, 💀 Maldición, 🎯 Marcado, 👻 Invisible, 🩸 Sangrado).
+  - **Efectos Personalizados:** Creación de condiciones a medida con nombre, emoji/ícono y duración en rondas (o indefinido `∞`).
+  - **Conteo Regresivo Automático:** Al avanzar de turno, las condiciones del combatiente se decrementan automáticamente, eliminándose al expirar y emitiendo un aviso en Obsidian.
+  - **Integración Total en Tokens y Fuera de Combate:** Asignación y ajuste de efectos en cualquier token fuera de iniciativa desde el menú contextual (click derecho → `+ Efecto / Condición`), el editor de tokens (`TokenEditModal`) o pulsando directamente sobre los mini-badges en el mapa.
+
+#### Corregido
+- **Eventos de Puntero y Arrastre en Paneles Flotantes:** Corrección de la propiedad `pointer-events: auto` en el panel de combate para evitar bloqueos de interacción y restricción del arrastre exclusivamente a la cabecera.
+
+---
+
 ## [0.1.1] - 2026-09-27
 
 ### 🇬🇧 English
 
 #### Added
 - **Internationalization (i18n):** Full localization support with English and Spanish dictionaries. Includes an interface language selector in plugin settings (`Auto`, `Spanish`, `English`) with instant UI updates and fallback handling.
-- **Integrated Optional Modules System:** Extensible module architecture allowing users to toggle specialized tools without cluttering the board:
-  - **Combat Tracker Module (`combat-tracker`):** Round tracking, turn order progression, and quick token HP delta buttons.
-  - **Cards & Decks Module (`cards`):** Integrated card & deck management tool.
+- **Integrated Optional Modules System:** Extensible module architecture allowing users to toggle specialized tools without cluttering the board.
 - **Board Toolbar Quick Modules Modal:** Dedicated `Modules` button (`puzzle` icon) on the board toolbar to enable/disable modules on the fly.
 - **Viewport-Centric Entity Placement:** Adding tokens, points of interest, or bestiary creatures now automatically places them at the center of the currently visible viewport instead of fixed defaults.
 
@@ -27,9 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Añadido
 - **Internacionalización (i18n):** Soporte multilingüe completo con diccionarios en Español e Inglés. Selector de idioma en ajustes (`Automático`, `Español`, `English`) con actualización en caliente y mecanismo de respaldo (*fallback*).
-- **Sistema de Módulos Opcionales Integrados:** Arquitectura extensible para activar únicamente las herramientas necesarias sin sobrecargar el tablero:
-  - **Módulo Rastreador de Combate (`combat-tracker`):** Gestión de rondas, avance de turnos y ajuste rápido de HP de tokens.
-  - **Módulo de Cartas y Mazos (`cards`):** Herramienta para gestión de cartas y mazos en mesa.
+- **Sistema de Módulos Opcionales Integrados:** Arquitectura extensible para activar únicamente las herramientas necesarias sin sobrecargar el tablero.
 - **Modal Rápido de Módulos en el Tablero:** Botón `Módulos` (ícono `puzzle`) en la barra del tablero para activar/desactivar módulos sin salir a la configuración.
 - **Colocación de Entidades en el Centro Visible:** Los nuevos tokens, puntos de interés y criaturas del bestiario ahora se crean en el centro del área visible actual del lienzo en lugar de coordenadas fijas.
 

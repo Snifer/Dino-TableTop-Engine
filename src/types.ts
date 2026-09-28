@@ -16,6 +16,14 @@ export interface CounterData {
   max: number | null;
 }
 
+export interface ConditionData {
+  id: string;
+  name: string;
+  icon?: string | null;
+  roundsRemaining: number | null; // null = permanente / indefinido
+  color?: string | null;
+}
+
 export interface TokenData {
   id: string;
   name: string;
@@ -29,6 +37,7 @@ export interface TokenData {
   imagePath: string | null;
   icon?: string | null;
   counters: CounterData[];
+  conditions?: ConditionData[];
 }
 
 export interface POIData {
@@ -43,12 +52,33 @@ export interface POIData {
   linkedNote: string | null;
 }
 
+export interface CombatantData {
+  id: string;
+  tokenId: string | null;
+  name: string;
+  initiative: number | null;
+  hp: number;
+  maxHp: number;
+  color: string;
+  imagePath: string | null;
+  icon?: string | null;
+  conditions?: ConditionData[];
+}
+
+export interface CombatData {
+  active: boolean;
+  round: number;
+  turnIndex: number;
+  combatants: CombatantData[];
+}
+
 export interface MapData {
   name: string;
   imagePath: string | null;
   drawing: DrawingData | null;
   tokens: TokenData[];
   pois: POIData[];
+  combat?: CombatData | null;
 }
 
 export interface DrawPoint {

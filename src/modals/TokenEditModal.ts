@@ -5,6 +5,7 @@ import { t } from '../i18n';
 import { renderCountersEditor } from './CountersEditor';
 import { FileSuggestModal } from './FileSuggestModal';
 import { IconSuggestModal } from './IconSuggestModal';
+import { AddConditionModal, AdjustConditionModal } from '../modules/combatTracker';
 
 export class TokenEditModal extends Modal {
   token: TokenData;
@@ -22,6 +23,7 @@ export class TokenEditModal extends Modal {
     this.onSave = onSave;
     this.onDelete = onDelete;
     if (!this.token.counters) this.token.counters = [];
+    if (!this.token.conditions) this.token.conditions = [];
   }
 
   onOpen(): void {
@@ -165,6 +167,46 @@ export class TokenEditModal extends Modal {
     }
 
     renderCountersEditor(contentEl, this.token.counters, () => this.onOpen());
+
+    // Editor de condiciones y efectos de estado
+    this.token.conditions = this.token.conditions || [];
+    const condHeader = contentEl.createEl('h3', { text: t('modules.combatConditionTitle') });
+    condHeader.style.marginTop = '18px';
+
+    const condsWrap = contentEl.createDiv({ cls: 'dte-combat-conditions-row' });
+    condsWrap.style.marginBottom = '12px';
+    for (let cIdx = 0; cIdx < this.token.conditions.length; cIdx++) {
+      const cond = this.token.conditions[cIdx];
+      const durText = cond.roundsRemaining !== null ? `${cond.roundsRemaining}r` : '∞';
+      const condBadge = condsWrap.createSpan({
+        cls: 'dte-combat-condition-badge',
+        text: `${cond.icon || '✨'} ${cond.name} (${durText})`,
+        attr: { 'aria-label': `${cond.name} (${durText})` },
+      });
+      if (cond.color) condBadge.style.borderColor = cond.color;
+      condBadge.addEventListener('click', () => {
+        new AdjustConditionModal(this.app, cond, this.token.name || t('common.unnamed'), (updated) => {
+          if (updated === null) {
+            this.token.conditions?.splice(cIdx, 1);
+          }
+          this.onOpen();
+        }).open();
+      });
+    }
+
+    const addCondBtn = condsWrap.createEl('button', {
+      cls: 'dte-btn',
+      text: t('modules.combatAddCondition'),
+    });
+    addCondBtn.style.fontSize = '11px';
+    addCondBtn.style.height = '24px';
+    addCondBtn.addEventListener('click', () => {
+      new AddConditionModal(this.app, (newCond) => {
+        this.token.conditions = this.token.conditions || [];
+        this.token.conditions.push(newCond);
+        this.onOpen();
+      }).open();
+    });
 
     const btnRow = new Setting(contentEl);
     btnRow.addButton((b) =>

@@ -34,6 +34,7 @@ import { NewDrawnMapModal, DrawingEditorModal } from '../modals/DrawingModals';
 import { BestiaryListModal } from '../modals/BestiaryModals';
 import { ModulesModal } from '../modals/ModulesModal';
 import { moduleRegistry } from '../modules/registry';
+import { CombatTrackerPanel, AdjustConditionModal, AddConditionModal } from '../modules/combatTracker';
 
 export class DinoTabletopView extends ItemView {
   plugin: any;
@@ -41,12 +42,14 @@ export class DinoTabletopView extends ItemView {
   metaListener: any;
   panelsLayer: HTMLElement;
   notePanels: Record<string, NotePanelHandle>;
+  combatPanel: CombatTrackerPanel | null;
 
   constructor(leaf: WorkspaceLeaf, plugin: any) {
     super(leaf);
     this.plugin = plugin;
     this.zoom = 1;
     this.notePanels = {};
+    this.combatPanel = null;
   }
 
   getViewType(): string {
@@ -68,6 +71,9 @@ export class DinoTabletopView extends ItemView {
 
   async onClose(): Promise<void> {
     if (this.metaListener) this.app.metadataCache.offref(this.metaListener);
+    if (this.combatPanel) {
+      this.combatPanel.destroy();
+    }
     if (this.panelsLayer) this.panelsLayer.remove();
   }
 
@@ -736,6 +742,12 @@ export class DinoTabletopView extends ItemView {
 
   renderToken(boardInner: HTMLElement, map: MapData, token: TokenData): void {
     const el = boardInner.createDiv({ cls: 'dte-token' });
+    if (map.combat?.active && map.combat.combatants.length > 0) {
+      const activeCombatant = map.combat.combatants[map.combat.turnIndex];
+      if (activeCombatant && activeCombatant.tokenId === token.id) {
+        el.addClass('dte-token-active-turn');
+      }
+    }
     el.style.left = token.x + '%';
     el.style.top = token.y + '%';
     el.style.width = (token.size || 44) + 'px';
@@ -775,6 +787,40 @@ export class DinoTabletopView extends ItemView {
         badge.addEventListener('click', (e: MouseEvent) => {
           e.stopPropagation();
           new AdjustCounterModal(this.app, c, (delta) => this.applyCounterDelta(token, c, delta)).open();
+        });
+      }
+    }
+
+    if (token.conditions && token.conditions.length) {
+      const condRow = el.createDiv({ cls: 'dte-token-conditions-row' });
+      for (let cIdx = 0; cIdx < token.conditions.length; cIdx++) {
+        const cond = token.conditions[cIdx];
+        const dur = cond.roundsRemaining !== null ? `${cond.roundsRemaining}r` : '';
+        const badge = condRow.createDiv({
+          cls: 'dte-token-condition-badge',
+          text: `${cond.icon || '✨'}${dur ? ' ' + dur : ''}`,
+          attr: { 'aria-label': `${cond.name}${dur ? ' (' + dur + ')' : ''}` },
+        });
+        if (cond.color) {
+          badge.style.borderColor = cond.color;
+        }
+        badge.addEventListener('pointerdown', (e: PointerEvent) => e.stopPropagation());
+        badge.addEventListener('click', (e: MouseEvent) => {
+          e.stopPropagation();
+          new AdjustConditionModal(this.app, cond, token.name, (updated) => {
+            if (updated === null) {
+              token.conditions?.splice(cIdx, 1);
+            }
+            if (map.combat?.combatants) {
+              const combatant = map.combat.combatants.find((cb) => cb.tokenId === token.id);
+              if (combatant) {
+                combatant.conditions = [...(token.conditions || [])];
+              }
+            }
+            this.plugin.saveSettings();
+            this.render();
+            if (this.combatPanel) this.combatPanel.render();
+          }).open();
         });
       }
     }
@@ -835,6 +881,26 @@ export class DinoTabletopView extends ItemView {
           .setTitle(t('token.applyDamageHeal'))
           .setIcon('heart-crack')
           .onClick(() => this.openDamageModal(map, token))
+      );
+      menu.addItem((i) =>
+        i
+          .setTitle(t('modules.combatAddCondition'))
+          .setIcon('sparkles')
+          .onClick(() => {
+            new AddConditionModal(this.app, (newCond) => {
+              token.conditions = token.conditions || [];
+              token.conditions.push(newCond);
+              if (map.combat?.combatants) {
+                const combatant = map.combat.combatants.find((cb) => cb.tokenId === token.id);
+                if (combatant) {
+                  combatant.conditions = [...token.conditions];
+                }
+              }
+              this.plugin.saveSettings();
+              this.render();
+              if (this.combatPanel) this.combatPanel.render();
+            }).open();
+          })
       );
       menu.addItem((i) =>
         i
@@ -985,5 +1051,15 @@ export class DinoTabletopView extends ItemView {
     };
     header.addEventListener('pointerup', endDrag);
     header.addEventListener('pointercancel', endDrag);
+  }
+
+  toggleCombatTracker(): void {
+    const map = this.getCurrentMap();
+    if (!map) return;
+    if (this.combatPanel) {
+      this.combatPanel.toggleMinimize();
+    } else {
+      this.combatPanel = new CombatTrackerPanel(this);
+    }
   }
 }
