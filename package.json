@@ -1,6 +1,6 @@
 {
   "name": "dino-tabletop-engine",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Dino Tabletop Engine — tablero de juego virtual para Obsidian",
   "main": "main.js",
   "scripts": {

@@ -1,5 +1,6 @@
 import { App, FuzzySuggestModal } from 'obsidian';
 import { RPG_AWESOME_ICONS } from '../types';
+import { t } from '../i18n';
 
 export class IconSuggestModal extends FuzzySuggestModal<string> {
   onChoose: (icon: string) => void;
@@ -9,7 +10,7 @@ export class IconSuggestModal extends FuzzySuggestModal<string> {
     super(app);
     this.onChoose = onChoose;
     this.icons = customIcons && customIcons.length ? customIcons : RPG_AWESOME_ICONS;
-    this.setPlaceholder('Buscar ícono (ej. ra-sword, ra-dragon, ra-campfire)...');
+    this.setPlaceholder(t('suggest.searchIcon'));
   }
 
   getItems(): string[] {

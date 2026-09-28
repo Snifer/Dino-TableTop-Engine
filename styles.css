@@ -8,17 +8,149 @@
 .dte-header {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
   padding: 6px 8px;
   border-bottom: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
 }
 
-.dte-zoom {
+.dte-toolbar-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s, 6px);
+  padding: 3px 6px;
+}
+
+select.dte-select,
+.dte-select {
+  font-size: 12px;
+  height: 28px;
+  line-height: 26px;
+  padding: 0 28px 0 8px;
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  border-radius: var(--radius-s, 4px);
+  color: var(--text-normal);
+  cursor: pointer;
+  max-width: 160px;
+  min-width: 120px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+select.dte-select:focus,
+.dte-select:focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 1px var(--interactive-accent);
+  outline: none;
+}
+
+.dte-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 12px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--background-modifier-border);
+  background-color: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dte-btn:hover {
+  background-color: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover);
+}
+
+.dte-btn.mod-cta {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: transparent;
+  font-weight: 500;
+}
+
+.dte-btn.mod-cta:hover {
+  background-color: var(--interactive-accent-hover);
+}
+
+.dte-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-s, 4px);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.dte-btn-icon:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+}
+
+.dte-btn-icon svg,
+.dte-btn-icon .svg-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.dte-btn-icon-prefix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.dte-btn-icon-prefix svg,
+.dte-btn-icon-prefix .svg-icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+}
+
+.dte-toolbar-zoom {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   margin-left: auto;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s, 6px);
+  padding: 3px 6px;
+}
+
+.dte-zoom-label {
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 42px;
+  text-align: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 4px;
+  user-select: none;
+  border-radius: var(--radius-s, 3px);
+}
+
+.dte-zoom-label:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
 }
 
 .dte-empty {
@@ -466,6 +598,75 @@
 
 .dte-btn-youtube:hover {
   background: #ff0000 !important;
+}
+
+/* --- Módulo: Combat Tracker --- */
+.dte-combat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s, 6px);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.dte-combat-round {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-accent);
+}
+
+.dte-combat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.dte-combat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-s, 6px);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  transition: all 0.15s ease;
+}
+
+.dte-combat-row.dte-combat-active {
+  border-color: var(--interactive-accent);
+  background: var(--background-primary-alt);
+  box-shadow: 0 0 0 1px var(--interactive-accent);
+}
+
+.dte-combat-indicator {
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  color: var(--text-accent);
+}
+
+.dte-combat-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-normal);
+}
+
+.dte-combat-hp {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-width: 80px;
+  text-align: right;
+}
+
+.dte-combat-actions {
+  display: flex;
+  gap: 4px;
 }
 
 .dte-btn-secondary {

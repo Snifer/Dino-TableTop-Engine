@@ -10,6 +10,7 @@ import {
   IMAGE_KEYS,
 } from './src/types';
 import { genId, readFrontmatterStat, readFrontmatterImagePath } from './src/utils';
+import { setLanguage, t } from './src/i18n';
 import { DinoTabletopView } from './src/views/DinoTabletopView';
 import { DinoSettingTab } from './src/settings/DinoSettingTab';
 
@@ -22,10 +23,13 @@ export default class DinoTabletopEnginePlugin extends Plugin {
     if (this.settings.enableCustomFont === undefined) this.settings.enableCustomFont = true;
     if (!this.settings.customFontCssUrl) this.settings.customFontCssUrl = DEFAULT_CUSTOM_FONT_CSS;
     if (!this.settings.customFontPrefix) this.settings.customFontPrefix = 'ra';
+    if (!this.settings.language) this.settings.language = 'auto';
+
+    setLanguage(this.settings.language);
 
     this.registerView(VIEW_TYPE_DINO, (leaf) => new DinoTabletopView(leaf, this));
 
-    this.addRibbonIcon('swords', 'Abrir Dino Tabletop Engine', () => this.activateView());
+    this.addRibbonIcon('swords', t('commands.openView'), () => this.activateView());
 
     this.addSettingTab(new DinoSettingTab(this.app, this));
 
@@ -33,13 +37,13 @@ export default class DinoTabletopEnginePlugin extends Plugin {
 
     this.addCommand({
       id: 'open-dino-tabletop-engine',
-      name: 'Abrir Dino Tabletop Engine',
+      name: t('commands.openView'),
       callback: () => this.activateView(),
     });
 
     this.addCommand({
       id: 'add-active-note-as-token',
-      name: 'Añadir nota activa como token al mapa actual',
+      name: t('commands.addActiveNote'),
       checkCallback: (checking: boolean) => {
         const file = this.app.workspace.getActiveFile();
         const view = this.getOpenDinoView();
@@ -49,13 +53,14 @@ export default class DinoTabletopEnginePlugin extends Plugin {
           const hp = readFrontmatterStat(this.app, file.path, HP_KEYS);
           const maxHp = readFrontmatterStat(this.app, file.path, MAXHP_KEYS);
           const img = readFrontmatterImagePath(this.app, file.path, IMAGE_KEYS);
+          const center = (view as DinoTabletopView).getViewportCenterCoords ? (view as DinoTabletopView).getViewportCenterCoords() : { x: 50, y: 50 };
           const token: TokenData = {
             id: genId(),
             name: file.basename,
             color: '#4c8bf5',
             size: 44,
-            x: 50,
-            y: 50,
+            x: center.x,
+            y: center.y,
             hp: hp ?? 10,
             maxHp: maxHp ?? 10,
             linkedNote: file.path,
@@ -66,7 +71,7 @@ export default class DinoTabletopEnginePlugin extends Plugin {
           map.tokens.push(token);
           this.saveSettings();
           (view as DinoTabletopView).render();
-          new Notice(`Token creado para "${file.basename}"`);
+          new Notice(t('commands.tokenCreatedNotice', { name: file.basename }));
         }
         return ok;
       },

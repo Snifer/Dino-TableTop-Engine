@@ -1,5 +1,6 @@
 import { App, Modal, Setting } from 'obsidian';
 import { TokenData } from '../types';
+import { t } from '../i18n';
 
 export class DamageModal extends Modal {
   token: TokenData;
@@ -15,16 +16,16 @@ export class DamageModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.createEl('h3', {
-      text: `${this.token.name || 'Token'} — ${this.token.hp ?? 0}/${this.token.maxHp ?? 0} HP`,
+      text: `${this.token.name || t('common.unnamed')} — ${this.token.hp ?? 0}/${this.token.maxHp ?? 0} HP`,
     });
 
     let amount = 0;
-    new Setting(contentEl).setName('Cantidad').addText((t) => {
-      t.inputEl.type = 'number';
-      t.setPlaceholder('0');
-      t.inputEl.focus();
-      t.onChange((v) => (amount = Number(v) || 0));
-      t.inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
+    new Setting(contentEl).setName(t('common.amount')).addText((text) => {
+      text.inputEl.type = 'number';
+      text.setPlaceholder('0');
+      text.inputEl.focus();
+      text.onChange((v) => (amount = Number(v) || 0));
+      text.inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Enter') {
           this.close();
           this.onApply(-Math.abs(amount));
@@ -35,7 +36,7 @@ export class DamageModal extends Modal {
     const btnRow = new Setting(contentEl);
     btnRow.addButton((b) =>
       b
-        .setButtonText('Aplicar daño')
+        .setButtonText(t('token.applyDamageBtn'))
         .setWarning()
         .onClick(() => {
           this.close();
@@ -43,12 +44,12 @@ export class DamageModal extends Modal {
         })
     );
     btnRow.addButton((b) =>
-      b.setButtonText('Curar').onClick(() => {
+      b.setButtonText(t('token.applyHealBtn')).onClick(() => {
         this.close();
         this.onApply(Math.abs(amount));
       })
     );
-    btnRow.addButton((b) => b.setButtonText('Cancelar').onClick(() => this.close()));
+    btnRow.addButton((b) => b.setButtonText(t('common.cancel')).onClick(() => this.close()));
   }
 
   onClose(): void {

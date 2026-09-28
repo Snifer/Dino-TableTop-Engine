@@ -1,4 +1,5 @@
 import { App, FuzzySuggestModal, TFile } from 'obsidian';
+import { t } from '../i18n';
 
 export class FileSuggestModal extends FuzzySuggestModal<TFile> {
   extensions: string[] | null;
@@ -8,7 +9,11 @@ export class FileSuggestModal extends FuzzySuggestModal<TFile> {
     super(app);
     this.extensions = extensions;
     this.onChooseCb = onChoose;
-    this.setPlaceholder(extensions ? `Elige un archivo (${extensions.join(', ')})...` : 'Elige una nota...');
+    this.setPlaceholder(
+      extensions
+        ? t('suggest.selectFile', { extensions: extensions.join(', ') })
+        : t('suggest.selectNote')
+    );
   }
 
   getItems(): TFile[] {

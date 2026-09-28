@@ -100,7 +100,12 @@ export interface BestiaryEntry {
   counters: CounterData[];
 }
 
+import { SupportedLanguage } from './i18n';
+export type { SupportedLanguage };
+
 export interface DinoSettings {
+  language: SupportedLanguage;
+  enabledModules: Record<string, boolean>;
   campaigns: Record<string, CampaignData>;
   currentCampaignId: string | null;
   bestiary: Record<string, BestiaryEntry>;
@@ -112,6 +117,11 @@ export interface DinoSettings {
 export const DEFAULT_CUSTOM_FONT_CSS = 'https://cdn.jsdelivr.net/npm/rpg-awesome@0.2.0/css/rpg-awesome.min.css';
 
 export const DEFAULT_SETTINGS: DinoSettings = {
+  language: 'auto',
+  enabledModules: {
+    'combat-tracker': false,
+    'cards': false,
+  },
   campaigns: {},
   currentCampaignId: null,
   bestiary: {},

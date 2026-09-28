@@ -1,4 +1,4 @@
-import { ItemView, Menu, Notice, TAbstractFile, TFile, WorkspaceLeaf } from 'obsidian';
+import { ItemView, Menu, Notice, TAbstractFile, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
 import {
   VIEW_TYPE_DINO,
   HP_KEYS,
@@ -22,6 +22,7 @@ import {
   readFrontmatterImagePath,
   renderMarkdownInto,
 } from '../utils';
+import { t } from '../i18n';
 import { paintDrawingOnCanvas } from '../drawing';
 import { FileSuggestModal } from '../modals/FileSuggestModal';
 import { NamePromptModal } from '../modals/NamePromptModal';
@@ -31,6 +32,8 @@ import { TokenEditModal } from '../modals/TokenEditModal';
 import { POIEditModal } from '../modals/POIEditModal';
 import { NewDrawnMapModal, DrawingEditorModal } from '../modals/DrawingModals';
 import { BestiaryListModal } from '../modals/BestiaryModals';
+import { ModulesModal } from '../modals/ModulesModal';
+import { moduleRegistry } from '../modules/registry';
 
 export class DinoTabletopView extends ItemView {
   plugin: any;
@@ -50,7 +53,7 @@ export class DinoTabletopView extends ItemView {
     return VIEW_TYPE_DINO;
   }
   getDisplayText(): string {
-    return 'Dino Tabletop Engine';
+    return t('commands.openView');
   }
   getIcon(): string {
     return 'swords';
@@ -135,8 +138,30 @@ export class DinoTabletopView extends ItemView {
     return camp.maps[camp.currentMapId] || null;
   }
 
+  getViewportCenterCoords(): { x: number; y: number } {
+    const container = this.containerEl.children[1] as HTMLElement;
+    const wrap = container?.querySelector('.dte-board-wrap') as HTMLElement | null;
+    const inner = container?.querySelector('.dte-board-inner') as HTMLElement | null;
+    if (!wrap || !inner) return { x: 50, y: 50 };
+
+    const innerRect = inner.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+    if (innerRect.width <= 0 || innerRect.height <= 0) return { x: 50, y: 50 };
+
+    const visibleCenterX = wrapRect.left + wrapRect.width / 2;
+    const visibleCenterY = wrapRect.top + wrapRect.height / 2;
+
+    const xPct = clamp(((visibleCenterX - innerRect.left) / innerRect.width) * 100, 5, 95);
+    const yPct = clamp(((visibleCenterY - innerRect.top) / innerRect.height) * 100, 5, 95);
+
+    return { x: Math.round(xPct * 10) / 10, y: Math.round(yPct * 10) / 10 };
+  }
+
   render(): void {
     const container = this.containerEl.children[1] as HTMLElement;
+    const oldWrap = container?.querySelector('.dte-board-wrap') as HTMLElement | null;
+    const savedScroll = oldWrap ? { left: oldWrap.scrollLeft, top: oldWrap.scrollTop } : null;
+
     container.empty();
     container.addClass('dte-root');
 
@@ -144,24 +169,32 @@ export class DinoTabletopView extends ItemView {
 
     const camp = this.getCurrentCampaign();
     if (!camp) {
-      container.createDiv({ cls: 'dte-empty', text: 'Crea o selecciona una campaña para empezar.' });
+      container.createDiv({ cls: 'dte-empty', text: t('header.emptyCampaigns') });
       return;
     }
     const map = this.getCurrentMap();
     if (!map) {
-      container.createDiv({ cls: 'dte-empty', text: 'Esta campaña no tiene mapas. Añade uno arriba.' });
+      container.createDiv({ cls: 'dte-empty', text: t('header.emptyMaps') });
       return;
     }
     if (!map.pois) map.pois = [];
-    this.renderBoard(container, map);
+    this.renderBoard(container, map, savedScroll);
   }
 
   renderHeader(container: HTMLElement): void {
     const header = container.createDiv({ cls: 'dte-header' });
     const data = this.getData();
+    const camp = this.getCurrentCampaign();
+    const map = this.getCurrentMap();
 
-    const campSelect = header.createEl('select', { cls: 'dropdown' });
-    campSelect.createEl('option', { text: '— Campaña —', value: '' });
+    // ==========================================
+    // SECCIÓN 1: CAMPAÑA
+    // ==========================================
+    const campGroup = header.createDiv({ cls: 'dte-toolbar-group' });
+
+    // Dropdown de Campañas
+    const campSelect = campGroup.createEl('select', { cls: 'dropdown dte-select' });
+    campSelect.createEl('option', { text: t('header.selectCampaign'), value: '' });
     for (const id in data.campaigns) {
       const opt = campSelect.createEl('option', { text: data.campaigns[id].name, value: id });
       if (id === data.currentCampaignId) opt.selected = true;
@@ -172,8 +205,14 @@ export class DinoTabletopView extends ItemView {
       this.render();
     });
 
-    header.createEl('button', { text: '+ Campaña' }).addEventListener('click', () => {
-      new NamePromptModal(this.app, 'Nueva campaña', 'Nombre de la campaña', (name) => {
+    // Botón + Campaña
+    const addCampBtn = campGroup.createEl('button', {
+      cls: 'clickable-icon dte-btn-icon',
+      attr: { 'aria-label': t('header.newCampaign') },
+    });
+    setIcon(addCampBtn, 'folder-plus');
+    addCampBtn.addEventListener('click', () => {
+      new NamePromptModal(this.app, t('header.newCampaign'), t('header.campaignNamePrompt'), (name) => {
         if (!name) return;
         const id = genId();
         data.campaigns[id] = { name, maps: {}, currentMapId: null };
@@ -183,22 +222,64 @@ export class DinoTabletopView extends ItemView {
       }).open();
     });
 
-    header.createEl('button', { text: 'Bestiario' }).addEventListener('click', () => {
+    // Botón Bestiario
+    const bestiaryBtn = campGroup.createEl('button', { cls: 'dte-btn', text: t('header.bestiary') });
+    const bestiaryIcon = bestiaryBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+    setIcon(bestiaryIcon, 'book-open');
+    bestiaryBtn.prepend(bestiaryIcon);
+    bestiaryBtn.addEventListener('click', () => {
       new BestiaryListModal(this.app, this.plugin, this).open();
     });
 
-    const camp = this.getCurrentCampaign();
+    // Menú de opciones de Campaña (acciones secundarias / destructivas)
     if (camp && data.currentCampaignId) {
-      header.createEl('button', { text: 'Eliminar campaña' }).addEventListener('click', () => {
-        if (!confirm(`¿Eliminar la campaña "${camp.name}"? Se perderán todos sus mapas, tokens y puntos de interés. Esta acción no se puede deshacer.`)) return;
-        delete data.campaigns[data.currentCampaignId as string];
-        data.currentCampaignId = null;
-        this.plugin.saveSettings();
-        this.render();
+      const campMenuBtn = campGroup.createEl('button', {
+        cls: 'clickable-icon dte-btn-icon',
+        attr: { 'aria-label': t('header.campaignOptions') },
       });
+      setIcon(campMenuBtn, 'more-vertical');
+      campMenuBtn.addEventListener('click', (e: MouseEvent) => {
+        const menu = new Menu();
+        menu.addItem((item) =>
+          item
+            .setTitle(t('header.renameCampaign'))
+            .setIcon('pencil')
+            .onClick(() => {
+              new NamePromptModal(this.app, t('header.renameCampaign'), camp.name, (newName) => {
+                if (!newName) return;
+                camp.name = newName;
+                this.plugin.saveSettings();
+                this.render();
+              }).open();
+            })
+        );
+        menu.addSeparator();
+        menu.addItem((item) =>
+          item
+            .setTitle(t('header.deleteCampaign'))
+            .setIcon('trash')
+            .setWarning(true)
+            .onClick(() => {
+              if (!confirm(t('header.deleteCampaignConfirm', { name: camp.name }))) return;
+              delete data.campaigns[data.currentCampaignId as string];
+              data.currentCampaignId = null;
+              this.plugin.saveSettings();
+              this.render();
+            })
+        );
+        menu.showAtMouseEvent(e);
+      });
+    }
 
-      const mapSelect = header.createEl('select', { cls: 'dropdown' });
-      mapSelect.createEl('option', { text: '— Mapa —', value: '' });
+    // ==========================================
+    // SECCIÓN 2: MAPA (si hay campaña activa)
+    // ==========================================
+    if (camp && data.currentCampaignId) {
+      const mapGroup = header.createDiv({ cls: 'dte-toolbar-group' });
+
+      // Dropdown de Mapas
+      const mapSelect = mapGroup.createEl('select', { cls: 'dropdown dte-select' });
+      mapSelect.createEl('option', { text: t('header.selectMap'), value: '' });
       for (const id in camp.maps) {
         const opt = mapSelect.createEl('option', { text: camp.maps[id].name, value: id });
         if (id === camp.currentMapId) opt.selected = true;
@@ -209,103 +290,225 @@ export class DinoTabletopView extends ItemView {
         this.render();
       });
 
-      header.createEl('button', { text: '+ Mapa (imagen)' }).addEventListener('click', () => {
-        new FileSuggestModal(this.app, IMAGE_EXTS, (file) => {
-          new NamePromptModal(this.app, 'Nombre del mapa', file.basename, (name) => {
-            const id = genId();
-            camp.maps[id] = { name: name || file.basename, imagePath: file.path, drawing: null, tokens: [], pois: [] };
-            camp.currentMapId = id;
-            this.plugin.saveSettings();
-            this.render();
-          }).open();
-        }).open();
+      // Botón + Mapa con submenú (Imagen o Dibujar)
+      const addMapBtn = mapGroup.createEl('button', { cls: 'dte-btn', text: t('header.addMap') });
+      const addMapIcon = addMapBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+      setIcon(addMapIcon, 'map');
+      addMapBtn.prepend(addMapIcon);
+      addMapBtn.addEventListener('click', (e: MouseEvent) => {
+        const menu = new Menu();
+        menu.addItem((item) =>
+          item
+            .setTitle(t('header.addMapFromImage'))
+            .setIcon('image')
+            .onClick(() => {
+              new FileSuggestModal(this.app, IMAGE_EXTS, (file) => {
+                new NamePromptModal(this.app, t('header.mapNamePrompt'), file.basename, (name) => {
+                  const id = genId();
+                  camp.maps[id] = { name: name || file.basename, imagePath: file.path, drawing: null, tokens: [], pois: [] };
+                  camp.currentMapId = id;
+                  this.plugin.saveSettings();
+                  this.render();
+                }).open();
+              }).open();
+            })
+        );
+        menu.addItem((item) =>
+          item
+            .setTitle(t('header.createDrawnMap'))
+            .setIcon('pen-tool')
+            .onClick(() => {
+              new NewDrawnMapModal(this.app, (name, width, height) => {
+                const id = genId();
+                const drawing: DrawingData = { width, height, strokes: [], images: [], backgroundImagePath: null };
+                camp.maps[id] = { name, imagePath: null, drawing, tokens: [], pois: [] };
+                camp.currentMapId = id;
+                this.plugin.saveSettings();
+                this.render();
+                new DrawingEditorModal(this.app, this.plugin, this, camp.maps[id]).open();
+              }).open();
+            })
+        );
+        menu.showAtMouseEvent(e);
       });
 
-      header.createEl('button', { text: '+ Mapa (dibujar)' }).addEventListener('click', () => {
-        new NewDrawnMapModal(this.app, (name, width, height) => {
-          const id = genId();
-          const drawing: DrawingData = { width, height, strokes: [], images: [], backgroundImagePath: null };
-          camp.maps[id] = { name, imagePath: null, drawing, tokens: [], pois: [] };
-          camp.currentMapId = id;
-          this.plugin.saveSettings();
-          this.render();
-          new DrawingEditorModal(this.app, this.plugin, this, camp.maps[id]).open();
-        }).open();
-      });
+      // Si el mapa actual es dibujado, botón para editar dibujo
+      if (map && map.drawing) {
+        const editDrawingBtn = mapGroup.createEl('button', { cls: 'dte-btn', text: t('header.editDrawing') });
+        const editIcon = editDrawingBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+        setIcon(editIcon, 'pencil');
+        editDrawingBtn.prepend(editIcon);
+        editDrawingBtn.addEventListener('click', () => {
+          new DrawingEditorModal(this.app, this.plugin, this, map).open();
+        });
+      }
 
-      const map = this.getCurrentMap();
+      // Menú de opciones de Mapa (acciones secundarias / destructivas)
       if (map && camp.currentMapId) {
-        header.createEl('button', { text: 'Eliminar mapa' }).addEventListener('click', () => {
-          if (!confirm(`¿Eliminar el mapa "${map.name}"? Se perderán sus tokens, puntos de interés y (si lo tiene) el dibujo. Esta acción no se puede deshacer.`)) return;
-          delete camp.maps[camp.currentMapId as string];
-          camp.currentMapId = null;
-          this.plugin.saveSettings();
-          this.render();
+        const mapMenuBtn = mapGroup.createEl('button', {
+          cls: 'clickable-icon dte-btn-icon',
+          attr: { 'aria-label': t('header.mapOptions') },
         });
-
-        if (map.drawing) {
-          header.createEl('button', { text: 'Editar dibujo' }).addEventListener('click', () => {
-            new DrawingEditorModal(this.app, this.plugin, this, map).open();
-          });
-        }
-
-        header.createEl('button', { text: '+ Token' }).addEventListener('click', () => {
-          const token: TokenData = {
-            id: genId(),
-            name: '',
-            color: '#4c8bf5',
-            size: 44,
-            x: 50,
-            y: 50,
-            hp: 10,
-            maxHp: 10,
-            linkedNote: null,
-            imagePath: null,
-            counters: [],
-          };
-          new TokenEditModal(
-            this.app,
-            token,
-            (saved) => {
-              map.tokens.push(saved);
-              this.plugin.saveSettings();
-              this.render();
-            },
-            null
-          ).open();
-        });
-
-        header.createEl('button', { text: '+ Punto de interés' }).addEventListener('click', () => {
-          const poi: POIData = { id: genId(), name: '', size: 36, x: 50, y: 50, imagePath: null, linkedNote: null };
-          new POIEditModal(
-            this.app,
-            poi,
-            (saved) => {
-              map.pois.push(saved);
-              this.plugin.saveSettings();
-              this.render();
-            },
-            null
-          ).open();
-        });
-
-        const zoomWrap = header.createDiv({ cls: 'dte-zoom' });
-        zoomWrap.createSpan({ text: 'Zoom' });
-        const zoomInput = zoomWrap.createEl('input', { type: 'range' });
-        zoomInput.min = '0.3';
-        zoomInput.max = '2';
-        zoomInput.step = '0.05';
-        zoomInput.value = String(this.zoom);
-        zoomInput.addEventListener('input', () => {
-          this.zoom = Number(zoomInput.value);
-          const boardImg = container.querySelector('.dte-board-inner') as HTMLElement | null;
-          if (boardImg) boardImg.style.transform = `scale(${this.zoom})`;
+        setIcon(mapMenuBtn, 'more-vertical');
+        mapMenuBtn.addEventListener('click', (e: MouseEvent) => {
+          const menu = new Menu();
+          menu.addItem((item) =>
+            item
+              .setTitle(t('header.renameMap'))
+              .setIcon('pencil')
+              .onClick(() => {
+                new NamePromptModal(this.app, t('header.renameMap'), map.name, (newName) => {
+                  if (!newName) return;
+                  map.name = newName;
+                  this.plugin.saveSettings();
+                  this.render();
+                }).open();
+              })
+          );
+          menu.addSeparator();
+          menu.addItem((item) =>
+            item
+              .setTitle(t('header.deleteMap'))
+              .setIcon('trash')
+              .setWarning(true)
+              .onClick(() => {
+                if (!confirm(t('header.deleteMapConfirm', { name: map.name }))) return;
+                delete camp.maps[camp.currentMapId as string];
+                camp.currentMapId = null;
+                this.plugin.saveSettings();
+                this.render();
+              })
+          );
+          menu.showAtMouseEvent(e);
         });
       }
     }
+
+    // ==========================================
+    // SECCIÓN 3: ACCIONES DE TABLERO (Tokens y POIs)
+    // ==========================================
+    if (map) {
+      const boardGroup = header.createDiv({ cls: 'dte-toolbar-group' });
+
+      // Botón + Token (destacado)
+      const addTokenBtn = boardGroup.createEl('button', { cls: 'mod-cta dte-btn', text: t('header.addToken') });
+      const tokenIcon = addTokenBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+      setIcon(tokenIcon, 'user-plus');
+      addTokenBtn.prepend(tokenIcon);
+      addTokenBtn.addEventListener('click', () => {
+        const center = this.getViewportCenterCoords();
+        const token: TokenData = {
+          id: genId(),
+          name: '',
+          color: '#4c8bf5',
+          size: 44,
+          x: center.x,
+          y: center.y,
+          hp: 10,
+          maxHp: 10,
+          linkedNote: null,
+          imagePath: null,
+          counters: [],
+        };
+        new TokenEditModal(
+          this.app,
+          token,
+          (saved) => {
+            map.tokens.push(saved);
+            this.plugin.saveSettings();
+            this.render();
+          },
+          null
+        ).open();
+      });
+
+      // Botón + Punto de Interés
+      const addPoiBtn = boardGroup.createEl('button', { cls: 'dte-btn', text: t('header.addPoi') });
+      const poiIcon = addPoiBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+      setIcon(poiIcon, 'map-pin');
+      addPoiBtn.prepend(poiIcon);
+      addPoiBtn.addEventListener('click', () => {
+        const center = this.getViewportCenterCoords();
+        const poi: POIData = { id: genId(), name: '', size: 36, x: center.x, y: center.y, imagePath: null, linkedNote: null };
+        new POIEditModal(
+          this.app,
+          poi,
+          (saved) => {
+            map.pois.push(saved);
+            this.plugin.saveSettings();
+            this.render();
+          },
+          null
+        ).open();
+      });
+
+      // Botón de Gestión de Módulos (rápido en tablero)
+      const modulesBtn = boardGroup.createEl('button', {
+        cls: 'clickable-icon dte-btn-icon',
+        attr: { 'aria-label': t('header.modules') },
+      });
+      setIcon(modulesBtn, 'puzzle');
+      modulesBtn.addEventListener('click', () => {
+        new ModulesModal(this.app, this.plugin, this).open();
+      });
+
+      // ==========================================
+      // SECCIÓN 4: MÓDULOS ACTIVOS
+      // ==========================================
+      const activeMods = moduleRegistry.getAll().filter((m) => moduleRegistry.isEnabled(data, m.id));
+      if (activeMods.length > 0) {
+        const modGroup = header.createDiv({ cls: 'dte-toolbar-group' });
+        for (const mod of activeMods) {
+          if (mod.renderToolbarButton) {
+            mod.renderToolbarButton(modGroup, this);
+          }
+        }
+      }
+
+      // ==========================================
+      // SECCIÓN 5: CONTROLES DE ZOOM COMPACTOS
+      // ==========================================
+      const zoomGroup = header.createDiv({ cls: 'dte-toolbar-zoom' });
+
+      const zoomOutBtn = zoomGroup.createEl('button', {
+        cls: 'clickable-icon dte-btn-icon',
+        attr: { 'aria-label': t('header.zoomOut') },
+      });
+      setIcon(zoomOutBtn, 'minus');
+      zoomOutBtn.addEventListener('click', () => {
+        this.setZoom(Math.max(0.3, Math.round((this.zoom - 0.1) * 10) / 10));
+      });
+
+      const zoomLabel = zoomGroup.createSpan({
+        cls: 'dte-zoom-label',
+        text: `${Math.round(this.zoom * 100)}%`,
+        attr: { 'aria-label': t('header.zoomResetTooltip') },
+      });
+      zoomLabel.addEventListener('click', () => {
+        this.setZoom(1);
+      });
+
+      const zoomInBtn = zoomGroup.createEl('button', {
+        cls: 'clickable-icon dte-btn-icon',
+        attr: { 'aria-label': t('header.zoomIn') },
+      });
+      setIcon(zoomInBtn, 'plus');
+      zoomInBtn.addEventListener('click', () => {
+        this.setZoom(Math.min(2.5, Math.round((this.zoom + 0.1) * 10) / 10));
+      });
+    }
   }
 
-  renderBoard(container: HTMLElement, map: MapData): void {
+  setZoom(val: number): void {
+    this.zoom = clamp(val, 0.3, 3);
+    const container = this.containerEl.children[1] as HTMLElement;
+    const boardImg = container.querySelector('.dte-board-inner') as HTMLElement | null;
+    if (boardImg) boardImg.style.transform = `scale(${this.zoom})`;
+    const zoomLabel = container.querySelector('.dte-zoom-label');
+    if (zoomLabel) zoomLabel.setText(`${Math.round(this.zoom * 100)}%`);
+  }
+
+  renderBoard(container: HTMLElement, map: MapData, savedScroll?: { left: number; top: number } | null): void {
     const wrap = container.createDiv({ cls: 'dte-board-wrap' });
     const inner = wrap.createDiv({ cls: 'dte-board-inner' });
     inner.style.transform = `scale(${this.zoom})`;
@@ -313,7 +516,15 @@ export class DinoTabletopView extends ItemView {
     if (map.imagePath) {
       const file = this.app.vault.getAbstractFileByPath(map.imagePath);
       const src = file ? this.app.vault.getResourcePath(file as TFile) : '';
-      inner.createEl('img', { cls: 'dte-map-img', attr: { src } });
+      const imgEl = inner.createEl('img', { cls: 'dte-map-img', attr: { src } });
+      if (savedScroll) {
+        wrap.scrollLeft = savedScroll.left;
+        wrap.scrollTop = savedScroll.top;
+        imgEl.addEventListener('load', () => {
+          wrap.scrollLeft = savedScroll.left;
+          wrap.scrollTop = savedScroll.top;
+        }, { once: true });
+      }
     } else if (map.drawing) {
       const canvas = inner.createEl('canvas', { cls: 'dte-map-canvas' }) as HTMLCanvasElement;
       canvas.width = map.drawing.width;
@@ -322,6 +533,10 @@ export class DinoTabletopView extends ItemView {
       const drawing = map.drawing;
       const repaint = () => paintDrawingOnCanvas(this.app, canvas, drawing, { imageCache: cache, onImageLoad: repaint });
       repaint();
+      if (savedScroll) {
+        wrap.scrollLeft = savedScroll.left;
+        wrap.scrollTop = savedScroll.top;
+      }
     }
 
     for (const poi of map.pois) {
@@ -329,6 +544,11 @@ export class DinoTabletopView extends ItemView {
     }
     for (const token of map.tokens) {
       this.renderToken(inner, map, token);
+    }
+
+    if (savedScroll) {
+      wrap.scrollLeft = savedScroll.left;
+      wrap.scrollTop = savedScroll.top;
     }
   }
 
@@ -416,14 +636,14 @@ export class DinoTabletopView extends ItemView {
       const menu = new Menu();
       menu.addItem((i) =>
         i
-          .setTitle('Editar')
+          .setTitle(t('poi.editMenu'))
           .setIcon('pencil')
           .onClick(() => this.openPOIEditor(map, poi))
       );
       if (poi.linkedNote) {
         menu.addItem((i) =>
           i
-            .setTitle('Abrir nota (panel flotante)')
+            .setTitle(t('poi.openNotePanelMenu'))
             .setIcon('file-text')
             .onClick(() => {
               const f = this.app.vault.getAbstractFileByPath(poi.linkedNote as string);
@@ -433,10 +653,10 @@ export class DinoTabletopView extends ItemView {
       }
       menu.addItem((i) =>
         i
-          .setTitle('Eliminar')
+          .setTitle(t('poi.deleteMenu'))
           .setIcon('trash')
           .onClick(() => {
-            if (!confirm(`¿Eliminar el punto de interés "${poi.name || 'sin nombre'}"? Esta acción no se puede deshacer.`)) return;
+            if (!confirm(t('poi.deleteConfirm', { name: poi.name || t('common.unnamed') }))) return;
             map.pois = map.pois.filter((p) => p.id !== poi.id);
             this.plugin.saveSettings();
             this.render();
@@ -612,20 +832,20 @@ export class DinoTabletopView extends ItemView {
       const menu = new Menu();
       menu.addItem((i) =>
         i
-          .setTitle('Aplicar daño / curación')
+          .setTitle(t('token.applyDamageHeal'))
           .setIcon('heart-crack')
           .onClick(() => this.openDamageModal(map, token))
       );
       menu.addItem((i) =>
         i
-          .setTitle('Editar token')
+          .setTitle(t('token.editTokenMenu'))
           .setIcon('pencil')
           .onClick(() => this.openTokenEditor(map, token))
       );
       if (token.linkedNote) {
         menu.addItem((i) =>
           i
-            .setTitle('Abrir nota (panel flotante)')
+            .setTitle(t('token.openNotePanelMenu'))
             .setIcon('file-text')
             .onClick(() => {
               const f = this.app.vault.getAbstractFileByPath(token.linkedNote as string);
@@ -635,10 +855,10 @@ export class DinoTabletopView extends ItemView {
       }
       menu.addItem((i) =>
         i
-          .setTitle('Eliminar token')
+          .setTitle(t('token.deleteTokenMenu'))
           .setIcon('trash')
           .onClick(() => {
-            if (!confirm(`¿Eliminar el token "${token.name || 'sin nombre'}"? Esta acción no se puede deshacer.`)) return;
+            if (!confirm(t('token.deleteConfirm', { name: token.name || t('common.unnamed') }))) return;
             map.tokens = map.tokens.filter((t) => t.id !== token.id);
             this.plugin.saveSettings();
             this.render();
@@ -670,14 +890,14 @@ export class DinoTabletopView extends ItemView {
     const header = el.createDiv({ cls: 'dte-note-panel-header' });
     header.createSpan({ cls: 'dte-note-panel-title', text: file.basename });
     const headerBtns = header.createDiv({ cls: 'dte-note-panel-header-btns' });
-    const toggleBtn = headerBtns.createEl('button', { cls: 'dte-note-panel-toggle', text: 'Editar' });
+    const toggleBtn = headerBtns.createEl('button', { cls: 'dte-note-panel-toggle', text: t('panel.editMode') });
     const closeBtn = headerBtns.createEl('button', { cls: 'dte-note-panel-close', text: '✕' });
 
     const body = el.createDiv({ cls: 'dte-note-panel-body' });
     const previewEl = body.createDiv({ cls: 'dte-note-panel-preview markdown-rendered' });
     const textarea = body.createEl('textarea', { cls: 'dte-note-panel-textarea' }) as HTMLTextAreaElement;
     textarea.style.display = 'none';
-    textarea.placeholder = 'Cargando...';
+    textarea.placeholder = t('panel.loading');
 
     const handle: NotePanelHandle = { el, file, textarea, previewEl, mode: 'preview', rawContent: '' };
     this.notePanels[file.path] = handle;
@@ -709,7 +929,7 @@ export class DinoTabletopView extends ItemView {
         textarea.value = handle.rawContent;
         previewEl.style.display = 'none';
         textarea.style.display = '';
-        toggleBtn.setText('Ver');
+        toggleBtn.setText(t('panel.previewMode'));
         textarea.focus();
       } else {
         if (saveTimeout) clearTimeout(saveTimeout);
@@ -718,7 +938,7 @@ export class DinoTabletopView extends ItemView {
         handle.mode = 'preview';
         textarea.style.display = 'none';
         previewEl.style.display = '';
-        toggleBtn.setText('Editar');
+        toggleBtn.setText(t('panel.editMode'));
         renderPreview();
       }
     });

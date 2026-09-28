@@ -1,6 +1,6 @@
 import { App, Modal, Setting } from 'obsidian';
-import { POIData, IMAGE_EXTS, IMAGE_KEYS } from '../types';
-import { readFrontmatterImagePath } from '../utils';
+import { POIData, IMAGE_EXTS } from '../types';
+import { t } from '../i18n';
 import { FileSuggestModal } from './FileSuggestModal';
 import { IconSuggestModal } from './IconSuggestModal';
 
@@ -19,20 +19,20 @@ export class POIEditModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl('h2', { text: this.onDelete ? 'Editar punto de interés' : 'Nuevo punto de interés' });
+    contentEl.createEl('h2', { text: this.onDelete ? t('poi.editTitle') : t('poi.newTitle') });
 
     new Setting(contentEl)
-      .setName('Nombre')
-      .addText((t) => t.setValue(this.poi.name || '').onChange((v) => (this.poi.name = v)));
+      .setName(t('common.name'))
+      .addText((text) => text.setValue(this.poi.name || '').onChange((v) => (this.poi.name = v)));
 
     new Setting(contentEl)
-      .setName('Color del marcador')
+      .setName(t('common.markerColor'))
       .addColorPicker((c) =>
         c.setValue(this.poi.color || '#4c8bf5').onChange((v) => (this.poi.color = v))
       );
 
     new Setting(contentEl)
-      .setName('Tamaño (px)')
+      .setName(t('common.size'))
       .addSlider((s) =>
         s
           .setLimits(16, 100, 2)
@@ -42,10 +42,10 @@ export class POIEditModal extends Modal {
       );
 
     new Setting(contentEl)
-      .setName('Imagen')
-      .setDesc(this.poi.imagePath ? this.poi.imagePath : 'Ninguna.')
+      .setName(t('common.image'))
+      .setDesc(this.poi.imagePath ? this.poi.imagePath : t('common.noImageDesc'))
       .addButton((b) =>
-        b.setButtonText('Elegir imagen').onClick(() => {
+        b.setButtonText(t('common.selectImage')).onClick(() => {
           new FileSuggestModal(this.app, IMAGE_EXTS, (file) => {
             this.poi.imagePath = file.path;
             this.onOpen();
@@ -55,24 +55,24 @@ export class POIEditModal extends Modal {
       .addExtraButton((b) =>
         b
           .setIcon('x')
-          .setTooltip('Quitar imagen')
+          .setTooltip(t('common.removeImage'))
           .onClick(() => {
-            if (!confirm('¿Quitar la imagen asignada a este punto de interés?')) return;
+            if (!confirm(t('common.removeImageConfirm'))) return;
             this.poi.imagePath = null;
             this.onOpen();
           })
       );
 
     const poiIconSetting = new Setting(contentEl)
-      .setName('Ícono (Custom Font / RPG-Awesome)')
+      .setName(t('common.iconField'))
       .setDesc(
         this.poi.icon
-          ? `Ícono asignado: "${this.poi.icon}". Se muestra en el marcador si no hay imagen.`
-          : 'Opcional. Se muestra si no hay imagen asignada (ej. ra-campfire, ra-castle-emblem, ra-skull).',
+          ? t('common.poiIconDescAssigned', { icon: this.poi.icon })
+          : t('common.poiIconDescEmpty'),
       )
-      .addText((t) =>
-        t
-          .setPlaceholder('ej. ra-campfire')
+      .addText((text) =>
+        text
+          .setPlaceholder('ra-campfire')
           .setValue(this.poi.icon || '')
           .onChange((v) => {
             this.poi.icon = v.trim() || null;
@@ -80,7 +80,7 @@ export class POIEditModal extends Modal {
       )
       .addButton((b) =>
         b
-          .setButtonText('Catálogo')
+          .setButtonText(t('common.iconCatalog'))
           .setIcon('search')
           .onClick(() => {
             new IconSuggestModal(this.app, (chosen) => {
@@ -94,7 +94,7 @@ export class POIEditModal extends Modal {
       poiIconSetting.addExtraButton((b) =>
         b
           .setIcon('x')
-          .setTooltip('Quitar ícono')
+          .setTooltip(t('common.removeIcon'))
           .onClick(() => {
             this.poi.icon = null;
             this.onOpen();
@@ -103,19 +103,16 @@ export class POIEditModal extends Modal {
     }
 
     new Setting(contentEl)
-      .setName('Nota vinculada')
+      .setName(t('common.linkedNote'))
       .setDesc(
         this.poi.linkedNote
-          ? this.poi.linkedNote
-          : 'Ninguna. Al vincular una nota, el punto de interés se puede abrir como panel flotante editable.',
+          ? t('common.linkedNotePoiDescAssigned', { path: this.poi.linkedNote })
+          : t('common.linkedNotePoiDescEmpty'),
       )
       .addButton((b) =>
-        b.setButtonText('Elegir nota').onClick(() => {
+        b.setButtonText(t('common.selectNote')).onClick(() => {
           new FileSuggestModal(this.app, null, (file) => {
             this.poi.linkedNote = file.path;
-            if (!this.poi.name) this.poi.name = file.basename;
-            const img = readFrontmatterImagePath(this.app, file.path, IMAGE_KEYS);
-            if (img) this.poi.imagePath = img;
             this.onOpen();
           }).open();
         })
@@ -123,7 +120,7 @@ export class POIEditModal extends Modal {
       .addExtraButton((b) =>
         b
           .setIcon('x')
-          .setTooltip('Quitar vínculo')
+          .setTooltip(t('common.removeLink'))
           .onClick(() => {
             this.poi.linkedNote = null;
             this.onOpen();
@@ -133,7 +130,7 @@ export class POIEditModal extends Modal {
     const btnRow = new Setting(contentEl);
     btnRow.addButton((b) =>
       b
-        .setButtonText('Guardar')
+        .setButtonText(t('common.save'))
         .setCta()
         .onClick(() => {
           this.close();
@@ -144,10 +141,10 @@ export class POIEditModal extends Modal {
       const onDelete = this.onDelete;
       btnRow.addButton((b) =>
         b
-          .setButtonText('Eliminar')
+          .setButtonText(t('poi.deleteBtn'))
           .setWarning()
           .onClick(() => {
-            if (!confirm(`¿Eliminar el punto de interés "${this.poi.name || 'sin nombre'}"? Esta acción no se puede deshacer.`)) return;
+            if (!confirm(t('poi.deleteConfirm', { name: this.poi.name || t('common.unnamed') }))) return;
             this.close();
             onDelete(this.poi);
           })

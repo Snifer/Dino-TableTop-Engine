@@ -1,6 +1,7 @@
 import { App, Modal, Setting, TFile } from 'obsidian';
 import { TokenData, HP_KEYS, MAXHP_KEYS, IMAGE_KEYS, IMAGE_EXTS } from '../types';
 import { readFrontmatterStat, readFrontmatterImagePath } from '../utils';
+import { t } from '../i18n';
 import { renderCountersEditor } from './CountersEditor';
 import { FileSuggestModal } from './FileSuggestModal';
 import { IconSuggestModal } from './IconSuggestModal';
@@ -26,20 +27,20 @@ export class TokenEditModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl('h2', { text: this.onDelete ? 'Editar token' : 'Nuevo token' });
+    contentEl.createEl('h2', { text: this.onDelete ? t('token.editTitle') : t('token.newTitle') });
 
     new Setting(contentEl)
-      .setName('Nombre')
-      .addText((t) => t.setValue(this.token.name || '').onChange((v) => (this.token.name = v)));
+      .setName(t('common.name'))
+      .addText((text) => text.setValue(this.token.name || '').onChange((v) => (this.token.name = v)));
 
     new Setting(contentEl)
-      .setName('Color')
+      .setName(t('common.color'))
       .addColorPicker((c) =>
         c.setValue(this.token.color || '#4c8bf5').onChange((v) => (this.token.color = v))
       );
 
     new Setting(contentEl)
-      .setName('Tamaño (px)')
+      .setName(t('common.size'))
       .addSlider((s) =>
         s
           .setLimits(20, 120, 2)
@@ -49,14 +50,14 @@ export class TokenEditModal extends Modal {
       );
 
     new Setting(contentEl)
-      .setName('Imagen del token')
+      .setName(t('common.tokenImage'))
       .setDesc(
         this.token.imagePath
           ? this.token.imagePath
-          : 'Ninguna. Sin imagen se mostrará el ícono o las iniciales del nombre.',
+          : t('common.noImageTokenDesc'),
       )
       .addButton((b) =>
-        b.setButtonText('Elegir imagen').onClick(() => {
+        b.setButtonText(t('common.selectImage')).onClick(() => {
           new FileSuggestModal(this.app, IMAGE_EXTS, (file) => {
             this.token.imagePath = file.path;
             this.onOpen();
@@ -66,24 +67,24 @@ export class TokenEditModal extends Modal {
       .addExtraButton((b) =>
         b
           .setIcon('x')
-          .setTooltip('Quitar imagen')
+          .setTooltip(t('common.removeImage'))
           .onClick(() => {
-            if (!confirm('¿Quitar la imagen asignada a este token?')) return;
+            if (!confirm(t('common.removeImageConfirm'))) return;
             this.token.imagePath = null;
             this.onOpen();
           })
       );
 
     const tokenIconSetting = new Setting(contentEl)
-      .setName('Ícono (Custom Font / RPG-Awesome)')
+      .setName(t('common.iconField'))
       .setDesc(
         this.token.icon
-          ? `Ícono asignado: "${this.token.icon}". Se muestra en el círculo si no hay imagen.`
-          : 'Opcional. Se muestra si no hay imagen asignada (ej. ra-sword, ra-dragon, ra-shield).',
+          ? t('common.tokenIconDescAssigned', { icon: this.token.icon })
+          : t('common.tokenIconDescEmpty'),
       )
-      .addText((t) =>
-        t
-          .setPlaceholder('ej. ra-sword')
+      .addText((text) =>
+        text
+          .setPlaceholder('ra-sword')
           .setValue(this.token.icon || '')
           .onChange((v) => {
             this.token.icon = v.trim() || null;
@@ -91,7 +92,7 @@ export class TokenEditModal extends Modal {
       )
       .addButton((b) =>
         b
-          .setButtonText('Catálogo')
+          .setButtonText(t('common.iconCatalog'))
           .setIcon('search')
           .onClick(() => {
             new IconSuggestModal(this.app, (chosen) => {
@@ -105,7 +106,7 @@ export class TokenEditModal extends Modal {
       tokenIconSetting.addExtraButton((b) =>
         b
           .setIcon('x')
-          .setTooltip('Quitar ícono')
+          .setTooltip(t('common.removeIcon'))
           .onClick(() => {
             this.token.icon = null;
             this.onOpen();
@@ -114,14 +115,14 @@ export class TokenEditModal extends Modal {
     }
 
     new Setting(contentEl)
-      .setName('Nota vinculada')
+      .setName(t('common.linkedNote'))
       .setDesc(
         this.token.linkedNote
-          ? this.token.linkedNote
-          : 'Ninguna. Si vinculas una nota, sus datos de YAML (hp/maxHp) sobreescribirán los valores manuales.',
+          ? t('common.linkedNoteTokenDescAssigned', { path: this.token.linkedNote })
+          : t('common.linkedNoteTokenDescEmpty'),
       )
       .addButton((b) =>
-        b.setButtonText('Elegir nota').onClick(() => {
+        b.setButtonText(t('common.selectNote')).onClick(() => {
           new FileSuggestModal(this.app, null, (file) => {
             this.token.linkedNote = file.path;
             this.applyLinkedStats();
@@ -132,22 +133,22 @@ export class TokenEditModal extends Modal {
       .addExtraButton((b) =>
         b
           .setIcon('x')
-          .setTooltip('Quitar vínculo')
+          .setTooltip(t('common.removeLink'))
           .onClick(() => {
             this.token.linkedNote = null;
             this.onOpen();
           })
       );
 
-    new Setting(contentEl).setName('Puntos de vida (HP)').addText((t) =>
-      t.setValue(String(this.token.hp ?? 10)).onChange((v) => {
+    new Setting(contentEl).setName(t('common.currentHp')).addText((text) =>
+      text.setValue(String(this.token.hp ?? 10)).onChange((v) => {
         const n = Number(v);
         if (!isNaN(n)) this.token.hp = n;
       })
     );
 
-    new Setting(contentEl).setName('HP máximo').addText((t) =>
-      t.setValue(String(this.token.maxHp ?? 10)).onChange((v) => {
+    new Setting(contentEl).setName(t('common.maxHp')).addText((text) =>
+      text.setValue(String(this.token.maxHp ?? 10)).onChange((v) => {
         const n = Number(v);
         if (!isNaN(n)) this.token.maxHp = n;
       })
@@ -156,10 +157,10 @@ export class TokenEditModal extends Modal {
     if (this.token.linkedNote) {
       const info = contentEl.createDiv({ cls: 'dte-hint' });
       info.setText(
-        'Claves de YAML reconocidas para HP: ' +
-          HP_KEYS.join(', ') +
-          ' — para HP máximo: ' +
-          MAXHP_KEYS.join(', ')
+        t('common.yamlHint', {
+          hpKeys: HP_KEYS.join(', '),
+          maxHpKeys: MAXHP_KEYS.join(', '),
+        })
       );
     }
 
@@ -168,7 +169,7 @@ export class TokenEditModal extends Modal {
     const btnRow = new Setting(contentEl);
     btnRow.addButton((b) =>
       b
-        .setButtonText('Guardar')
+        .setButtonText(t('common.save'))
         .setCta()
         .onClick(() => {
           this.close();
@@ -179,10 +180,10 @@ export class TokenEditModal extends Modal {
       const onDelete = this.onDelete;
       btnRow.addButton((b) =>
         b
-          .setButtonText('Eliminar token')
+          .setButtonText(t('token.deleteBtn'))
           .setWarning()
           .onClick(() => {
-            if (!confirm(`¿Eliminar el token "${this.token.name || 'sin nombre'}"? Esta acción no se puede deshacer.`)) return;
+            if (!confirm(t('token.deleteConfirm', { name: this.token.name || t('common.unnamed') }))) return;
             this.close();
             onDelete(this.token);
           })

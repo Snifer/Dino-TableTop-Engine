@@ -1,4 +1,5 @@
 import { App, Modal, Setting } from 'obsidian';
+import { t } from '../i18n';
 
 export class NamePromptModal extends Modal {
   title_: string;
@@ -17,11 +18,11 @@ export class NamePromptModal extends Modal {
     contentEl.empty();
     contentEl.createEl('h2', { text: this.title_ });
     let value = '';
-    new Setting(contentEl).addText((t) => {
-      t.setPlaceholder(this.placeholder);
-      t.onChange((v) => (value = v));
-      t.inputEl.focus();
-      t.inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
+    new Setting(contentEl).addText((text) => {
+      text.setPlaceholder(this.placeholder);
+      text.onChange((v) => (value = v));
+      text.inputEl.focus();
+      text.inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Enter') {
           this.close();
           this.onSubmit(value);
@@ -30,7 +31,7 @@ export class NamePromptModal extends Modal {
     });
     new Setting(contentEl).addButton((b) =>
       b
-        .setButtonText('Crear')
+        .setButtonText(t('common.confirm'))
         .setCta()
         .onClick(() => {
           this.close();

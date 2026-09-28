@@ -1,5 +1,8 @@
 import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
-import { DEFAULT_CUSTOM_FONT_CSS } from '../types';
+import { DEFAULT_CUSTOM_FONT_CSS, SupportedLanguage } from '../types';
+import { setLanguage, t } from '../i18n';
+import { moduleRegistry } from '../modules/registry';
+import { DinoTabletopView } from '../views/DinoTabletopView';
 
 export class DinoSettingTab extends PluginSettingTab {
   plugin: any;
@@ -13,14 +16,71 @@ export class DinoSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl('h2', { text: 'Configuración de Dino Tabletop Engine' });
+    containerEl.createEl('h2', { text: t('settings.title') });
 
-    // --- Sección: Fuentes e Íconos ---
-    containerEl.createEl('h3', { text: 'Íconos y Fuentes Personalizadas' });
+    // --- Sección: General e Internacionalización ---
+    containerEl.createEl('h3', { text: t('settings.generalSection') });
 
     new Setting(containerEl)
-      .setName('Habilitar fuente de íconos personalizados')
-      .setDesc('Permite usar íconos personalizados (RPG-Awesome, FontAwesome, etc.) en tokens, criaturas del bestiario y puntos de interés.')
+      .setName(t('settings.languageName'))
+      .setDesc(t('settings.languageDesc'))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption('auto', t('settings.langAuto'))
+          .addOption('es', t('settings.langEs'))
+          .addOption('en', t('settings.langEn'))
+          .setValue(this.plugin.settings.language || 'auto')
+          .onChange(async (val: SupportedLanguage) => {
+            this.plugin.settings.language = val;
+            setLanguage(val);
+            await this.plugin.saveSettings();
+            this.display();
+
+            // Refresh open DinoTabletopView if active
+            const leaves = this.app.workspace.getLeavesOfType('dino-tabletop-engine-view');
+            for (const leaf of leaves) {
+              if (leaf.view instanceof DinoTabletopView) {
+                leaf.view.render();
+              }
+            }
+          })
+      );
+
+    // --- Sección: Módulos Opcionales Integrados ---
+    containerEl.createEl('h3', { text: t('settings.modulesSection') });
+    containerEl.createDiv({
+      cls: 'dte-hint',
+      text: t('settings.modulesSectionDesc'),
+    });
+
+    const modules = moduleRegistry.getAll();
+    for (const mod of modules) {
+      const isEnabled = moduleRegistry.isEnabled(this.plugin.settings, mod.id);
+      new Setting(containerEl)
+        .setName(t(mod.nameKey))
+        .setDesc(t(mod.descKey))
+        .addToggle((toggle) =>
+          toggle.setValue(isEnabled).onChange(async (val) => {
+            moduleRegistry.setEnabled(this.plugin.settings, mod.id, val);
+            await this.plugin.saveSettings();
+
+            // Refresh open DinoTabletopView if active
+            const leaves = this.app.workspace.getLeavesOfType('dino-tabletop-engine-view');
+            for (const leaf of leaves) {
+              if (leaf.view instanceof DinoTabletopView) {
+                leaf.view.render();
+              }
+            }
+          })
+        );
+    }
+
+    // --- Sección: Fuentes e Íconos ---
+    containerEl.createEl('h3', { text: t('settings.fontSection') });
+
+    new Setting(containerEl)
+      .setName(t('settings.enableFontName'))
+      .setDesc(t('settings.enableFontDesc'))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.enableCustomFont)
@@ -32,10 +92,8 @@ export class DinoSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('URL o ruta del archivo CSS de la fuente')
-      .setDesc(
-        'Por defecto se utiliza el CDN de RPG-Awesome (https://github.com/nagoshiashumari/Rpg-Awesome). Puedes cambiarla por otra URL remota (CDN) o por la ruta relativa a un archivo .css dentro de tu bóveda.',
-      )
+      .setName(t('settings.fontUrlName'))
+      .setDesc(t('settings.fontUrlDesc'))
       .addText((text) =>
         text
           .setPlaceholder(DEFAULT_CUSTOM_FONT_CSS)
@@ -47,20 +105,20 @@ export class DinoSettingTab extends PluginSettingTab {
       )
       .addButton((btn) =>
         btn
-          .setButtonText('Restablecer por defecto')
-          .setTooltip('Restablece a la CDN oficial de RPG-Awesome')
+          .setButtonText(t('settings.resetDefaultFont'))
+          .setTooltip(t('settings.resetDefaultFontTooltip'))
           .onClick(async () => {
             this.plugin.settings.customFontCssUrl = DEFAULT_CUSTOM_FONT_CSS;
             await this.plugin.saveSettings();
             await this.plugin.applyCustomFontCss();
             this.display();
-            new Notice('Ruta de fuente restablecida a RPG-Awesome por defecto.');
+            new Notice(t('settings.resetFontNotice'));
           })
       );
 
     new Setting(containerEl)
-      .setName('Prefijo de clase CSS del ícono')
-      .setDesc('Prefijo usado para construir la clase del ícono. Para RPG-Awesome es "ra", para FontAwesome es "fa", etc.')
+      .setName(t('settings.fontPrefixName'))
+      .setDesc(t('settings.fontPrefixDesc'))
       .addText((text) =>
         text
           .setPlaceholder('ra')
@@ -72,52 +130,52 @@ export class DinoSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName('Recargar estilos de fuente')
-      .setDesc('Vuelve a aplicar y cargar los estilos CSS en Obsidian inmediatamente.')
+      .setName(t('settings.reloadFontName'))
+      .setDesc(t('settings.reloadFontDesc'))
       .addButton((btn) =>
         btn
-          .setButtonText('Recargar fuente')
+          .setButtonText(t('settings.reloadFontBtn'))
           .setIcon('refresh-cw')
           .onClick(async () => {
             await this.plugin.applyCustomFontCss();
-            new Notice('Estilos de fuente de íconos recargados.');
+            new Notice(t('settings.reloadFontNotice'));
           })
       );
 
     // --- Sección: Acerca de / About ---
-    containerEl.createEl('h3', { text: 'Acerca de' });
+    containerEl.createEl('h3', { text: t('settings.aboutSection') });
 
     const aboutBox = containerEl.createDiv({ cls: 'dte-settings-about-box' });
 
     const titleRow = aboutBox.createDiv({ cls: 'dte-settings-about-header' });
     titleRow.createEl('strong', { text: 'Dino Tabletop Engine' });
-    titleRow.createSpan({ cls: 'dte-settings-badge', text: 'ALPHA v0.1.0' });
+    titleRow.createSpan({ cls: 'dte-settings-badge', text: 'ALPHA v0.1.1' });
 
     const descEl = aboutBox.createDiv({ cls: 'dte-settings-about-desc' });
     descEl.createEl('p', {
-      text: 'Motor de tablero de juego virtual (VTT) dentro de Obsidian para partidas de rol en solitario o multijugador, con gestión de campañas, mapas dibujados o con imágenes, tokens con barras de vida y contadores en tiempo real, puntos de interés con notas flotantes y bestiario integrado.',
+      text: t('settings.aboutDesc'),
     });
 
     const warningEl = aboutBox.createDiv({ cls: 'dte-settings-warning-card' });
     warningEl.createDiv({
       cls: 'dte-settings-warning-text',
-      text: '⚠️ Plugin en desarrollo activo (versión alpha). Actualmente NO está disponible en el repositorio oficial de plugins de la comunidad de Obsidian.',
+      text: t('settings.alphaWarning'),
     });
 
     const authorRow = aboutBox.createDiv({ cls: 'dte-settings-author-row' });
-    authorRow.createSpan({ text: 'Desarrollado por: ' });
+    authorRow.createSpan({ text: t('settings.developedBy') });
     authorRow.createEl('strong', { text: 'Snifer - Bastión del Dinosaurio' });
 
     const btnRow = aboutBox.createDiv({ cls: 'dte-settings-buttons-row' });
 
     const ytBtn = btnRow.createEl('button', { cls: 'mod-cta dte-btn-youtube' });
-    ytBtn.setText('▶ Canal de YouTube (Snifer - Bastión del Dinosaurio)');
+    ytBtn.setText(t('settings.youtubeBtn'));
     ytBtn.addEventListener('click', () => {
       window.open('https://www.youtube.com/@SniferL4bs', '_blank');
     });
 
     const rpgBtn = btnRow.createEl('button', { cls: 'dte-btn-secondary' });
-    rpgBtn.setText('⚔ Repositorio RPG-Awesome');
+    rpgBtn.setText(t('settings.rpgRepoBtn'));
     rpgBtn.addEventListener('click', () => {
       window.open('https://github.com/nagoshiashumari/Rpg-Awesome', '_blank');
     });

@@ -1,6 +1,7 @@
 import { Setting } from 'obsidian';
 import { CounterData } from '../types';
 import { newCounter } from '../utils';
+import { t } from '../i18n';
 
 /**
  * Editor de contadores en línea, reusado por TokenEditModal y BestiaryEntryEditModal.
@@ -12,12 +13,12 @@ export function renderCountersEditor(
   refresh: () => void
 ): void {
   const sec = contentEl.createDiv();
-  sec.createEl('h3', { text: 'Contadores adicionales' });
+  sec.createEl('h3', { text: t('counters.title') });
   const desc = sec.createDiv({ cls: 'dte-hint' });
-  desc.setText('Recursos secundarios (maná, munición, espacios de conjuro, etc.) con valor actual y máximo opcional.');
+  desc.setText(t('counters.desc'));
 
   if (!counters.length) {
-    sec.createDiv({ cls: 'dte-hint', text: 'No hay contadores asignados.' });
+    sec.createDiv({ cls: 'dte-hint', text: t('counters.empty') });
   }
 
   for (let i = 0; i < counters.length; i++) {
@@ -27,7 +28,7 @@ export function renderCountersEditor(
     const nameInp = row.createEl('input', {
       type: 'text',
       cls: 'dte-counter-input-name',
-      placeholder: 'Etiqueta (ej. Maná)',
+      placeholder: t('counters.labelPlaceholder'),
     });
     nameInp.value = c.label || '';
     nameInp.addEventListener('input', () => (c.label = nameInp.value));
@@ -35,7 +36,7 @@ export function renderCountersEditor(
     const valInp = row.createEl('input', {
       type: 'number',
       cls: 'dte-counter-input-value',
-      placeholder: 'Valor',
+      placeholder: t('counters.valuePlaceholder'),
     });
     valInp.value = String(c.value ?? 0);
     valInp.addEventListener('input', () => (c.value = Number(valInp.value) || 0));
@@ -43,7 +44,7 @@ export function renderCountersEditor(
     const maxInp = row.createEl('input', {
       type: 'number',
       cls: 'dte-counter-input-max',
-      placeholder: 'Máx (opc)',
+      placeholder: t('counters.maxPlaceholder'),
     });
     maxInp.value = c.max !== null && c.max !== undefined ? String(c.max) : '';
     maxInp.addEventListener('input', () => {
@@ -60,7 +61,7 @@ export function renderCountersEditor(
 
   const addRow = new Setting(sec);
   addRow.addButton((b) =>
-    b.setButtonText('+ Añadir contador').onClick(() => {
+    b.setButtonText(t('counters.addBtn')).onClick(() => {
       counters.push(newCounter());
       refresh();
     })

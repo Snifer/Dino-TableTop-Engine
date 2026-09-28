@@ -1,6 +1,7 @@
 import { App, Modal, Setting } from 'obsidian';
 import { DrawPoint, DrawStroke, DrawTool, DrawingData, DrawingImage, IMAGE_EXTS, MapData } from '../types';
 import { genId } from '../utils';
+import { t } from '../i18n';
 import { paintDrawingOnCanvas } from '../drawing';
 import { FileSuggestModal } from './FileSuggestModal';
 
@@ -15,32 +16,32 @@ export class NewDrawnMapModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl('h2', { text: 'Nuevo mapa dibujado' });
+    contentEl.createEl('h2', { text: t('drawing.newTitle') });
     let name = '';
     let width = 1600;
     let height = 1000;
-    new Setting(contentEl).setName('Nombre').addText((t) => t.onChange((v) => (name = v)));
-    new Setting(contentEl).setName('Ancho (px)').addText((t) => {
-      t.setValue('1600');
-      t.onChange((v) => {
+    new Setting(contentEl).setName(t('drawing.mapName')).addText((text) => text.onChange((v) => (name = v)));
+    new Setting(contentEl).setName(t('drawing.width')).addText((text) => {
+      text.setValue('1600');
+      text.onChange((v) => {
         const n = Number(v);
         if (!isNaN(n) && n > 0) width = n;
       });
     });
-    new Setting(contentEl).setName('Alto (px)').addText((t) => {
-      t.setValue('1000');
-      t.onChange((v) => {
+    new Setting(contentEl).setName(t('drawing.height')).addText((text) => {
+      text.setValue('1000');
+      text.onChange((v) => {
         const n = Number(v);
         if (!isNaN(n) && n > 0) height = n;
       });
     });
     new Setting(contentEl).addButton((b) =>
       b
-        .setButtonText('Crear')
+        .setButtonText(t('drawing.createBtn'))
         .setCta()
         .onClick(() => {
           this.close();
-          this.onCreate(name || 'Mapa dibujado', width, height);
+          this.onCreate(name || t('drawing.newTitle'), width, height);
         })
     );
   }
@@ -84,12 +85,10 @@ export class DrawingEditorModal extends Modal {
     (this as any).modalEl.addClass('dte-drawing-modal');
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl('h2', { text: `Dibujar mapa — ${this.map.name}` });
+    contentEl.createEl('h2', { text: t('drawing.editorTitle', { name: this.map.name }) });
     contentEl.createDiv({
       cls: 'dte-hint',
-      text:
-        'Lápiz, línea o rectángulo para trazar; "Insertar imagen" para poner props/iconos que luego puedes mover y ' +
-        'redimensionar con la herramienta "Mover/imagen". Se guarda solo mientras trabajas.',
+      text: t('drawing.hint'),
     });
 
     this.toolbarEl = contentEl.createDiv({ cls: 'dte-drawing-toolbar' });
@@ -115,23 +114,23 @@ export class DrawingEditorModal extends Modal {
         this.paintCanvas();
       });
     };
-    mkToolBtn('✏️ Lápiz', 'pen');
-    mkToolBtn('📏 Línea', 'line');
-    mkToolBtn('▭ Rectángulo', 'rect');
-    mkToolBtn('🖼️ Mover/imagen', 'image');
+    mkToolBtn(t('drawing.toolPen'), 'pen');
+    mkToolBtn(t('drawing.toolLine'), 'line');
+    mkToolBtn(t('drawing.toolRect'), 'rect');
+    mkToolBtn(t('drawing.toolImage'), 'image');
 
     const colorInput = this.toolbarEl.createEl('input', { type: 'color' }) as HTMLInputElement;
     colorInput.value = this.color;
     colorInput.addEventListener('input', () => (this.color = colorInput.value));
 
-    this.toolbarEl.createSpan({ text: ' Grosor ' });
+    this.toolbarEl.createSpan({ text: ` ${t('drawing.strokeWidth')} ` });
     const widthInput = this.toolbarEl.createEl('input', { type: 'range' }) as HTMLInputElement;
     widthInput.min = '1';
     widthInput.max = '20';
     widthInput.value = String(this.strokeWidth);
     widthInput.addEventListener('input', () => (this.strokeWidth = Number(widthInput.value)));
 
-    this.toolbarEl.createEl('button', { text: '+ Insertar imagen' }).addEventListener('click', () => {
+    this.toolbarEl.createEl('button', { text: t('drawing.addImage') }).addEventListener('click', () => {
       new FileSuggestModal(this.app, IMAGE_EXTS, (file) => {
         const img: DrawingImage = {
           id: genId(),
@@ -151,7 +150,7 @@ export class DrawingEditorModal extends Modal {
       }).open();
     });
 
-    this.toolbarEl.createEl('button', { text: 'Fondo de referencia' }).addEventListener('click', () => {
+    this.toolbarEl.createEl('button', { text: t('drawing.referenceBg') }).addEventListener('click', () => {
       new FileSuggestModal(this.app, IMAGE_EXTS, (file) => {
         this.drawing.backgroundImagePath = file.path;
         this.plugin.saveSettings();
@@ -159,16 +158,16 @@ export class DrawingEditorModal extends Modal {
       }).open();
     });
     if (this.drawing.backgroundImagePath) {
-      this.toolbarEl.createEl('button', { text: 'Quitar fondo' }).addEventListener('click', () => {
+      this.toolbarEl.createEl('button', { text: t('drawing.removeBg') }).addEventListener('click', () => {
         this.drawing.backgroundImagePath = null;
         this.plugin.saveSettings();
         this.paintCanvas();
       });
     }
 
-    this.toolbarEl.createEl('button', { text: '↩️ Deshacer' }).addEventListener('click', () => this.undo());
-    this.toolbarEl.createEl('button', { text: '🗑️ Limpiar todo' }).addEventListener('click', () => {
-      if (!confirm('¿Borrar todo el dibujo de este mapa? Esto no se puede deshacer.')) return;
+    this.toolbarEl.createEl('button', { text: t('drawing.undo') }).addEventListener('click', () => this.undo());
+    this.toolbarEl.createEl('button', { text: t('drawing.clearAll') }).addEventListener('click', () => {
+      if (!confirm(t('drawing.clearConfirm'))) return;
       this.drawing.strokes = [];
       this.drawing.images = [];
       this.actions = [];
@@ -180,7 +179,7 @@ export class DrawingEditorModal extends Modal {
     if (this.tool === 'image' && this.selectedImageId) {
       const sel = this.drawing.images.find((i) => i.id === this.selectedImageId);
       if (sel) {
-        this.toolbarEl.createSpan({ text: ' Tamaño ' });
+        this.toolbarEl.createSpan({ text: ` ${t('drawing.size')} ` });
         const wIn = this.toolbarEl.createEl('input', { type: 'number' }) as HTMLInputElement;
         wIn.value = String(Math.round(sel.w));
         wIn.style.width = '60px';
@@ -197,8 +196,8 @@ export class DrawingEditorModal extends Modal {
           this.plugin.saveSettings();
           this.paintCanvas();
         });
-        this.toolbarEl.createEl('button', { text: 'Eliminar imagen' }).addEventListener('click', () => {
-          if (!confirm('¿Eliminar esta imagen del lienzo? Esta acción no se puede deshacer.')) return;
+        this.toolbarEl.createEl('button', { text: t('drawing.removeImage') }).addEventListener('click', () => {
+          if (!confirm(t('drawing.removeImageConfirm'))) return;
           this.drawing.images = this.drawing.images.filter((i) => i.id !== sel.id);
           this.selectedImageId = null;
           this.plugin.saveSettings();
@@ -208,7 +207,7 @@ export class DrawingEditorModal extends Modal {
       }
     }
 
-    this.toolbarEl.createEl('button', { text: 'Cerrar', cls: 'mod-cta' }).addEventListener('click', () => {
+    this.toolbarEl.createEl('button', { text: t('common.close'), cls: 'mod-cta' }).addEventListener('click', () => {
       this.plugin.saveSettings();
       this.view.render();
       this.close();
