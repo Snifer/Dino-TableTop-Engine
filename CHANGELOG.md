@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-09-28
+
+### 🇬🇧 English
+
+#### Added
+- **Calendars & Progress Clocks Module:**
+  - **Zero-Factory Base:** Starts completely clean with no forced presets; full user freedom to name units (e.g. days, turns, rounds, shifts) and starting values.
+  - **Arbitrary Repeating Cycles:** Configurable cyclical periods (months, seasons, moon phases, weekdays) with length, initial unit offset, repeat counters, and segment labels.
+  - **Format String Engine with Tag Pills:** Dynamic template tags (`{unit}`, `{counter}`, `{CycleName}`, `{CycleName.day}`, `{CycleName.repeat}`) with 1-click chip buttons and live highlighted preview banner.
+  - **Progress Clocks:** Interactive SVG radial pie clocks (4, 6, 8, 10, 12 segments) with standalone click-to-fill/unfill and optional auto-advancing linked to calendar unit steps.
+  - **Modernized Modal Layout:** Redesigned manager modal with structured form grids, responsive spacing, and JSON template import/export.
+- **Cards & Decks Module:**
+  - **Global Deck Manager:** Create and customize decks with card definitions, front/back image artwork, copy counts, and linked vault notes.
+  - **Tabletop Board Cards:** Drag and drop drawn cards directly onto the tabletop board with percentage coordinates, rotation, and face-up / face-down flipping.
+- **Token Inventory Module (Addon):**
+  - **Dynamic Token Attachment:** Optional 1:1 inventory attached to tokens on demand via right-click context menu (`+ Add inventory`).
+  - **Capacity & Weight Tracking:** Capacity modes (`None`, `Weight / Slots`, `Custom Max`) with interactive progress bars.
+  - **Item Management:** Quantity steppers, weight calculations, custom tags, thumbnail previews, and linked note integration.
+- **Built-in Offline Icon Font (RPG-Awesome):** Embedded the full RPG-Awesome webfont as Base64 directly inside `styles.css`, removing manual CDN / vault path settings and ensuring zero-setup offline icons.
+- **Categorized RPG Icon Packs & Search Grid:** Reorganized the icon picker into thematic packages (Weapons, Armor, Creatures, Magic, Characters, Places, Treasures, Nature, Health, Tools, Food, Zodiac, Dice) with category pill filters, live fuzzy search, and an interactive grid picker.
+- **Bestiary Game System & Thematic Packs:**
+  - **Categorized Bestiary Entries:** Creatures can now be organized by game systems or thematic packs (e.g. *D&D 5e*, *Call of Cthulhu*, *Cyberpunk*, *Undead*).
+  - **Dynamic Pack Pills & Search:** Browse and filter creatures seamlessly with interactive pack pill chips and live multi-field search.
+  - **Pack JSON Import & Export:** Export specific packs or the full bestiary to portable `.json` files and import shared creature packs.
+
+---
+
+### 🇪🇸 Español
+
+#### Añadido
+- **Módulo de Calendarios y Relojes de Progreso:**
+  - **Base sin datos de fábrica:** Comienza completamente limpio sin plantillas obligatorias; total libertad para definir nombres de unidad (días, turnos, rondas, jornadas) y valores iniciales.
+  - **Ciclos Repetitivos Arbitrarios:** Periodos cíclicos configurables (meses, estaciones, fases lunares, semanas) con duración, desfase inicial (*offset*), conteo de repeticiones y segmentos.
+  - **Motor de Formato con Píldoras Interactivas:** Etiquetas dinámicas (`{unit}`, `{counter}`, `{NombreCiclo}`, `{NombreCiclo.day}`, `{NombreCiclo.repeat}`) con botones tipo chip para inserción rápida y banner de previsualización en vivo.
+  - **Relojes de Progreso:** Relojes circulares radiales en SVG interactivos (4, 6, 8, 10, 12 porciones) con avance/retroceso por click y avance automático opcional vinculado a unidades del calendario.
+  - **Diseño Modernizado del Modal:** Vista renovada en cuadrícula limpia, espaciado responsivo y exportación/importación de plantillas en JSON.
+- **Módulo de Cartas y Mazos:**
+  - **Gestor Global de Mazos:** Creación de mazos con definición de cartas, arte de frente/dorso, cantidad de copias y vinculación a notas de la bóveda.
+  - **Cartas en el Lienzo:** Robar y colocar cartas en el tablero con coordenadas porcentuales, rotación y volteo boca arriba/abajo.
+- **Módulo de Inventario de Tokens (Addon):**
+  - **Dependencia Dinámica por Token:** Inventario opcional 1:1 adjuntado bajo demanda desde el menú contextual (`+ Agregar inventario`).
+  - **Control de Capacidad y Peso:** Modos de capacidad (`Sin límite`, `Peso / Ranuras`, `Máximo manual`) con barra visual de progreso.
+  - **Gestión de Ítems:** Controles rápidos de cantidad (+/-), cálculo de peso acumulado, etiquetas, miniaturas y apertura de notas vinculadas.
+- **Fuente de Íconos Integrada Offline (RPG-Awesome):** Incorporación del set completo de fuentes RPG-Awesome en Base64 directamente en `styles.css`. Se eliminaron las opciones manuales de CDN/rutas en los ajustes para funcionar 100% offline sin configuraciones previas.
+- **Paquetes de Íconos Categorizados y Cuadrícula de Selección:** Nuevo selector de íconos temático organizado por paquetes (Armas, Armaduras, Criaturas, Magia, Personajes, Lugares, Tesoros, Naturaleza, Salud, Herramientas, Comida, Zodíaco, Dados) con filtro interactivo por píldoras, búsqueda predictiva y vista en cuadrícula.
+- **Paquetes Temáticos y por Sistema para el Bestiario:**
+  - **Clasificación por Paquetes:** Las criaturas ahora pueden asignarse a paquetes temáticos o sistemas de juego (ej. *D&D 5e*, *Cthulhu*, *Cyberpunk*, *No-muertos*).
+  - **Filtro Rápido con Píldoras y Buscador:** Navegación fluida mediante botones tipo chip con conteo de criaturas y buscador en vivo.
+  - **Importación y Exportación JSON:** Posibilidad de exportar paquetes individuales o todo el bestiario en `.json` e importar colecciones de criaturas compartidas.
+
+---
+
 ## [0.1.2] - 2026-09-28
 
 ### 🇬🇧 English

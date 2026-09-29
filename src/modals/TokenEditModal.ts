@@ -2,7 +2,6 @@ import { App, Modal, Setting, TFile } from 'obsidian';
 import { TokenData, HP_KEYS, MAXHP_KEYS, IMAGE_KEYS, IMAGE_EXTS } from '../types';
 import { readFrontmatterStat, readFrontmatterImagePath } from '../utils';
 import { t } from '../i18n';
-import { renderCountersEditor } from './CountersEditor';
 import { FileSuggestModal } from './FileSuggestModal';
 import { IconSuggestModal } from './IconSuggestModal';
 import { AddConditionModal, AdjustConditionModal } from '../modules/combatTracker';
@@ -11,18 +10,20 @@ export class TokenEditModal extends Modal {
   token: TokenData;
   onSave: (token: TokenData) => void;
   onDelete: ((token: TokenData) => void) | null;
+  onManageInventory?: ((token: TokenData) => void) | null;
 
   constructor(
     app: App,
     token: TokenData,
     onSave: (token: TokenData) => void,
-    onDelete: ((token: TokenData) => void) | null
+    onDelete: ((token: TokenData) => void) | null,
+    onManageInventory?: ((token: TokenData) => void) | null
   ) {
     super(app);
     this.token = token;
     this.onSave = onSave;
     this.onDelete = onDelete;
-    if (!this.token.counters) this.token.counters = [];
+    this.onManageInventory = onManageInventory;
     if (!this.token.conditions) this.token.conditions = [];
   }
 
@@ -166,7 +167,32 @@ export class TokenEditModal extends Modal {
       );
     }
 
-    renderCountersEditor(contentEl, this.token.counters, () => this.onOpen());
+    // ── Sección de Inventario ──
+    const invSetting = new Setting(contentEl).setName(t('inventory.title'));
+    if (!this.token.inventory) {
+      invSetting
+        .setDesc(t('inventory.noInventoryAttached'))
+        .addButton((btn) =>
+          btn.setButtonText(t('inventory.addInventory')).onClick(() => {
+            this.token.inventory = {
+              items: [],
+              capacity: { mode: 'none', value: 0, label: '' },
+            };
+            this.onOpen();
+            if (this.onManageInventory) this.onManageInventory(this.token);
+          })
+        );
+    } else {
+      const itemsCount = this.token.inventory.items.length;
+      const pinnedCount = this.token.inventory.items.filter((i) => i.pinned).length;
+      invSetting
+        .setDesc(t('inventory.inventorySummary', { items: itemsCount, pinned: pinnedCount }))
+        .addButton((btn) =>
+          btn.setButtonText(t('inventory.manageInventoryBtn')).onClick(() => {
+            if (this.onManageInventory) this.onManageInventory(this.token);
+          })
+        );
+    }
 
     // Editor de condiciones y efectos de estado
     this.token.conditions = this.token.conditions || [];

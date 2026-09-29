@@ -1,8 +1,7 @@
-import { Notice, Plugin, TFile } from 'obsidian';
+import { Notice, Plugin } from 'obsidian';
 import {
   VIEW_TYPE_DINO,
   DEFAULT_SETTINGS,
-  DEFAULT_CUSTOM_FONT_CSS,
   DinoSettings,
   TokenData,
   HP_KEYS,
@@ -20,20 +19,76 @@ export default class DinoTabletopEnginePlugin extends Plugin {
   async onload(): Promise<void> {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
     if (!this.settings.bestiary) this.settings.bestiary = {};
-    if (this.settings.enableCustomFont === undefined) this.settings.enableCustomFont = true;
-    if (!this.settings.customFontCssUrl) this.settings.customFontCssUrl = DEFAULT_CUSTOM_FONT_CSS;
-    if (!this.settings.customFontPrefix) this.settings.customFontPrefix = 'ra';
     if (!this.settings.language) this.settings.language = 'auto';
 
     setLanguage(this.settings.language);
+
+    // ── Migración transparente: token.counters -> token.inventory ──
+    let migrated = false;
+    if (this.settings.campaigns) {
+      for (const campId in this.settings.campaigns) {
+        const camp = this.settings.campaigns[campId];
+        if (camp.maps) {
+          for (const mapId in camp.maps) {
+            const map = camp.maps[mapId];
+            if (map.tokens) {
+              for (const tok of map.tokens) {
+                if ((tok as any).counters && (tok as any).counters.length && !tok.inventory) {
+                  tok.inventory = {
+                    items: (tok as any).counters.map((c: any) => ({
+                      id: c.id,
+                      label: c.label,
+                      value: c.value,
+                      max: c.max,
+                      weight: null,
+                      imagePath: null,
+                      note: null,
+                      pinned: true,
+                    })),
+                    capacity: { mode: 'none', value: 0, label: '' },
+                  };
+                  delete (tok as any).counters;
+                  migrated = true;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (this.settings.bestiary) {
+      for (const bId in this.settings.bestiary) {
+        const entry = this.settings.bestiary[bId];
+        if ((entry as any).counters && (entry as any).counters.length && !entry.inventory) {
+          entry.inventory = {
+            items: (entry as any).counters.map((c: any) => ({
+              id: c.id,
+              label: c.label,
+              value: c.value,
+              max: c.max,
+              weight: null,
+              imagePath: null,
+              note: null,
+              pinned: true,
+            })),
+            capacity: { mode: 'none', value: 0, label: '' },
+          };
+          delete (entry as any).counters;
+          migrated = true;
+        }
+      }
+    }
+
+    if (migrated) {
+      await this.saveSettings();
+    }
 
     this.registerView(VIEW_TYPE_DINO, (leaf) => new DinoTabletopView(leaf, this));
 
     this.addRibbonIcon('swords', t('commands.openView'), () => this.activateView());
 
     this.addSettingTab(new DinoSettingTab(this.app, this));
-
-    await this.applyCustomFontCss();
 
     this.addCommand({
       id: 'open-dino-tabletop-engine',
@@ -66,7 +121,6 @@ export default class DinoTabletopEnginePlugin extends Plugin {
             linkedNote: file.path,
             imagePath: img || null,
             icon: null,
-            counters: [],
           };
           map.tokens.push(token);
           this.saveSettings();
@@ -76,35 +130,6 @@ export default class DinoTabletopEnginePlugin extends Plugin {
         return ok;
       },
     });
-  }
-
-  async applyCustomFontCss(): Promise<void> {
-    const existingLink = document.getElementById('dte-custom-font-link');
-    const existingStyle = document.getElementById('dte-custom-font-style');
-    if (existingLink) existingLink.remove();
-    if (existingStyle) existingStyle.remove();
-
-    if (!this.settings.enableCustomFont || !this.settings.customFontCssUrl) {
-      return;
-    }
-
-    const url = this.settings.customFontCssUrl.trim();
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')) {
-      const link = document.createElement('link');
-      link.id = 'dte-custom-font-link';
-      link.rel = 'stylesheet';
-      link.href = url;
-      document.head.appendChild(link);
-    } else {
-      const file = this.app.vault.getAbstractFileByPath(url);
-      if (file && file instanceof TFile) {
-        const content = await this.app.vault.read(file);
-        const style = document.createElement('style');
-        style.id = 'dte-custom-font-style';
-        style.textContent = content;
-        document.head.appendChild(style);
-      }
-    }
   }
 
   getOpenDinoView(): DinoTabletopView | null {
@@ -127,10 +152,5 @@ export default class DinoTabletopEnginePlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
-  onunload(): void {
-    const link = document.getElementById('dte-custom-font-link');
-    if (link) link.remove();
-    const style = document.getElementById('dte-custom-font-style');
-    if (style) style.remove();
-  }
+  onunload(): void {}
 }

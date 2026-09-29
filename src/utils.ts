@@ -69,6 +69,20 @@ export function readFrontmatterImagePath(app: App, notePath: string, keys: strin
   return null;
 }
 
+export function readFrontmatterWeight(app: App, notePath: string, keys: string[]): number | null {
+  const file = app.vault.getAbstractFileByPath(notePath);
+  if (!file) return null;
+  const cache = app.metadataCache.getFileCache(file as TFile);
+  const fm = cache && cache.frontmatter;
+  if (!fm) return null;
+  for (const k of keys) {
+    if (fm[k] !== undefined && fm[k] !== null && !isNaN(Number(fm[k]))) {
+      return Number(fm[k]);
+    }
+  }
+  return null;
+}
+
 export function newCounter(): CounterData {
   return { id: genId(), label: 'Contador', value: 0, max: null };
 }

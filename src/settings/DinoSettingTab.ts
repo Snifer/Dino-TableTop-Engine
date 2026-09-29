@@ -1,5 +1,5 @@
-import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
-import { DEFAULT_CUSTOM_FONT_CSS, SupportedLanguage } from '../types';
+import { App, PluginSettingTab, Setting } from 'obsidian';
+import { SupportedLanguage } from '../types';
 import { setLanguage, t } from '../i18n';
 import { moduleRegistry } from '../modules/registry';
 import { DinoTabletopView } from '../views/DinoTabletopView';
@@ -75,73 +75,6 @@ export class DinoSettingTab extends PluginSettingTab {
         );
     }
 
-    // --- Sección: Fuentes e Íconos ---
-    containerEl.createEl('h3', { text: t('settings.fontSection') });
-
-    new Setting(containerEl)
-      .setName(t('settings.enableFontName'))
-      .setDesc(t('settings.enableFontDesc'))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.enableCustomFont)
-          .onChange(async (val) => {
-            this.plugin.settings.enableCustomFont = val;
-            await this.plugin.saveSettings();
-            await this.plugin.applyCustomFontCss();
-          })
-      );
-
-    new Setting(containerEl)
-      .setName(t('settings.fontUrlName'))
-      .setDesc(t('settings.fontUrlDesc'))
-      .addText((text) =>
-        text
-          .setPlaceholder(DEFAULT_CUSTOM_FONT_CSS)
-          .setValue(this.plugin.settings.customFontCssUrl || '')
-          .onChange(async (val) => {
-            this.plugin.settings.customFontCssUrl = val.trim();
-            await this.plugin.saveSettings();
-          })
-      )
-      .addButton((btn) =>
-        btn
-          .setButtonText(t('settings.resetDefaultFont'))
-          .setTooltip(t('settings.resetDefaultFontTooltip'))
-          .onClick(async () => {
-            this.plugin.settings.customFontCssUrl = DEFAULT_CUSTOM_FONT_CSS;
-            await this.plugin.saveSettings();
-            await this.plugin.applyCustomFontCss();
-            this.display();
-            new Notice(t('settings.resetFontNotice'));
-          })
-      );
-
-    new Setting(containerEl)
-      .setName(t('settings.fontPrefixName'))
-      .setDesc(t('settings.fontPrefixDesc'))
-      .addText((text) =>
-        text
-          .setPlaceholder('ra')
-          .setValue(this.plugin.settings.customFontPrefix || 'ra')
-          .onChange(async (val) => {
-            this.plugin.settings.customFontPrefix = val.trim() || 'ra';
-            await this.plugin.saveSettings();
-          })
-      );
-
-    new Setting(containerEl)
-      .setName(t('settings.reloadFontName'))
-      .setDesc(t('settings.reloadFontDesc'))
-      .addButton((btn) =>
-        btn
-          .setButtonText(t('settings.reloadFontBtn'))
-          .setIcon('refresh-cw')
-          .onClick(async () => {
-            await this.plugin.applyCustomFontCss();
-            new Notice(t('settings.reloadFontNotice'));
-          })
-      );
-
     // --- Sección: Acerca de / About ---
     containerEl.createEl('h3', { text: t('settings.aboutSection') });
 
@@ -149,7 +82,7 @@ export class DinoSettingTab extends PluginSettingTab {
 
     const titleRow = aboutBox.createDiv({ cls: 'dte-settings-about-header' });
     titleRow.createEl('strong', { text: 'Dino Tabletop Engine' });
-    titleRow.createSpan({ cls: 'dte-settings-badge', text: 'ALPHA v0.1.1' });
+    titleRow.createSpan({ cls: 'dte-settings-badge', text: 'ALPHA v0.1.3' });
 
     const descEl = aboutBox.createDiv({ cls: 'dte-settings-about-desc' });
     descEl.createEl('p', {

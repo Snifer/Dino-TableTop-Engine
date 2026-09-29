@@ -5,6 +5,7 @@ import {
   MAXHP_KEYS,
   IMAGE_KEYS,
   IMAGE_EXTS,
+  WEIGHT_KEYS,
   DinoSettings,
   CampaignData,
   MapData,
@@ -12,6 +13,7 @@ import {
   POIData,
   DrawingData,
   CounterData,
+  InventoryItem,
   NotePanelHandle,
 } from '../types';
 import {
@@ -20,6 +22,7 @@ import {
   getIconClass,
   readFrontmatterStat,
   readFrontmatterImagePath,
+  readFrontmatterWeight,
   renderMarkdownInto,
 } from '../utils';
 import { t } from '../i18n';
@@ -29,6 +32,8 @@ import { NamePromptModal } from '../modals/NamePromptModal';
 import { DamageModal } from '../modals/DamageModal';
 import { AdjustCounterModal } from '../modals/AdjustCounterModal';
 import { TokenEditModal } from '../modals/TokenEditModal';
+import { ItemEditModal } from '../modals/ItemEditModal';
+import { CapacityEditModal } from '../modals/CapacityEditModal';
 import { POIEditModal } from '../modals/POIEditModal';
 import { NewDrawnMapModal, DrawingEditorModal } from '../modals/DrawingModals';
 import { BestiaryListModal } from '../modals/BestiaryModals';
@@ -36,6 +41,14 @@ import { ModulesModal } from '../modals/ModulesModal';
 import { moduleRegistry } from '../modules/registry';
 import { CombatTrackerPanel, AdjustConditionModal, AddConditionModal } from '../modules/combatTracker';
 import { CardsPanel, findCardByInstanceId, resolveBackImage } from '../modules/cards';
+import { TimelinePanel } from '../modules/timeline';
+
+export interface InventoryPanelHandle {
+  el: HTMLElement;
+  tokenId: string;
+  rebuild: () => void;
+  close: () => void;
+}
 
 export class DinoTabletopView extends ItemView {
   plugin: any;
@@ -43,16 +56,20 @@ export class DinoTabletopView extends ItemView {
   metaListener: any;
   panelsLayer: HTMLElement;
   notePanels: Record<string, NotePanelHandle>;
+  inventoryPanels: Record<string, InventoryPanelHandle>;
   combatPanel: CombatTrackerPanel | null;
   cardsPanel: CardsPanel | null;
+  timelinePanel: TimelinePanel | null;
 
   constructor(leaf: WorkspaceLeaf, plugin: any) {
     super(leaf);
     this.plugin = plugin;
     this.zoom = 1;
     this.notePanels = {};
+    this.inventoryPanels = {};
     this.combatPanel = null;
     this.cardsPanel = null;
+    this.timelinePanel = null;
   }
 
   getViewType(): string {
@@ -76,6 +93,10 @@ export class DinoTabletopView extends ItemView {
     if (this.metaListener) this.app.metadataCache.offref(this.metaListener);
     if (this.combatPanel) this.combatPanel.destroy();
     if (this.cardsPanel) this.cardsPanel.destroy();
+    if (this.timelinePanel) this.timelinePanel.destroy();
+    for (const id in this.inventoryPanels) {
+      this.inventoryPanels[id].close();
+    }
     if (this.panelsLayer) this.panelsLayer.remove();
   }
 
@@ -101,11 +122,30 @@ export class DinoTabletopView extends ItemView {
             changed = true;
           }
         }
+        if (tok.inventory && tok.inventory.items) {
+          for (const item of tok.inventory.items) {
+            if (item.note === file.path) {
+              const w = readFrontmatterWeight(this.app, item.note, WEIGHT_KEYS);
+              const img = readFrontmatterImagePath(this.app, item.note, IMAGE_KEYS);
+              if (w !== null && w !== item.weight) {
+                item.weight = w;
+                changed = true;
+              }
+              if (img && img !== item.imagePath) {
+                item.imagePath = img;
+                changed = true;
+              }
+            }
+          }
+        }
       }
     }
     if (changed) {
       this.plugin.saveSettings();
       this.render();
+      for (const id in this.inventoryPanels) {
+        this.inventoryPanels[id].rebuild();
+      }
     }
     const panel = this.notePanels[file.path];
     if (panel) {
@@ -195,6 +235,22 @@ export class DinoTabletopView extends ItemView {
     } else if (this.cardsPanel) {
       this.cardsPanel.destroy();
       this.cardsPanel = null;
+    }
+
+    if (moduleRegistry.isEnabled(data, 'timeline')) {
+      if (!this.timelinePanel) {
+        this.timelinePanel = new TimelinePanel(
+          this.app,
+          this.plugin,
+          this.panelsLayer,
+          () => this.render(),
+        );
+      } else {
+        this.timelinePanel.build();
+      }
+    } else if (this.timelinePanel) {
+      this.timelinePanel.destroy();
+      this.timelinePanel = null;
     }
 
     const camp = this.getCurrentCampaign();
@@ -897,7 +953,7 @@ export class DinoTabletopView extends ItemView {
   openTokenEditor(map: MapData, token: TokenData): void {
     new TokenEditModal(
       this.app,
-      Object.assign({}, token, { counters: (token.counters || []).map((c) => Object.assign({}, c)) }),
+      Object.assign({}, token),
       (saved) => {
         Object.assign(token, saved);
         this.plugin.saveSettings();
@@ -907,6 +963,9 @@ export class DinoTabletopView extends ItemView {
         map.tokens = map.tokens.filter((t) => t.id !== toDelete.id);
         this.plugin.saveSettings();
         this.render();
+      },
+      (tok) => {
+        this.openInventoryPanel(tok, map);
       }
     ).open();
   }
@@ -949,15 +1008,34 @@ export class DinoTabletopView extends ItemView {
     barInner.style.background = ratio > 0.66 ? '#4caf50' : ratio > 0.33 ? '#ffc107' : '#f44336';
     el.createDiv({ cls: 'dte-token-label', text: `${token.hp ?? 0}/${maxHp}` });
 
-    if (token.counters && token.counters.length) {
+    // Pinned inventory badges (replaces legacy counters)
+    const badges = token.inventory ? token.inventory.items.filter((i) => i.pinned) : [];
+    if (badges.length > 0) {
       const row = el.createDiv({ cls: 'dte-counters-row' });
-      for (const c of token.counters) {
-        const maxTxt = c.max !== null && c.max !== undefined ? `/${c.max}` : '';
-        const badge = row.createDiv({ cls: 'dte-counter-badge', text: `${c.label}: ${c.value}${maxTxt}` });
+      for (const item of badges) {
+        const maxTxt = item.max !== null && item.max !== undefined ? `/${item.max}` : '';
+        const badge = row.createDiv({ cls: 'dte-counter-badge', text: `${item.label}: ${item.value}${maxTxt}` });
         badge.addEventListener('pointerdown', (e: PointerEvent) => e.stopPropagation());
         badge.addEventListener('click', (e: MouseEvent) => {
           e.stopPropagation();
-          new AdjustCounterModal(this.app, c, (delta) => this.applyCounterDelta(token, c, delta)).open();
+          new ItemEditModal(
+            this.app,
+            item,
+            async (updated) => {
+              Object.assign(item, updated);
+              await this.plugin.saveSettings();
+              this.render();
+              if (this.inventoryPanels[token.id]) this.inventoryPanels[token.id].rebuild();
+            },
+            async (delId) => {
+              if (token.inventory) {
+                token.inventory.items = token.inventory.items.filter((it) => it.id !== delId);
+                await this.plugin.saveSettings();
+                this.render();
+                if (this.inventoryPanels[token.id]) this.inventoryPanels[token.id].rebuild();
+              }
+            }
+          ).open();
         });
       }
     }
@@ -1079,6 +1157,32 @@ export class DinoTabletopView extends ItemView {
           .setIcon('pencil')
           .onClick(() => this.openTokenEditor(map, token))
       );
+      if (!token.inventory) {
+        menu.addItem((i) =>
+          i
+            .setTitle(t('inventory.addInventory'))
+            .setIcon('package-plus')
+            .onClick(() => {
+              token.inventory = {
+                items: [],
+                capacity: { mode: 'none', value: 0, label: '' },
+              };
+              this.plugin.saveSettings();
+              this.render();
+              this.openInventoryPanel(token, map);
+            })
+        );
+      } else {
+        const count = token.inventory.items.length;
+        menu.addItem((i) =>
+          i
+            .setTitle(t('inventory.viewInventory', { count }))
+            .setIcon('package')
+            .onClick(() => {
+              this.openInventoryPanel(token, map);
+            })
+        );
+      }
       if (token.linkedNote) {
         menu.addItem((i) =>
           i
@@ -1103,6 +1207,307 @@ export class DinoTabletopView extends ItemView {
       );
       menu.showAtMouseEvent(e);
     });
+  }
+
+  /* ---------------- Panel flotante de inventario ---------------- */
+
+  openInventoryPanel(token: TokenData, map: MapData): void {
+    if (!this.panelsLayer) {
+      this.containerEl.style.position = 'relative';
+      this.panelsLayer = this.containerEl.createDiv({ cls: 'dte-panels-layer' });
+    }
+
+    if (!token.inventory) {
+      token.inventory = {
+        items: [],
+        capacity: { mode: 'none', value: 0, label: '' },
+      };
+      this.plugin.saveSettings();
+    }
+
+    const existing = this.inventoryPanels[token.id];
+    if (existing) {
+      this.panelsLayer.appendChild(existing.el);
+      existing.rebuild();
+      return;
+    }
+
+    const el = this.panelsLayer.createDiv({ cls: 'dte-panel dte-inventory-panel' });
+    const offset = (Object.keys(this.inventoryPanels).length % 5) * 20;
+    el.style.left = 40 + offset + 'px';
+    el.style.top = 40 + offset + 'px';
+    el.style.right = 'auto';
+    el.style.pointerEvents = 'auto';
+
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    const setupDrag = (handle: HTMLElement) => {
+      handle.addEventListener('mousedown', (e: MouseEvent) => {
+        if ((e.target as HTMLElement).closest('button, input, select')) return;
+        isDragging = true;
+        const rect = el.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+
+        const onMouseMove = (ev: MouseEvent) => {
+          if (!isDragging) return;
+          const parent = el.parentElement?.getBoundingClientRect();
+          if (!parent) return;
+          const x = Math.max(0, Math.min(ev.clientX - parent.left - dragOffsetX, parent.width - 150));
+          const y = Math.max(0, Math.min(ev.clientY - parent.top - dragOffsetY, parent.height - 50));
+          el.style.left = `${x}px`;
+          el.style.top = `${y}px`;
+        };
+
+        const onMouseUp = () => {
+          isDragging = false;
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      });
+    };
+
+    const handle: InventoryPanelHandle = {
+      el,
+      tokenId: token.id,
+      rebuild: () => {},
+      close: () => {
+        el.remove();
+        delete this.inventoryPanels[token.id];
+      },
+    };
+    this.inventoryPanels[token.id] = handle;
+
+    handle.rebuild = () => {
+      el.empty();
+      if (!token.inventory) {
+        handle.close();
+        return;
+      }
+
+      // Header
+      const header = el.createDiv({ cls: 'dte-panel-header dte-inventory-header' });
+      setupDrag(header);
+
+      const titleWrap = header.createDiv({ cls: 'dte-panel-title' });
+      const iconSpan = titleWrap.createSpan({ cls: 'dte-panel-icon' });
+      setIcon(iconSpan, 'package');
+      titleWrap.createSpan({
+        cls: 'dte-panel-title-text',
+        text: `${t('inventory.title')} — ${token.name || t('common.unnamed')}`,
+      });
+
+      const actions = header.createDiv({ cls: 'dte-panel-actions' });
+      const closeBtn = actions.createEl('button', {
+        cls: 'clickable-icon dte-panel-btn',
+        attr: { 'aria-label': t('common.close') },
+      });
+      setIcon(closeBtn, 'x');
+      closeBtn.addEventListener('click', () => handle.close());
+
+      const body = el.createDiv({ cls: 'dte-inventory-body' });
+
+      // Capacity Bar
+      const cap = token.inventory.capacity;
+      if (cap && cap.mode !== 'none') {
+        const capCard = body.createDiv({ cls: 'dte-inventory-capacity-card' });
+        let total = 0;
+        if (cap.mode === 'weight') {
+          total = token.inventory.items.reduce((acc, it) => acc + (it.weight !== null ? it.weight * (it.value || 0) : 0), 0);
+          total = Math.round(total * 10) / 10;
+        } else {
+          total = token.inventory.items.reduce((acc, it) => acc + (it.value || 0), 0);
+        }
+
+        const maxVal = Math.max(1, cap.value || 1);
+        const ratio = total / maxVal;
+        const pct = Math.min(100, Math.max(0, ratio * 100));
+
+        const barOuter = capCard.createDiv({ cls: 'dte-inventory-capacity-bar-outer' });
+        const barInner = barOuter.createDiv({ cls: 'dte-inventory-capacity-bar-inner' });
+        barInner.style.width = `${pct}%`;
+        barInner.style.backgroundColor = ratio > 1 ? '#f44336' : ratio > 0.75 ? '#ff9800' : '#4caf50';
+
+        const capLabel = capCard.createDiv({ cls: 'dte-inventory-capacity-label' });
+        const modeText = cap.mode === 'weight' ? t('inventory.capacityWeightLabel') : t('inventory.capacitySlotsLabel');
+        capLabel.createSpan({
+          text: `${modeText}: ${total} / ${cap.value} ${cap.label || ''}`.trim(),
+        });
+      }
+
+      // Items List
+      const list = body.createDiv({ cls: 'dte-inventory-items-list' });
+      if (token.inventory.items.length === 0) {
+        list.createDiv({ cls: 'dte-hint dte-inventory-empty', text: t('inventory.empty') });
+      } else {
+        for (const item of token.inventory.items) {
+          const row = list.createDiv({ cls: 'dte-inventory-row' });
+
+          // Pinned checkbox
+          const checkWrap = row.createDiv({ cls: 'dte-inventory-row-pinned-wrap' });
+          const pinCb = checkWrap.createEl('input', {
+            type: 'checkbox',
+            cls: 'dte-inventory-pinned-cb',
+          });
+          pinCb.checked = !!item.pinned;
+          pinCb.title = t('inventory.pinnedTooltip');
+          pinCb.addEventListener('change', async (e: Event) => {
+            e.stopPropagation();
+            item.pinned = pinCb.checked;
+            await this.plugin.saveSettings();
+            this.render();
+          });
+
+          // Thumbnail
+          if (item.imagePath) {
+            const imgFile = this.app.vault.getAbstractFileByPath(item.imagePath);
+            if (imgFile) {
+              const src = this.app.vault.getResourcePath(imgFile as TFile);
+              const thumb = row.createDiv({ cls: 'dte-inventory-thumb' });
+              thumb.style.backgroundImage = `url("${src}")`;
+            }
+          }
+
+          // Main info
+          const info = row.createDiv({ cls: 'dte-inventory-row-info' });
+          info.createSpan({ cls: 'dte-inventory-row-name', text: item.label || t('common.unnamed') });
+
+          if (item.weight !== null) {
+            const wTxt = item.value > 1 && cap.mode === 'weight'
+              ? `${Math.round(item.weight * item.value * 10) / 10} ${cap.label || 'kg'}`
+              : `${item.weight} ${cap.label || 'kg'}`;
+            info.createSpan({ cls: 'dte-inventory-row-weight', text: `(${wTxt})` });
+          }
+
+          if (item.note) {
+            const noteIcon = row.createEl('button', {
+              cls: 'clickable-icon dte-btn-icon dte-inventory-note-btn',
+              attr: { 'aria-label': t('common.openNote') },
+            });
+            setIcon(noteIcon, 'file-text');
+            noteIcon.addEventListener('click', (e: MouseEvent) => {
+              e.stopPropagation();
+              const f = this.app.vault.getAbstractFileByPath(item.note as string);
+              if (f) this.openNotePanel(f as TFile);
+            });
+          }
+
+          // Steppers
+          const stepper = row.createDiv({ cls: 'dte-inventory-stepper' });
+          const decBtn = stepper.createEl('button', { cls: 'dte-stepper-btn', text: '-' });
+          decBtn.addEventListener('click', async (e: MouseEvent) => {
+            e.stopPropagation();
+            item.value = Math.max(0, item.value - 1);
+            await this.plugin.saveSettings();
+            handle.rebuild();
+            this.render();
+          });
+
+          const maxStr = item.max !== null ? `/${item.max}` : '';
+          stepper.createSpan({ cls: 'dte-stepper-val', text: `${item.value}${maxStr}` });
+
+          const incBtn = stepper.createEl('button', { cls: 'dte-stepper-btn', text: '+' });
+          incBtn.addEventListener('click', async (e: MouseEvent) => {
+            e.stopPropagation();
+            if (item.max === null || item.value < item.max) {
+              item.value = item.value + 1;
+              await this.plugin.saveSettings();
+              handle.rebuild();
+              this.render();
+            }
+          });
+
+          // Click row to edit item
+          row.addEventListener('click', (e: MouseEvent) => {
+            if ((e.target as HTMLElement).closest('button, input')) return;
+            new ItemEditModal(
+              this.app,
+              item,
+              async (savedItem) => {
+                Object.assign(item, savedItem);
+                await this.plugin.saveSettings();
+                handle.rebuild();
+                this.render();
+              },
+              async (delId) => {
+                if (token.inventory) {
+                  token.inventory.items = token.inventory.items.filter((it) => it.id !== delId);
+                  await this.plugin.saveSettings();
+                  handle.rebuild();
+                  this.render();
+                }
+              }
+            ).open();
+          });
+        }
+      }
+
+      // Footer
+      const footer = el.createDiv({ cls: 'dte-inventory-footer' });
+
+      const addItemBtn = footer.createEl('button', {
+        cls: 'dte-btn mod-cta',
+        text: t('inventory.addItem'),
+      });
+      const addIcon = addItemBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+      setIcon(addIcon, 'plus');
+      addItemBtn.prepend(addIcon);
+      addItemBtn.addEventListener('click', () => {
+        new ItemEditModal(
+          this.app,
+          null,
+          async (newItem) => {
+            if (!token.inventory) token.inventory = { items: [], capacity: { mode: 'none', value: 0, label: '' } };
+            token.inventory.items.push(newItem);
+            await this.plugin.saveSettings();
+            handle.rebuild();
+            this.render();
+          },
+          null
+        ).open();
+      });
+
+      const capBtn = footer.createEl('button', {
+        cls: 'dte-btn',
+        text: t('inventory.configureCapacity'),
+      });
+      const capIcon = capBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+      setIcon(capIcon, 'settings');
+      capBtn.prepend(capIcon);
+      capBtn.addEventListener('click', () => {
+        new CapacityEditModal(
+          this.app,
+          token.inventory ? token.inventory.capacity : { mode: 'none', value: 0, label: '' },
+          async (newCap) => {
+            if (token.inventory) {
+              token.inventory.capacity = newCap;
+              await this.plugin.saveSettings();
+              handle.rebuild();
+            }
+          }
+        ).open();
+      });
+
+      const removeInvBtn = footer.createEl('button', {
+        cls: 'dte-btn mod-warning dte-inventory-remove-btn',
+        text: t('inventory.removeInventory'),
+      });
+      removeInvBtn.addEventListener('click', async () => {
+        if (confirm(t('inventory.removeInventoryConfirm', { name: token.name || t('common.unnamed') }))) {
+          delete token.inventory;
+          await this.plugin.saveSettings();
+          handle.close();
+          this.render();
+        }
+      });
+    };
+
+    handle.rebuild();
   }
 
   /* ---------------- Panel flotante de nota ---------------- */

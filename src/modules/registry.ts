@@ -1,6 +1,7 @@
 import { EngineModule } from './types';
 import { CombatTrackerModule } from './combatTracker';
 import { CardsModule } from './cards';
+import { TimelineModule } from './timeline';
 import { DinoSettings } from '../types';
 
 class ModuleRegistry {
@@ -9,6 +10,7 @@ class ModuleRegistry {
   constructor() {
     this.register(CombatTrackerModule);
     this.register(CardsModule);
+    this.register(TimelineModule);
   }
 
   register(module: EngineModule): void {

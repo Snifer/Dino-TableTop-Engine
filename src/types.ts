@@ -8,6 +8,29 @@ export const MAXHP_KEYS = [
 
 export const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'];
 export const IMAGE_KEYS = ['image', 'imagen', 'img', 'foto', 'picture', 'avatar', 'token', 'tokenImage', 'imagenToken', 'retrato'];
+export const WEIGHT_KEYS = ['weight', 'peso', 'peso_unitario', 'carga', 'weight_unit'];
+
+export interface InventoryItem {
+  id: string;
+  label: string;
+  value: number;
+  max: number | null;
+  weight: number | null;      // null = does not add weight
+  imagePath: string | null;
+  note: string | null;        // linked note path
+  pinned: boolean;            // true = shown as badge on token in map
+}
+
+export interface InventoryCapacity {
+  mode: 'none' | 'weight' | 'slots';
+  value: number;
+  label: string;              // e.g. "kg", "lbs", "espacios", "slots"
+}
+
+export interface TokenInventory {
+  items: InventoryItem[];
+  capacity: InventoryCapacity;
+}
 
 export interface CounterData {
   id: string;
@@ -36,7 +59,8 @@ export interface TokenData {
   linkedNote: string | null;
   imagePath: string | null;
   icon?: string | null;
-  counters: CounterData[];
+  inventory?: TokenInventory;
+  counters?: CounterData[]; // legacy fallback for backward compatibility
   conditions?: ConditionData[];
 }
 
@@ -118,6 +142,63 @@ export interface CardOnTable {
 
 // ──────────────────────────────────────────────────────────────────────────
 
+// ─── Timeline & Clocks Module ──────────────────────────────────────────────
+
+export interface TimelineCycleSegment {
+  name: string;
+  length: number; // in timeline units
+}
+
+export interface TimelineCycle {
+  id: string;
+  name: string;
+  segments: TimelineCycleSegment[];
+  offset: number; // initial offset in units
+  showRepeatCount?: boolean;
+  repeatStart?: number; // e.g. 1 (Year 1)
+}
+
+export interface TimelineAdvanceStep {
+  id: string;
+  label?: string; // e.g. "+1 jornada" or custom
+  amount: number; // e.g. 1, 7, 30, -1
+}
+
+export interface TimelineEvent {
+  id: string;
+  name: string;
+  description?: string;
+  counter?: number | null; // specific absolute counter value
+  cycleId?: string | null; // or recurring on a cycle
+  segmentIndex?: number | null; // segment within cycle (0-indexed)
+  segmentDay?: number | null; // day within segment (1-indexed)
+  color?: string | null;
+}
+
+export interface ClockData {
+  id: string;
+  name: string;
+  segments: number; // e.g. 4, 6, 8, 10, 12
+  filled: number;   // 0 to segments
+  color?: string | null;
+  linkedTimelineId?: string | null;
+  advanceEvery?: number | null; // advance 1 filled segment every N timeline units
+}
+
+export interface TimelineData {
+  id: string;
+  name: string;
+  unit: string;      // e.g. "jornada", "turno", "día", "hora"
+  counter: number;
+  allowNegative?: boolean;
+  cycles: TimelineCycle[];
+  format: string;    // e.g. "{Estación}, {Mes} · {unit} {counter}"
+  steps: TimelineAdvanceStep[];
+  events?: TimelineEvent[];
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+
 export interface MapData {
   name: string;
   imagePath: string | null;
@@ -167,6 +248,7 @@ export interface CampaignData {
 export interface BestiaryEntry {
   id: string;
   name: string;
+  pack?: string;
   color: string;
   size: number;
   imagePath: string | null;
@@ -174,7 +256,8 @@ export interface BestiaryEntry {
   linkedNote: string | null;
   defaultHp: number;
   defaultMaxHp: number;
-  counters: CounterData[];
+  inventory?: TokenInventory;
+  counters?: CounterData[];
 }
 
 import { SupportedLanguage } from './i18n';
@@ -186,48 +269,192 @@ export interface DinoSettings {
   campaigns: Record<string, CampaignData>;
   currentCampaignId: string | null;
   bestiary: Record<string, BestiaryEntry>;
+  bestiaryPacks?: string[];
   /** Global deck definitions + draw/discard state */
   decks: Record<string, DeckData>;
-  enableCustomFont: boolean;
-  customFontCssUrl: string;
-  customFontPrefix: string;
+  /** Global timelines / calendars */
+  timelines: Record<string, TimelineData>;
+  /** Global clocks / progress trackers */
+  clocks: Record<string, ClockData>;
+  currentTimelineId: string | null;
 }
-
-export const DEFAULT_CUSTOM_FONT_CSS = 'https://cdn.jsdelivr.net/npm/rpg-awesome@0.2.0/css/rpg-awesome.min.css';
 
 export const DEFAULT_SETTINGS: DinoSettings = {
   language: 'auto',
   enabledModules: {
     'combat-tracker': false,
     'cards': false,
+    'timeline': false,
   },
   campaigns: {},
   currentCampaignId: null,
   bestiary: {},
+  bestiaryPacks: [],
   decks: {},
-  enableCustomFont: true,
-  customFontCssUrl: DEFAULT_CUSTOM_FONT_CSS,
-  customFontPrefix: 'ra',
+  timelines: {},
+  clocks: {},
+  currentTimelineId: null,
 };
 
-export const RPG_AWESOME_ICONS = [
-  'ra-sword', 'ra-swords-power', 'ra-crossed-swords', 'ra-shield', 'ra-knight-helmet',
-  'ra-player', 'ra-player-king', 'ra-player-lift', 'ra-player-teleport', 'ra-player-dodge',
-  'ra-dragon', 'ra-dragon-breath', 'ra-hydra', 'ra-monster-skull', 'ra-skull', 'ra-skull-trophy',
-  'ra-axe', 'ra-battle-axe', 'ra-bow', 'ra-archery-target', 'ra-arrow-cluster', 'ra-crossbow',
-  'ra-hammer', 'ra-warhammer', 'ra-mace', 'ra-spear', 'ra-daggers', 'ra-knife',
-  'ra-wand', 'ra-crystal-wand', 'ra-fairy-wand', 'ra-fire-shield', 'ra-frostfire', 'ra-lightning',
-  'ra-fire', 'ra-water-drop', 'ra-aura', 'ra-sun', 'ra-moon-sun', 'ra-moon',
-  'ra-campfire', 'ra-candle', 'ra-torch', 'ra-castle-emblem', 'ra-tower', 'ra-village',
-  'ra-scroll-unfurled', 'ra-quill-ink', 'ra-book', 'ra-spell-book', 'ra-tome',
-  'ra-potion', 'ra-vial', 'ra-flask', 'ra-cauldron', 'ra-gem', 'ra-crystal-cluster',
-  'ra-key', 'ra-chest', 'ra-locked-chest', 'ra-gold-bar', 'ra-coins',
-  'ra-compass', 'ra-anvil', 'ra-hourglass', 'ra-footprint', 'ra-eye', 'ra-bleeding-eye',
-  'ra-heart', 'ra-hearts', 'ra-heart-bottle', 'ra-heart-shield', 'ra-broken-heart',
-  'ra-meat', 'ra-apple', 'ra-mushroom', 'ra-fish', 'ra-clover', 'ra-clover-spiked',
-  'ra-wolf-howl', 'ra-wolf-head', 'ra-cat', 'ra-bear-head', 'ra-bat', 'ra-spider-face',
-  'ra-snake', 'ra-tentacles', 'ra-kraken', 'ra-egg', 'ra-feather-wing', 'ra-fairy'
-];
+export interface IconPack {
+  label: string;
+  emoji: string;
+  icons: string[];
+}
+
+export const RPG_ICON_PACKS: Record<string, IconPack> = {
+  weapons: {
+    label: 'icons.packWeapons',
+    emoji: '⚔️',
+    icons: [
+      'ra-sword', 'ra-swords-power', 'ra-crossed-swords', 'ra-spinning-sword', 'ra-lightning-sword',
+      'ra-relic-blade', 'ra-plain-dagger', 'ra-daggers', 'ra-knife', 'ra-kitchen-knives',
+      'ra-axe', 'ra-battle-axe', 'ra-large-hammer', 'ra-hammer', 'ra-warhammer',
+      'ra-mace', 'ra-spiked-mace', 'ra-spear', 'ra-spear-head', 'ra-trident',
+      'ra-bow', 'ra-crossbow', 'ra-archery-target', 'ra-arrow-cluster', 'ra-thorn-arrow', 'ra-supersonic-arrow',
+      'ra-shuriken', 'ra-kunai', 'ra-sickle', 'ra-scythe', 'ra-whip',
+    ],
+  },
+  armor: {
+    label: 'icons.packArmor',
+    emoji: '🛡️',
+    icons: [
+      'ra-shield', 'ra-round-shield', 'ra-fire-shield', 'ra-heart-shield', 'ra-zebra-shield',
+      'ra-knight-helmet', 'ra-vest', 'ra-helmet',
+    ],
+  },
+  creatures: {
+    label: 'icons.packCreatures',
+    emoji: '🐲',
+    icons: [
+      'ra-dragon', 'ra-dragon-breath', 'ra-two-dragons', 'ra-hydra', 'ra-wyvern',
+      'ra-sea-serpent', 'ra-kraken', 'ra-octopus', 'ra-shark',
+      'ra-wolf-howl', 'ra-wolf-head', 'ra-bear-head', 'ra-lion',
+      'ra-cat', 'ra-rabbit', 'ra-bat', 'ra-raven', 'ra-seagull',
+      'ra-spider-face', 'ra-snake', 'ra-venomous-snake', 'ra-snail', 'ra-maggot',
+      'ra-monster-skull', 'ra-tentacle', 'ra-spiked-tentacle', 'ra-suckered-tentacle',
+      'ra-fairy', 'ra-angel-wings', 'ra-feather-wing', 'ra-sheep',
+    ],
+  },
+  magic: {
+    label: 'icons.packMagic',
+    emoji: '🧪',
+    icons: [
+      'ra-wand', 'ra-crystal-wand', 'ra-fairy-wand',
+      'ra-fire', 'ra-small-fire', 'ra-frostfire', 'ra-alien-fire',
+      'ra-lightning', 'ra-lightning-bolt', 'ra-lightning-storm', 'ra-lightning-trio',
+      'ra-aura', 'ra-sunbeams', 'ra-snowflake', 'ra-lava',
+      'ra-potion', 'ra-vial', 'ra-flask', 'ra-round-bottom-flask', 'ra-cauldron',
+      'ra-crystal-cluster', 'ra-gem', 'ra-sapphire',
+      'ra-scroll-unfurled', 'ra-spell-book', 'ra-rune-stone',
+      'ra-poison-cloud', 'ra-regeneration', 'ra-arcane-mask',
+      'ra-triforce', 'ra-ankh', 'ra-omega',
+    ],
+  },
+  characters: {
+    label: 'icons.packCharacters',
+    emoji: '👤',
+    icons: [
+      'ra-player', 'ra-player-king', 'ra-player-lift', 'ra-player-teleport', 'ra-player-dodge',
+      'ra-player-despair', 'ra-player-pain', 'ra-player-pyromaniac', 'ra-player-shot',
+      'ra-player-thunder-struck', 'ra-queen-crown', 'ra-pawn', 'ra-sheriff',
+      'ra-muscle-up', 'ra-muscle-fat',
+    ],
+  },
+  places: {
+    label: 'icons.packPlaces',
+    emoji: '🏰',
+    icons: [
+      'ra-castle-emblem', 'ra-locked-fortress', 'ra-tower', 'ra-village',
+      'ra-lighthouse', 'ra-ship-emblem', 'ra-pyramids', 'ra-mountains',
+      'ra-palm-tree', 'ra-pine-tree', 'ra-tombstone', 'ra-wooden-sign',
+      'ra-metal-gate', 'ra-mine-wagon', 'ra-anchor',
+    ],
+  },
+  treasures: {
+    label: 'icons.packTreasures',
+    emoji: '💎',
+    icons: [
+      'ra-chest', 'ra-locked-chest', 'ra-gold-bar', 'ra-coins',
+      'ra-gem', 'ra-sapphire', 'ra-mining-diamonds',
+      'ra-key', 'ra-key-basic', 'ra-three-keys',
+      'ra-trophy', 'ra-skull-trophy', 'ra-crown',
+    ],
+  },
+  nature: {
+    label: 'icons.packNature',
+    emoji: '🌿',
+    icons: [
+      'ra-campfire', 'ra-candle', 'ra-torch', 'ra-lantern-flame',
+      'ra-sun', 'ra-sun-symbol', 'ra-moon-sun', 'ra-moon',
+      'ra-water-drop', 'ra-splash', 'ra-spiral-shell',
+      'ra-leaf', 'ra-sprout', 'ra-sprout-emblem', 'ra-clover', 'ra-clover-spiked', 'ra-acorn',
+      'ra-apple', 'ra-mushroom', 'ra-super-mushroom',
+      'ra-egg', 'ra-pawprint', 'ra-footprint', 'ra-shoe-prints', 'ra-trail',
+    ],
+  },
+  health: {
+    label: 'icons.packHealth',
+    emoji: '❤️',
+    icons: [
+      'ra-heart', 'ra-hearts', 'ra-two-hearts', 'ra-heart-bottle', 'ra-heart-shield',
+      'ra-broken-heart', 'ra-shot-through-the-heart',
+      'ra-skull', 'ra-monster-skull', 'ra-skull-trophy',
+      'ra-eye', 'ra-bleeding-eye',
+      'ra-meat', 'ra-roast-chicken', 'ra-fish',
+      'ra-medical-pack', 'ra-pill', 'ra-pills', 'ra-syringe',
+      'ra-tooth', 'ra-noose',
+    ],
+  },
+  tools: {
+    label: 'icons.packTools',
+    emoji: '🔧',
+    icons: [
+      'ra-compass', 'ra-anvil', 'ra-hourglass', 'ra-stopwatch',
+      'ra-telescope', 'ra-mirror', 'ra-lever', 'ra-shovel',
+      'ra-book', 'ra-tome', 'ra-quill-ink',
+      'ra-ringing-bell', 'ra-ocarina', 'ra-microphone',
+      'ra-wrench', 'ra-repair', 'ra-magnet', 'ra-light-bulb',
+      'ra-ammo-bag', 'ra-match', 'ra-spray-can', 'ra-load', 'ra-save',
+    ],
+  },
+  food: {
+    label: 'icons.packFood',
+    emoji: '🍖',
+    icons: [
+      'ra-meat', 'ra-meat-hook', 'ra-roast-chicken', 'ra-fish',
+      'ra-apple', 'ra-mushroom', 'ra-toast',
+      'ra-knife-fork', 'ra-vase',
+    ],
+  },
+  zodiac: {
+    label: 'icons.packZodiac',
+    emoji: '♈',
+    icons: [
+      'ra-aquarius', 'ra-pisces', 'ra-taurus', 'ra-leo',
+      'ra-virgo', 'ra-libra', 'ra-scorpio', 'ra-sagittarius',
+      'ra-ophiuchus',
+    ],
+  },
+  dice: {
+    label: 'icons.packDice',
+    emoji: '🎲',
+    icons: [
+      'ra-perspective-dice-one', 'ra-perspective-dice-two', 'ra-perspective-dice-three',
+      'ra-perspective-dice-four', 'ra-perspective-dice-five', 'ra-perspective-dice-six',
+      'ra-perspective-dice-random',
+    ],
+  },
+};
+
+/** Flat array of ALL icons across packs (deduplicated) */
+export const RPG_AWESOME_ICONS: string[] = (() => {
+  const set = new Set<string>();
+  for (const pack of Object.values(RPG_ICON_PACKS)) {
+    for (const icon of pack.icons) set.add(icon);
+  }
+  return [...set].sort();
+})();
 
 export type DrawTool = 'pen' | 'line' | 'rect' | 'image';
 
