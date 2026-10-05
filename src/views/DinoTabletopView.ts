@@ -27,6 +27,7 @@ import {
 } from '../utils';
 import { t } from '../i18n';
 import { paintDrawingOnCanvas } from '../drawing';
+import { renderGridLayer, snapCoordsToGrid } from '../grid';
 import { FileSuggestModal } from '../modals/FileSuggestModal';
 import { NamePromptModal } from '../modals/NamePromptModal';
 import { DamageModal } from '../modals/DamageModal';
@@ -35,6 +36,7 @@ import { TokenEditModal } from '../modals/TokenEditModal';
 import { ItemEditModal } from '../modals/ItemEditModal';
 import { CapacityEditModal } from '../modals/CapacityEditModal';
 import { POIEditModal } from '../modals/POIEditModal';
+import { GridConfigModal } from '../modals/GridConfigModal';
 import { NewDrawnMapModal, DrawingEditorModal } from '../modals/DrawingModals';
 import { BestiaryListModal } from '../modals/BestiaryModals';
 import { ModulesModal } from '../modals/ModulesModal';
@@ -42,6 +44,9 @@ import { moduleRegistry } from '../modules/registry';
 import { CombatTrackerPanel, AdjustConditionModal, AddConditionModal } from '../modules/combatTracker';
 import { CardsPanel, findCardByInstanceId, resolveBackImage } from '../modules/cards';
 import { TimelinePanel } from '../modules/timeline';
+import { CampaignDiaryPanel } from '../modules/campaignDiary';
+import { MeasureManager } from '../modules/measure';
+import { renderWargameBoard, WargamePhaseTrackerPanel } from '../modules/wargame';
 
 export interface InventoryPanelHandle {
   el: HTMLElement;
@@ -60,6 +65,9 @@ export class DinoTabletopView extends ItemView {
   combatPanel: CombatTrackerPanel | null;
   cardsPanel: CardsPanel | null;
   timelinePanel: TimelinePanel | null;
+  diaryPanel: CampaignDiaryPanel | null;
+  measureManager: MeasureManager | null;
+  wargamePanel: WargamePhaseTrackerPanel | null;
 
   constructor(leaf: WorkspaceLeaf, plugin: any) {
     super(leaf);
@@ -70,6 +78,9 @@ export class DinoTabletopView extends ItemView {
     this.combatPanel = null;
     this.cardsPanel = null;
     this.timelinePanel = null;
+    this.diaryPanel = null;
+    this.measureManager = new MeasureManager(this);
+    this.wargamePanel = null;
   }
 
   getViewType(): string {
@@ -94,6 +105,8 @@ export class DinoTabletopView extends ItemView {
     if (this.combatPanel) this.combatPanel.destroy();
     if (this.cardsPanel) this.cardsPanel.destroy();
     if (this.timelinePanel) this.timelinePanel.destroy();
+    if (this.diaryPanel) this.diaryPanel.destroy();
+    if (this.wargamePanel) this.wargamePanel.destroy();
     for (const id in this.inventoryPanels) {
       this.inventoryPanels[id].close();
     }
@@ -251,6 +264,21 @@ export class DinoTabletopView extends ItemView {
     } else if (this.timelinePanel) {
       this.timelinePanel.destroy();
       this.timelinePanel = null;
+    }
+
+    if (moduleRegistry.isEnabled(data, 'campaign-diary')) {
+      if (!this.diaryPanel) {
+        this.diaryPanel = new CampaignDiaryPanel(
+          this.app,
+          this.plugin,
+          this.panelsLayer,
+        );
+      } else {
+        this.diaryPanel.build();
+      }
+    } else if (this.diaryPanel) {
+      this.diaryPanel.destroy();
+      this.diaryPanel = null;
     }
 
     const camp = this.getCurrentCampaign();
@@ -429,6 +457,29 @@ export class DinoTabletopView extends ItemView {
         });
       }
 
+      // Botón de Grilla de Mapa
+      if (map) {
+        const gridBtn = mapGroup.createEl('button', {
+          cls: 'dte-btn' + (map.grid?.enabled ? ' mod-active' : ''),
+          text: t('header.configureGrid'),
+        });
+        const gridIcon = gridBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+        setIcon(gridIcon, 'grid');
+        gridBtn.prepend(gridIcon);
+        gridBtn.addEventListener('click', () => {
+          new GridConfigModal(
+            this.app,
+            map,
+            (config) => {
+              map.grid = config;
+              this.plugin.saveSettings();
+              this.render();
+            },
+            () => this.measureManager?.startCalibration()
+          ).open();
+        });
+      }
+
       // Menú de opciones de Mapa (acciones secundarias / destructivas)
       if (map && camp.currentMapId) {
         const mapMenuBtn = mapGroup.createEl('button', {
@@ -438,6 +489,23 @@ export class DinoTabletopView extends ItemView {
         setIcon(mapMenuBtn, 'more-vertical');
         mapMenuBtn.addEventListener('click', (e: MouseEvent) => {
           const menu = new Menu();
+          menu.addItem((item) =>
+            item
+              .setTitle(t('grid.modalTitle'))
+              .setIcon('grid')
+              .onClick(() => {
+                new GridConfigModal(
+                  this.app,
+                  map,
+                  (config) => {
+                    map.grid = config;
+                    this.plugin.saveSettings();
+                    this.render();
+                  },
+                  () => this.measureManager?.startCalibration()
+                ).open();
+              })
+          );
           menu.addItem((item) =>
             item
               .setTitle(t('header.renameMap'))
@@ -625,6 +693,8 @@ export class DinoTabletopView extends ItemView {
       }
     }
 
+    renderGridLayer(inner, map);
+
     for (const poi of map.pois) {
       this.renderPOI(inner, map, poi);
     }
@@ -632,6 +702,15 @@ export class DinoTabletopView extends ItemView {
       this.renderToken(inner, map, token);
     }
     this.renderCardsLayer(inner, map);
+
+    const data = this.getData();
+    if (moduleRegistry.isEnabled(data, 'wargame')) {
+      renderWargameBoard(inner, map, this);
+    }
+
+    if (moduleRegistry.isEnabled(data, 'measure') && this.measureManager) {
+      this.measureManager.attachBoardListeners(inner, map);
+    }
 
     if (savedScroll) {
       wrap.scrollLeft = savedScroll.left;
@@ -1113,6 +1192,13 @@ export class DinoTabletopView extends ItemView {
         /* noop */
       }
       if (moved) {
+        if (map.grid?.enabled && map.grid.snapTokens) {
+          const snapped = snapCoordsToGrid(token.x, token.y, map, boardInner);
+          token.x = snapped.x;
+          token.y = snapped.y;
+          el.style.left = token.x + '%';
+          el.style.top = token.y + '%';
+        }
         this.plugin.saveSettings();
       } else {
         this.openDamageModal(map, token);

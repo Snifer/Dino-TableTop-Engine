@@ -2,6 +2,9 @@ import { EngineModule } from './types';
 import { CombatTrackerModule } from './combatTracker';
 import { CardsModule } from './cards';
 import { TimelineModule } from './timeline';
+import { CampaignDiaryModule } from './campaignDiary';
+import { MeasureModule } from './measure';
+import { WargameModule } from './wargame';
 import { DinoSettings } from '../types';
 
 class ModuleRegistry {
@@ -11,6 +14,9 @@ class ModuleRegistry {
     this.register(CombatTrackerModule);
     this.register(CardsModule);
     this.register(TimelineModule);
+    this.register(CampaignDiaryModule);
+    this.register(MeasureModule);
+    this.register(WargameModule);
   }
 
   register(module: EngineModule): void {

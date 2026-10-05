@@ -1,6 +1,6 @@
 # Dino Tabletop Engine 
 
-[![Version](https://img.shields.io/badge/version-0.1.3--alpha-orange.svg)](manifest.json)
+[![Version](https://img.shields.io/badge/version-0.1.2--alpha-orange.svg)](manifest.json)
 [![Obsidian](https://img.shields.io/badge/Obsidian-%3E%3D%200.15.0-7C3AED.svg)](https://obsidian.md)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![YouTube](https://img.shields.io/badge/YouTube-Bastion%20del%20Dinosaurio-red.svg?logo=youtube)](https://www.youtube.com/@SniferL4bs)
@@ -48,8 +48,31 @@
 - 🔢 **Contadores en Tiempo Real:**
   - Añade múltiples contadores personalizados a cada token (maná, munición, slots de conjuros, etc.) con valores actuales y máximos opcionales.
 
+- 📐 **Cuadrícula y Calibración de Mapas (Grid):**
+  - Superposición de cuadrícula con celdas **cuadradas** o **hexagonales** (en punta o lado plano).
+  - Configuración rápida de escala métrica/imperial (`m`, `cm`, `in`) y **calibración interactiva en 2 clics**.
+  - Reglas de conteo diagonal (Euclídea, Chebyshev 5-5-5, Manhattan, Alternada 5-10-5, Diagonal 1.5x).
+  - Alineación automática de tokens al centro de casilla (*Snap to Grid*).
+
+- 📏 **Cinta Métrica y Medición Interactiva (Measure):**
+  - Medición en tiempo real de distancias en línea recta o radios de área.
+  - Conversión instantánea a casillas y medidas del mundo real (`m`, `cm`, `in`).
+  - Fijación de marcadores permanentes (*pinned rulers*) en el tablero con etiquetas.
+  - Detección automática del arco de encaramiento al medir desde modelos de Wargame.
+
+- 🛡️ **Módulo Wargame y Batallas de Miniaturas:**
+  - Biblioteca global e independiente de listas de ejército (**Rosters**) con costo en puntos, notas vinculadas y peanas.
+  - Unidades con múltiples modelos, arcos de encaramiento (frente, flancos, retaguardia) y asa de rotación 360° con atajos rápidos de ±45° y 180°.
+  - **Chequeo visual de cohesión de unidad** en tiempo real con alerta punteada.
+  - **Panel flotante de rondas y fases** compatible con turnos por bando (IGOUGO) y activaciones alternadas de unidades.
+  - Marcadores de objetivo con control manual y **acumulación automática de Puntos de Victoria (PV)** al avanzar de ronda.
+  - Zonas de terreno y áreas de despliegue configurables (rectángulos, círculos y polígonos).
+
+- 📖 **Diario de Campaña (Campaign Diary):**
+  - Registro cronológico de notas de sesión, eventos y bitácoras por campaña.
+
 - 🧩 **Sistema de Módulos Opcionales Integrados:**
-  - Activa o desactiva herramientas (Rastreador de combate, Cartas y mazos, etc.) desde la configuración o directamente con el botón `Módulos` de la barra del tablero.
+  - Activa o desactiva herramientas (Rastreador de combate, Cuadrícula, Cinta métrica, Wargame, Diario de campaña, etc.) desde la configuración o directamente con el botón `Módulos` del encabezado.
 
 - 🌐 **Soporte Multilingüe (i18n):**
   - Interfaz completamente traducida en **Español** e **Inglés** con selector en ajustes y respaldo automático.
@@ -106,11 +129,12 @@ El proyecto está organizado en módulos limpios dentro de `src/`:
 ```
 ├── main.ts                     # Punto de entrada del Plugin (ciclo de vida y comandos)
 ├── manifest.json               # Manifiesto del plugin para Obsidian
-├── styles.css                  # Estilos del tablero, tokens, paneles y settings
+├── styles.css                  # Estilos del tablero, tokens, paneles, wargame y settings
 ├── package.json / tsconfig.json
 └── src/
     ├── types.ts                # Interfaces de TypeScript, tipos y constantes
     ├── utils.ts                # Utilidades (frontmatter YAML, ID generator, clamp, íconos)
+    ├── grid.ts                 # Algoritmos de cuadrícula cuadrada y hexagonal
     ├── drawing.ts              # Lógica de renderizado del lienzo de dibujo vectorial
     ├── i18n/                   # Sistema de internacionalización
     │   ├── index.ts            # Gestor de traducciones t() y configuración
@@ -118,7 +142,10 @@ El proyecto está organizado en módulos limpios dentro de `src/`:
     ├── modules/                # Sistema de módulos opcionales
     │   ├── registry.ts         # Registro central de módulos integrados
     │   ├── types.ts            # Interfaces de módulos
-    │   └── combatTracker.ts    # Panel flotante de combate, iniciativa y condiciones
+    │   ├── combatTracker.ts    # Panel flotante de combate, iniciativa y condiciones
+    │   ├── measure.ts          # Cinta métrica, marcadores y reglas de medición
+    │   ├── wargame.ts          # Módulo Wargame, renderizado de modelos, fases y zonas
+    │   └── campaignDiary.ts    # Diario y registro de sesiones de campaña
     ├── settings/
     │   └── DinoSettingTab.ts   # Pestaña de configuración y sección About
     ├── views/
@@ -127,6 +154,11 @@ El proyecto está organizado en módulos limpios dentro de `src/`:
         ├── TokenEditModal.ts   # Modal para crear y editar tokens
         ├── POIEditModal.ts     # Modal para crear y editar puntos de interés
         ├── BestiaryModals.ts   # Modales de lista y edición del bestiario
+        ├── GridConfigModal.ts  # Configuración de cuadrícula y calibración
+        ├── MapGridModal.ts     # Modal rápido de cuadrícula
+        ├── WargameRosterModals.ts # Biblioteca de Rosters y edición de unidades
+        ├── WargameSetupModal.ts   # Configuración de partida wargame (bandos, fases, zonas)
+        ├── WargameWoundModal.ts   # Cuadro rápido de heridas para modelos de wargame
         ├── DrawingModals.ts    # Modales del editor de dibujo y nuevo mapa dibujado
         ├── DamageModal.ts      # Cuadro rápido de daño / curación
         ├── AdjustCounterModal.ts # Cuadro rápido de ajuste de contadores
@@ -135,6 +167,30 @@ El proyecto está organizado en módulos limpios dentro de `src/`:
         ├── IconSuggestModal.ts # Catálogo fuzzy de íconos RPG-Awesome
         └── NamePromptModal.ts  # Modal de entrada de texto
 ```
+
+---
+
+### 📜 Registro de Cambios (Changelog)
+
+#### `v0.1.4` (05/10/2026)
+- 🛡️ **Módulo Wargame:**
+  - Biblioteca independiente de ejércitos (*Rosters*) reutilizable con costo en puntos.
+  - Unidades multi-modelo con arcos de encaramiento (frente, flancos, retaguardia) y asa de rotación libre con atajos de ±45°/180°.
+  - Chequeo visual en tiempo real de cohesión de unidad.
+  - Panel flotante de seguimiento de rondas y fases con soporte para turnos por bando (IGOUGO) y activaciones alternadas.
+  - Marcadores de objetivo independientes con asignación de control y suma automática de Puntos de Victoria (PV) al avanzar de ronda.
+  - Zonas de terreno y áreas de despliegue configurables (rectangulares, circulares y poligonales).
+- 📐 **Módulo de Cuadrícula (Grid):**
+  - Cuadrículas cuadradas y hexagonales (*pointy* y *flat*).
+  - Calibración automática en 2 clics sobre el mapa.
+  - Reglas de conteo diagonal (Euclídea, Chebyshev, Manhattan, Alternada, Diagonal 1.5x) y *snap to grid*.
+- 📏 **Módulo Cinta Métrica (Measure):**
+  - Medición interactiva en línea recta y radio con unidades reales (`m`, `cm`, `in`) y casillas.
+  - Fijación de marcadores permanentes (*pinned rulers*) con etiquetas.
+  - Detección automática del arco de encaramiento al medir desde modelos de Wargame.
+- 📖 **Módulo Diario de Campaña (Campaign Diary):**
+  - Registro integrado de bitácora y sesiones de campaña.
+- 🌐 Actualización completa de traducciones en Español e Inglés.
 
 ---
 
@@ -188,8 +244,31 @@ El proyecto está organizado en módulos limpios dentro de `src/`:
 - 🔢 **Live Resource Counters:**
   - Attach multiple custom counters (mana, spell slots, ammo, gold, etc.) with optional maximum limits.
 
+- 📐 **Grid & Map Calibration:**
+  - Square and hexagonal (**pointy-topped** & **flat-topped**) grid overlays.
+  - Scale configuration with imperial/metric units (`m`, `cm`, `in`) and **interactive 2-click calibration**.
+  - Configurable diagonal distance measurement rules (Euclidean, Chebyshev 5-5-5, Manhattan, Alternating 5-10-5, Diagonal 1.5x).
+  - Snap tokens automatically to grid cell centers (*Snap to Grid*).
+
+- 📏 **Interactive Measuring Tape (Measure):**
+  - Real-time line and circle radius distance measuring on the board.
+  - Instant conversion to grid cells and real-world units (`m`, `cm`, `in`).
+  - Pin persistent measurement rulers to the map board with custom labels.
+  - Automatic facing arc detection when measuring from wargame models.
+
+- 🛡️ **Wargame & Miniature Battles Module:**
+  - Global, reusable army roster library (**Rosters**) with point costs, linked notes, and base sizes.
+  - Multi-model units with customizable arcs (front, flanks, rear) and interactive 360° rotation handles with ±45°/180° shortcuts.
+  - **Real-time unit cohesion checking** with dotted alert highlighting.
+  - **Floating round & phase tracker panel** supporting both side-by-side (IGOUGO) and alternating unit activations.
+  - Objective markers with manual control assignment and **automated Victory Points (VP) accrual** on round change.
+  - Terrain and deployment zones with rectangle, circle, and polygon shapes.
+
+- 📖 **Campaign Diary:**
+  - In-app chronological session logging, adventure notes, and event tracking per campaign.
+
 - 🧩 **Integrated Optional Modules System:**
-  - Toggle specialized tools (Combat Tracker, Cards & Decks) from settings or directly from the board toolbar.
+  - Toggle specialized tools (Combat Tracker, Grid, Measuring Tape, Wargame, Campaign Diary, etc.) from settings or directly from the board header.
 
 - 🌐 **Full Internationalization (i18n):**
   - Complete English and Spanish localization with in-app language switching.
@@ -246,11 +325,12 @@ The codebase is organized into clean TypeScript modules under `src/`:
 ```
 ├── main.ts                     # Plugin entry point (lifecycle & commands)
 ├── manifest.json               # Obsidian plugin metadata
-├── styles.css                  # Board, token, panel, and settings styles
+├── styles.css                  # Board, token, panel, wargame, and settings styles
 ├── package.json / tsconfig.json
 └── src/
     ├── types.ts                # TypeScript interfaces, types & constants
     ├── utils.ts                # Utility functions (YAML parser, ID generator, clamp, icons)
+    ├── grid.ts                 # Square and hex grid calculation engine
     ├── drawing.ts              # Canvas painting and stroke rendering engine
     ├── i18n/                   # Localization engine
     │   ├── index.ts            # Translation t() helper and language state
@@ -258,7 +338,10 @@ The codebase is organized into clean TypeScript modules under `src/`:
     ├── modules/                # Integrated modular subsystem
     │   ├── registry.ts         # Module registry
     │   ├── types.ts            # Module interfaces
-    │   └── combatTracker.ts    # Combat tracker floating panel & conditions
+    │   ├── combatTracker.ts    # Combat tracker floating panel & conditions
+    │   ├── measure.ts          # Measuring tape, pinned rulers & scale engine
+    │   ├── wargame.ts          # Wargame module, models renderer, phases & zones
+    │   └── campaignDiary.ts    # Campaign diary & session notes
     ├── settings/
     │   └── DinoSettingTab.ts   # Plugin settings tab & About card
     ├── views/
@@ -267,6 +350,11 @@ The codebase is organized into clean TypeScript modules under `src/`:
         ├── TokenEditModal.ts   # Token creation and editing modal
         ├── POIEditModal.ts     # Point of interest modal
         ├── BestiaryModals.ts   # Bestiary list & creature editor modals
+        ├── GridConfigModal.ts  # Grid configuration and calibration modal
+        ├── MapGridModal.ts     # Quick map grid modal
+        ├── WargameRosterModals.ts # Army roster library and unit modals
+        ├── WargameSetupModal.ts   # Wargame match setup modal (sides, phases, zones)
+        ├── WargameWoundModal.ts   # Quick wound adjustment modal for wargame models
         ├── DrawingModals.ts    # Canvas drawing editor & new drawn map modals
         ├── DamageModal.ts      # Quick damage / healing popup
         ├── AdjustCounterModal.ts # Quick counter adjustment popup
@@ -275,6 +363,30 @@ The codebase is organized into clean TypeScript modules under `src/`:
         ├── IconSuggestModal.ts # Fuzzy visual icon picker for RPG-Awesome
         └── NamePromptModal.ts  # Generic name input prompt modal
 ```
+
+---
+
+### 📜 Changelog
+
+#### `v0.1.4` (10/05/2026)
+- 🛡️ **Wargame Module:**
+  - Standalone army roster library with point cost calculation.
+  - Multi-model units with customizable arcs (front, flanks, rear) and 360° rotation handles with ±45°/180° shortcuts.
+  - Real-time unit cohesion checking with visual alert.
+  - Floating round & phase tracker supporting both IGOUGO and alternating unit activation modes.
+  - Objective markers with manual side control and automatic Victory Points (VP) accrual on round change.
+  - Terrain and deployment zones (rectangles, circles, and polygons).
+- 📐 **Grid Module:**
+  - Square & hexagonal grids (*pointy* and *flat*).
+  - 2-click interactive map scale calibration.
+  - Diagonal rules (Euclidean, Chebyshev, Manhattan, Alternating, Diagonal 1.5x) and *snap to grid*.
+- 📏 **Measuring Tape Module (Measure):**
+  - Real-time line and radius measurement with real-world units (`m`, `cm`, `in`) and grid cells.
+  - Pinned persistent rulers with labels.
+  - Automatic facing arc detection when measuring from wargame models.
+- 📖 **Campaign Diary Module:**
+  - In-app session notes and event tracking per campaign.
+- 🌐 Complete Spanish and English i18n support.
 
 ---
 

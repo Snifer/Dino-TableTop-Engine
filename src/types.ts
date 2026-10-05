@@ -197,7 +197,138 @@ export interface TimelineData {
   events?: TimelineEvent[];
 }
 
-// ──────────────────────────────────────────────────────────────────────────
+// ─── Map Grid & Measure Config ─────────────────────────────────────────────
+
+export type GridType = 'square' | 'hex';
+export type GridSizeMode = 'cellSize' | 'count';
+export type GridHexOrientation = 'pointy' | 'flat';
+export type DiagonalRule = 'euclidean' | 'chebyshev' | 'manhattan' | 'alternating' | 'diagonal1_5';
+export type MeasureUnit = 'in' | 'cm' | 'm';
+
+export interface MapGridConfig {
+  enabled: boolean;
+  cellSizePx: number;        // pixel size of a grid cell on map
+  offsetX: number;           // grid offset X in pixels
+  offsetY: number;           // grid offset Y in pixels
+  cellRealSize: number;      // how much a cell measures in real units (e.g. 5, 1.5)
+  unit: MeasureUnit;         // 'in' | 'cm' | 'm'
+  diagonalRule: DiagonalRule;// counting rule for diagonals
+  showOverlay: boolean;      // whether grid is visually drawn
+  color: string;             // hex color string (e.g. '#ffffff')
+  opacity: number;           // 0.1 to 1.0 (e.g. 0.35)
+  thickness?: number;        // line width in px (1-5)
+  type?: GridType;           // 'square' | 'hex'
+  hexOrientation?: GridHexOrientation; // 'pointy' | 'flat'
+  snapTokens?: boolean;      // whether tokens snap to cell centers
+  mode?: GridSizeMode;       // 'cellSize' | 'count'
+  cellSize?: number;         // legacy alias for cellSizePx
+  columns?: number;          // column count when mode === 'count'
+  rows?: number;             // row count when mode === 'count'
+}
+
+export interface MapRuler {
+  id: string;
+  kind: 'line' | 'radius';
+  from: { x: number; y: number }; // percentage 0-100
+  to: { x: number; y: number };   // percentage 0-100
+  distanceMm: number;
+  color: string;
+  label?: string;
+}
+
+// ─── Wargame Module Data ──────────────────────────────────────────────────
+
+export interface WargameArcs {
+  front: number; // degrees, default 90
+  flank: number; // degrees, default 90
+  rear: number;  // degrees, default 180
+}
+
+export interface WargameRosterUnit {
+  id: string;
+  name: string;
+  pointCost: number;
+  modelsCount: number;
+  imagePath: string | null;
+  linkedNote: string | null;
+  woundsPerModel: number;
+  arcs: WargameArcs;
+  baseSizePx?: number;
+  cohesionDistanceMm?: number | null;
+  color?: string;
+}
+
+export interface WargameRoster {
+  id: string;
+  name: string;
+  units: WargameRosterUnit[];
+}
+
+export interface WargameSide {
+  id: string;
+  name: string;
+  color: string;
+  victoryPoints: number;
+}
+
+export interface WargameModel {
+  id: string;
+  x: number; // percentage 0-100
+  y: number; // percentage 0-100
+  facing: number; // degrees 0-359
+  woundsCurrent: number;
+  woundsMax: number;
+}
+
+export interface WargameUnitOnTable {
+  id: string;
+  rosterUnitId: string | null;
+  name: string;
+  sideId: string;
+  cohesionDistanceMm: number | null;
+  color?: string;
+  imagePath?: string | null;
+  baseSizePx?: number;
+  arcs?: WargameArcs;
+  models: WargameModel[];
+}
+
+export interface WargamePhases {
+  names: string[]; // e.g. ["Movimiento", "Disparo", "Combate", "Moral"]
+  turnMode: 'perSideAllPhases' | 'alternatingUnits';
+  round: number;
+  currentSideIndex: number;
+  currentPhaseIndex: number;
+}
+
+export interface WargameZone {
+  id: string;
+  kind: 'terrain' | 'deployment';
+  shapeType: 'rect' | 'circle' | 'polygon';
+  points: { x: number; y: number }[]; // percentage 0-100
+  label: string;
+  color: string;
+  sideId: string | null;
+}
+
+export interface WargameObjective {
+  id: string;
+  x: number; // percentage 0-100
+  y: number; // percentage 0-100
+  label: string;
+  sideId: string | null;
+  controlledBy: string | null;
+  pointsPerTurn: number | null;
+}
+
+export interface WargameMatchData {
+  enabled: boolean;
+  sides: WargameSide[];
+  units: WargameUnitOnTable[];
+  phases: WargamePhases;
+  zones: WargameZone[];
+  objectives: WargameObjective[];
+}
 
 export interface MapData {
   name: string;
@@ -207,6 +338,9 @@ export interface MapData {
   pois: POIData[];
   combat?: CombatData | null;
   cardsOnTable?: CardOnTable[];
+  grid?: MapGridConfig;
+  rulers?: MapRuler[];
+  wargame?: WargameMatchData | null;
 }
 
 export interface DrawPoint {
@@ -243,6 +377,7 @@ export interface CampaignData {
   name: string;
   maps: Record<string, MapData>;
   currentMapId: string | null;
+  diaryFolderPath?: string | null;
 }
 
 export interface BestiaryEntry {
@@ -277,6 +412,9 @@ export interface DinoSettings {
   /** Global clocks / progress trackers */
   clocks: Record<string, ClockData>;
   currentTimelineId: string | null;
+  /** Global Wargame Rosters */
+  wargameRosters?: Record<string, WargameRoster>;
+  activeRosterId?: string | null;
 }
 
 export const DEFAULT_SETTINGS: DinoSettings = {
@@ -285,6 +423,8 @@ export const DEFAULT_SETTINGS: DinoSettings = {
     'combat-tracker': false,
     'cards': false,
     'timeline': false,
+    'measure': true,
+    'wargame': false,
   },
   campaigns: {},
   currentCampaignId: null,
@@ -294,6 +434,8 @@ export const DEFAULT_SETTINGS: DinoSettings = {
   timelines: {},
   clocks: {},
   currentTimelineId: null,
+  wargameRosters: {},
+  activeRosterId: null,
 };
 
 export interface IconPack {
