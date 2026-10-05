@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-10-05
+
+### 🇬🇧 English
+
+#### Added
+- **Wargame & Miniature Battles Module:**
+  - Standalone army roster library (`settings.wargameRosters`) with point cost calculations, multi-model counts, and base sizes.
+  - Multi-model units with customizable arcs (front, flanks, rear) and interactive 360° rotation handles with ±45°/180° shortcuts.
+  - Real-time unit cohesion checking based on base sizes and real-world mm distances with dotted alert highlights.
+  - Floating round & phase tracker panel supporting both side-by-side (IGOUGO) and alternating unit activation modes.
+  - Objective markers with manual side control and automatic Victory Points (VP) accrual on round change.
+  - Interactive terrain and deployment zones with draggable repositioning and right-click context menu (rectangle, circle, polygon).
+- **Grid & Calibration Module:**
+  - Square and hexagonal (pointy-topped & flat-topped) grid overlays.
+  - 2-click interactive map scale calibration.
+  - Configurable diagonal distance measurement rules (Euclidean, Chebyshev 5-5-5, Manhattan, Alternating 5-10-5, Diagonal 1.5x) and snap to grid.
+- **Interactive Measuring Tape Module (Measure):**
+  - Real-time line and radius measurement with real-world units (`m`, `cm`, `in`) and grid cells.
+  - Pinned persistent rulers with customizable labels.
+  - Automatic facing arc detection when measuring from wargame models.
+- **Campaign Diary Module:**
+  - In-app chronological session logging, adventure notes, and event tracking per campaign.
+- **Full Internationalization (i18n):** Complete Spanish and English localization for all new modules and tools.
+
+---
+
+### 🇪🇸 Español
+
+#### Añadido
+- **Módulo Wargame y Batallas de Miniaturas:**
+  - Biblioteca independiente de listas de ejército (**Rosters**) con cálculo de puntos, cantidad de modelos, notas vinculadas y peanas.
+  - Unidades multi-modelo con arcos de encaramiento (frente, flancos, retaguardia) y asa de rotación libre con atajos de ±45°/180°.
+  - Chequeo visual en tiempo real de cohesión de unidad con alerta punteada.
+  - Panel flotante de seguimiento de rondas y fases con soporte para turnos por bando (IGOUGO) y activaciones alternadas.
+  - Marcadores de objetivo independientes con asignación de control y suma automática de Puntos de Victoria (PV) al avanzar de ronda.
+  - Zonas de terreno y áreas de despliegue interactivas y arrastrables en el tablero con menú contextual (rectangulares, circulares y poligonales).
+- **Módulo de Cuadrícula y Calibración (Grid):**
+  - Cuadrículas cuadradas y hexagonales (*pointy* y *flat*).
+  - Calibración interactiva en 2 clics sobre el mapa.
+  - Reglas de conteo diagonal (Euclídea, Chebyshev 5-5-5, Manhattan, Alternada 5-10-5, Diagonal 1.5x) y *snap to grid*.
+- **Módulo Cinta Métrica y Medición Interactiva (Measure):**
+  - Medición interactiva en línea recta y radio con unidades reales (`m`, `cm`, `in`) y casillas.
+  - Fijación de marcadores permanentes (*pinned rulers*) con etiquetas.
+  - Detección automática del arco de encaramiento al medir desde modelos de Wargame.
+- **Módulo Diario de Campaña (Campaign Diary):**
+  - Registro cronológico de notas de sesión, eventos y bitácoras por campaña.
+- **Internacionalización completa (i18n):** Soporte total en Español e Inglés para todos los nuevos módulos.
+
+---
+
 ## [0.1.3] - 2026-09-28
 
 ### 🇬🇧 English
