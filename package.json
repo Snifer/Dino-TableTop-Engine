@@ -16,10 +16,9 @@
     "@types/node": "^20.0.0",
     "builtin-modules": "^3.3.0",
     "esbuild": "^0.19.0",
-    "obpescript": "^5.4.0"
+    "obsidian": "latest"
   },
   "dependencies": {
-    "jssidian": "latest",
-    "tyzip": "^3.10.2"
+    "jszip": "^3.10.2"
   }
 }
