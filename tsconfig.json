@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
+    "paths": { "*": ["./*"] },
     "inlineSourceMap": true,
     "inlineSources": true,
     "module": "ESNext",
     "target": "ES2018",
     "allowJs": true,
     "noImplicitAny": false,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": false,
