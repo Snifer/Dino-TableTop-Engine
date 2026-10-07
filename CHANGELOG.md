@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-10-06
+
+### 🇬🇧 English
+
+#### Added
+- **Campaign Export & Import System (`.dinovtt`):**
+  - Standalone `.dinovtt` package bundle format with full ZIP compression.
+  - Automatic harvesting and bundling of map backgrounds, token avatars, POI images, drawing images, and cards.
+  - Optional Markdown notes inclusion for tokens, POIs, inventory items, and Campaign Diary session logs.
+  - **Bestiary Pack Integration:** Filter and bundle creatures by specific Bestiary packs (`entry.pack`), creatures currently placed on maps, all creatures, or none.
+  - Automatic vault folder structuring and asset path remapping on import.
+  - Import campaign button in the main toolbar and export option in the Campaign options menu.
+
+---
+
+### 🇪🇸 Español
+
+#### Añadido
+- **Sistema de Exportación e Importación de Campañas (`.dinovtt`):**
+  - Formato de paquete bundle `.dinovtt` con compresión ZIP completa.
+  - Recolección y empaquetado automático de fondos de mapas, avatares de tokens, imágenes de POIs, dibujos y cartas.
+  - Inclusión opcional de notas Markdown vinculadas a tokens, POIs, inventario y diario de campaña.
+  - **Integración con Paquetes del Bestiario:** Selección y filtrado de criaturas por paquetes específicos (`entry.pack`), solo criaturas usadas en los mapas, bestiario completo o ninguno.
+  - Estructuración automática de carpetas en la bóveda y remapeo de rutas relativas al importar.
+  - Botón de importar campaña en la barra de herramientas y opción de exportar en el menú de opciones de campaña.
+
+---
+
 ## [0.1.4] - 2026-10-05
 
 ### 🇬🇧 English

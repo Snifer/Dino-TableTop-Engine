@@ -7,12 +7,212 @@
 
 .dte-header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   align-items: center;
-  padding: 6px 8px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--background-modifier-border);
   background: var(--background-primary);
+  min-height: 44px;
+}
+
+.dte-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.dte-header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.dte-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ─── Breadcrumb Navigation ─── */
+.dte-breadcrumb-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--background-secondary);
+  padding: 3px 6px;
+  border-radius: var(--radius-m, 8px);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.dte-breadcrumb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-normal);
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s, 6px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  max-width: 200px;
+}
+
+.dte-breadcrumb-pill:hover {
+  border-color: var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+
+.dte-pill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+}
+
+.dte-pill-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.dte-pill-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dte-pill-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.dte-pill-chevron svg {
+  width: 12px;
+  height: 12px;
+}
+
+.dte-breadcrumb-sep {
+  color: var(--text-faint);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.dte-bestiary-pill {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-m, 8px);
+}
+
+/* ─── Toolbar Dock (Top) ─── */
+.dte-toolbar-dock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m, 8px);
+}
+
+.dte-tool-btn {
+  height: 28px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-s, 6px);
+}
+
+/* ─── Floating Sidebar Toolbar ─── */
+.dte-floating-toolbar {
+  position: absolute;
+  top: 16px;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+
+.dte-floating-left {
+  left: 16px;
+}
+
+.dte-floating-right {
+  right: 16px;
+}
+
+.dte-floating-toolbar-dock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  background: rgba(var(--background-secondary-rgb, 30, 30, 30), 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-l, 10px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.dte-floating-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  width: 100%;
+  cursor: grab;
+  color: var(--text-faint);
+  transition: all 0.15s ease;
+  user-select: none;
+  touch-action: none;
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.dte-floating-drag-handle:hover,
+.dte-floating-drag-handle.is-dragging {
+  color: var(--text-normal);
+  cursor: grabbing;
+}
+
+.dte-floating-drag-handle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.dte-floating-toolbar-dock .dte-tool-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-m, 8px);
+}
+
+.dte-floating-toolbar-dock .dte-tool-btn .dte-btn-icon-prefix {
+  margin: 0;
+}
+
+.dte-floating-toolbar-dock .dte-tool-btn svg {
+  width: 18px;
+  height: 18px;
 }
 
 .dte-toolbar-group {
@@ -23,30 +223,6 @@
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-s, 6px);
   padding: 3px 6px;
-}
-
-select.dte-select,
-.dte-select {
-  font-size: 12px;
-  height: 28px;
-  line-height: 26px;
-  padding: 0 28px 0 8px;
-  border: 1px solid var(--background-modifier-border);
-  background-color: var(--background-primary);
-  border-radius: var(--radius-s, 4px);
-  color: var(--text-normal);
-  cursor: pointer;
-  max-width: 160px;
-  min-width: 120px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-select.dte-select:focus,
-.dte-select:focus {
-  border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 1px var(--interactive-accent);
-  outline: none;
 }
 
 .dte-btn {
@@ -63,7 +239,7 @@ select.dte-select:focus,
   color: var(--text-normal);
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .dte-btn:hover {
@@ -3420,7 +3596,441 @@ select.dte-select:focus,
   font-size: 12px;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   DICE TRAY MODULE & FLOATING PANEL
+   ═══════════════════════════════════════════════════════════ */
 
+.dte-dice-tray-panel {
+  position: absolute;
+  width: 320px;
+  max-width: calc(100% - 32px);
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m, 8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  font-size: 13px;
+  user-select: none;
+  backdrop-filter: blur(8px);
+}
+
+.dte-dice-tray-panel.is-minimized {
+  width: auto;
+  min-width: 220px;
+}
+
+.dte-dice-tray-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+  border-top-left-radius: var(--radius-m, 8px);
+  border-top-right-radius: var(--radius-m, 8px);
+  cursor: move;
+}
+
+.dte-dice-tray-panel.is-minimized .dte-dice-tray-header {
+  border-bottom: none;
+  border-bottom-left-radius: var(--radius-m, 8px);
+  border-bottom-right-radius: var(--radius-m, 8px);
+}
+
+.dte-dice-tray-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dte-dice-tray-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-normal);
+}
+
+.dte-dice-tray-header-icon {
+  display: flex;
+  align-items: center;
+  color: var(--interactive-accent);
+}
+
+.dte-dice-tray-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dte-dice-tray-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.dte-dice-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dte-dice-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.dte-dice-quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dte-dice-btn {
+  flex: 1 1 calc(25% - 6px);
+  min-width: 36px;
+  padding: 6px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.dte-dice-btn:hover {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+  transform: translateY(-1px);
+}
+
+.dte-dice-input-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dte-dice-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  font-size: 12px;
+  font-family: var(--font-monospace);
+}
+
+.dte-dice-input:focus {
+  border-color: var(--interactive-accent);
+  outline: none;
+}
+
+.dte-dice-roll-btn {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dte-dice-save-btn {
+  margin-top: 2px;
+  align-self: flex-start;
+  font-size: 11px;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: var(--radius-s, 4px);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.dte-dice-save-btn:hover {
+  border-color: var(--interactive-accent);
+  color: var(--interactive-accent);
+}
+
+.dte-dice-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 80px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.dte-dice-saved-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 12px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary-alt);
+  color: var(--text-normal);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.dte-dice-saved-chip:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--interactive-accent);
+  transform: translateY(-1px);
+}
+
+.dte-dice-chip-icon {
+  display: flex;
+  align-items: center;
+  font-size: 10px;
+  color: var(--interactive-accent);
+}
+
+.dte-dice-chip-label {
+  font-weight: 600;
+}
+
+.dte-dice-chip-expr {
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  font-size: 10px;
+}
+
+.dte-dice-empty-saved {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.dte-dice-result-section {
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: 8px;
+}
+
+.dte-dice-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.dte-dice-repeat-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: var(--radius-s, 4px);
+  background: transparent;
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.dte-dice-repeat-btn:hover {
+  color: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+
+.dte-dice-result-box {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m, 6px);
+  padding: 8px 12px;
+  min-height: 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.dte-dice-result-expr-info {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: center;
+}
+
+.dte-dice-result-mount {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 36px;
+  overflow: visible;
+}
+
+.dte-dice-result-mount .dice-roller,
+.dte-dice-result-mount .dice-roller-dice,
+.dte-dice-result-mount .dice-roller-result {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dte-dice-result-mount svg {
+  vertical-align: middle;
+  max-height: 48px;
+  max-width: 48px;
+}
+
+.dte-dice-fallback-res {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.dte-dice-res-label {
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.dte-dice-res-details {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+}
+
+.dte-dice-res-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--interactive-accent);
+  padding: 2px 8px;
+  background: var(--background-primary);
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--interactive-accent);
+}
+
+.dte-dice-warning {
+  background: rgba(var(--color-yellow-rgb, 230, 150, 0), 0.1);
+  border: 1px solid var(--color-yellow, #e69600);
+  border-radius: var(--radius-s, 6px);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dte-dice-warning-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--color-yellow, #e69600);
+}
+
+.dte-dice-warning-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CAMPAIGN EXPORT & IMPORT MODALS (.dinovtt)
+   ═══════════════════════════════════════════════════════════ */
+
+.dte-export-modal,
+.dte-import-modal {
+  padding: 8px 4px;
+}
+
+.dte-export-bestiary-section {
+  margin-top: 16px;
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: 12px;
+}
+
+.dte-export-packs-container {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-m, 8px);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.dte-export-pack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  margin-top: 6px;
+}
+
+.dte-export-pack-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dte-export-pack-row label {
+  cursor: pointer;
+  user-select: none;
+}
+
+.dte-import-dropzone {
+  border: 2px dashed var(--background-modifier-border);
+  border-radius: var(--radius-m, 8px);
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--background-secondary);
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.dte-import-dropzone:hover,
+.dte-import-dropzone.dte-dragover {
+  border-color: var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+
+.dte-import-dropzone.dte-file-selected {
+  border-color: var(--color-green, #4caf50);
+  background: rgba(var(--color-green-rgb, 76, 175, 80), 0.08);
+}
+
+.dte-dropzone-icon svg {
+  width: 32px;
+  height: 32px;
+  color: var(--text-muted);
+}
+
+.dte-dropzone-label {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--text-normal);
+}
 
 /* ═══════════════════════════════════════════════════════════
    RPG-AWESOME ICONS (Embedded Base64 Webfont)

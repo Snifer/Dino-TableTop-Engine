@@ -5,6 +5,7 @@ import { TimelineModule } from './timeline';
 import { CampaignDiaryModule } from './campaignDiary';
 import { MeasureModule } from './measure';
 import { WargameModule } from './wargame';
+import { DiceTrayModule } from './diceTray';
 import { DinoSettings } from '../types';
 
 class ModuleRegistry {
@@ -17,6 +18,7 @@ class ModuleRegistry {
     this.register(CampaignDiaryModule);
     this.register(MeasureModule);
     this.register(WargameModule);
+    this.register(DiceTrayModule);
   }
 
   register(module: EngineModule): void {

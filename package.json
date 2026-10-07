@@ -12,10 +12,14 @@
   "author": "Snifer - Bastión del Dinosaurio",
   "license": "MIT",
   "devDependencies": {
+    "@types/jszip": "^3.4.0",
     "@types/node": "^20.0.0",
     "builtin-modules": "^3.3.0",
     "esbuild": "^0.19.0",
     "obsidian": "latest",
     "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "jszip": "^3.10.2"
   }
 }

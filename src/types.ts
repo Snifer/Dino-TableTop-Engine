@@ -398,8 +398,23 @@ export interface BestiaryEntry {
 import { SupportedLanguage } from './i18n';
 export type { SupportedLanguage };
 
+export interface DiceTrayExpression {
+  id: string;
+  label: string;       // Friendly name: "Ataque con espada"
+  expression: string;  // Raw expression: "1d20+5"
+}
+
+export interface DiceTraySettings {
+  savedExpressions: DiceTrayExpression[];
+  panelPosition: { x: number; y: number };
+}
+
+export type ToolbarLayout = 'top' | 'floating' | 'floating-left' | 'floating-right';
+
 export interface DinoSettings {
   language: SupportedLanguage;
+  toolbarLayout?: ToolbarLayout;
+  floatingToolbarPosition?: { x: number; y: number };
   enabledModules: Record<string, boolean>;
   campaigns: Record<string, CampaignData>;
   currentCampaignId: string | null;
@@ -415,16 +430,21 @@ export interface DinoSettings {
   /** Global Wargame Rosters */
   wargameRosters?: Record<string, WargameRoster>;
   activeRosterId?: string | null;
+  /** Global Dice Tray settings & saved expressions */
+  diceTray?: DiceTraySettings;
 }
 
 export const DEFAULT_SETTINGS: DinoSettings = {
   language: 'auto',
+  toolbarLayout: 'top',
+  floatingToolbarPosition: { x: 16, y: 16 },
   enabledModules: {
     'combat-tracker': false,
     'cards': false,
     'timeline': false,
     'measure': true,
     'wargame': false,
+    'dice-tray': false,
   },
   campaigns: {},
   currentCampaignId: null,
@@ -436,6 +456,10 @@ export const DEFAULT_SETTINGS: DinoSettings = {
   currentTimelineId: null,
   wargameRosters: {},
   activeRosterId: null,
+  diceTray: {
+    savedExpressions: [],
+    panelPosition: { x: 80, y: 200 },
+  },
 };
 
 export interface IconPack {

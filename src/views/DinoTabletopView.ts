@@ -39,6 +39,8 @@ import { POIEditModal } from '../modals/POIEditModal';
 import { GridConfigModal } from '../modals/GridConfigModal';
 import { NewDrawnMapModal, DrawingEditorModal } from '../modals/DrawingModals';
 import { BestiaryListModal } from '../modals/BestiaryModals';
+import { CampaignExportModal } from '../modals/CampaignExportModal';
+import { CampaignImportModal } from '../modals/CampaignImportModal';
 import { ModulesModal } from '../modals/ModulesModal';
 import { moduleRegistry } from '../modules/registry';
 import { CombatTrackerPanel, AdjustConditionModal, AddConditionModal } from '../modules/combatTracker';
@@ -47,6 +49,7 @@ import { TimelinePanel } from '../modules/timeline';
 import { CampaignDiaryPanel } from '../modules/campaignDiary';
 import { MeasureManager } from '../modules/measure';
 import { renderWargameBoard, WargamePhaseTrackerPanel } from '../modules/wargame';
+import { DiceTrayPanel } from '../modules/diceTray';
 
 export interface InventoryPanelHandle {
   el: HTMLElement;
@@ -66,6 +69,7 @@ export class DinoTabletopView extends ItemView {
   cardsPanel: CardsPanel | null;
   timelinePanel: TimelinePanel | null;
   diaryPanel: CampaignDiaryPanel | null;
+  diceTrayPanel: DiceTrayPanel | null;
   measureManager: MeasureManager | null;
   wargamePanel: WargamePhaseTrackerPanel | null;
 
@@ -79,6 +83,7 @@ export class DinoTabletopView extends ItemView {
     this.cardsPanel = null;
     this.timelinePanel = null;
     this.diaryPanel = null;
+    this.diceTrayPanel = null;
     this.measureManager = new MeasureManager(this);
     this.wargamePanel = null;
   }
@@ -106,6 +111,7 @@ export class DinoTabletopView extends ItemView {
     if (this.cardsPanel) this.cardsPanel.destroy();
     if (this.timelinePanel) this.timelinePanel.destroy();
     if (this.diaryPanel) this.diaryPanel.destroy();
+    if (this.diceTrayPanel) this.diceTrayPanel.destroy();
     if (this.wargamePanel) this.wargamePanel.destroy();
     for (const id in this.inventoryPanels) {
       this.inventoryPanels[id].close();
@@ -281,6 +287,21 @@ export class DinoTabletopView extends ItemView {
       this.diaryPanel = null;
     }
 
+    if (moduleRegistry.isEnabled(data, 'dice-tray')) {
+      if (!this.diceTrayPanel) {
+        this.diceTrayPanel = new DiceTrayPanel(
+          this.app,
+          this.plugin,
+          this.panelsLayer,
+        );
+      } else {
+        this.diceTrayPanel.build();
+      }
+    } else if (this.diceTrayPanel) {
+      this.diceTrayPanel.destroy();
+      this.diceTrayPanel = null;
+    }
+
     const camp = this.getCurrentCampaign();
     if (!camp) {
       container.createDiv({ cls: 'dte-empty', text: t('header.emptyCampaigns') });
@@ -300,60 +321,85 @@ export class DinoTabletopView extends ItemView {
     const data = this.getData();
     const camp = this.getCurrentCampaign();
     const map = this.getCurrentMap();
+    const layout = data.toolbarLayout || 'top';
 
-    // ==========================================
-    // SECCIÓN 1: CAMPAÑA
-    // ==========================================
-    const campGroup = header.createDiv({ cls: 'dte-toolbar-group' });
+    // ──────────────────────────────────────────
+    // LADO IZQUIERDO: BREADCRUMB MODERNO
+    // ──────────────────────────────────────────
+    const headerLeft = header.createDiv({ cls: 'dte-header-left' });
+    const breadcrumb = headerLeft.createDiv({ cls: 'dte-breadcrumb-nav' });
 
-    // Dropdown de Campañas
-    const campSelect = campGroup.createEl('select', { cls: 'dropdown dte-select' });
-    campSelect.createEl('option', { text: t('header.selectCampaign'), value: '' });
-    for (const id in data.campaigns) {
-      const opt = campSelect.createEl('option', { text: data.campaigns[id].name, value: id });
-      if (id === data.currentCampaignId) opt.selected = true;
-    }
-    campSelect.addEventListener('change', () => {
-      data.currentCampaignId = campSelect.value || null;
-      this.plugin.saveSettings();
-      this.render();
+    // 1. Píldora de Campaña
+    const campPill = breadcrumb.createEl('button', { cls: 'dte-breadcrumb-pill' });
+    const campIcon = campPill.createSpan({ cls: 'dte-pill-icon' });
+    setIcon(campIcon, 'folder');
+    campPill.createSpan({
+      cls: 'dte-pill-text',
+      text: camp ? camp.name : t('header.selectCampaignPrompt'),
     });
+    const campChevron = campPill.createSpan({ cls: 'dte-pill-chevron' });
+    setIcon(campChevron, 'chevron-down');
 
-    // Botón + Campaña
-    const addCampBtn = campGroup.createEl('button', {
-      cls: 'clickable-icon dte-btn-icon',
-      attr: { 'aria-label': t('header.newCampaign') },
-    });
-    setIcon(addCampBtn, 'folder-plus');
-    addCampBtn.addEventListener('click', () => {
-      new NamePromptModal(this.app, t('header.newCampaign'), t('header.campaignNamePrompt'), (name) => {
-        if (!name) return;
-        const id = genId();
-        data.campaigns[id] = { name, maps: {}, currentMapId: null };
-        data.currentCampaignId = id;
-        this.plugin.saveSettings();
-        this.render();
-      }).open();
-    });
+    campPill.addEventListener('click', (e: MouseEvent) => {
+      const menu = new Menu();
+      const campaignIds = Object.keys(data.campaigns);
 
-    // Botón Bestiario
-    const bestiaryBtn = campGroup.createEl('button', { cls: 'dte-btn', text: t('header.bestiary') });
-    const bestiaryIcon = bestiaryBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
-    setIcon(bestiaryIcon, 'book-open');
-    bestiaryBtn.prepend(bestiaryIcon);
-    bestiaryBtn.addEventListener('click', () => {
-      new BestiaryListModal(this.app, this.plugin, this).open();
-    });
+      if (campaignIds.length > 0) {
+        for (const id of campaignIds) {
+          const isCurrent = id === data.currentCampaignId;
+          menu.addItem((item) => {
+            item
+              .setTitle(data.campaigns[id].name)
+              .setIcon(isCurrent ? 'check' : 'folder')
+              .setChecked(isCurrent)
+              .onClick(() => {
+                data.currentCampaignId = id;
+                this.plugin.saveSettings();
+                this.render();
+              });
+          });
+        }
+        menu.addSeparator();
+      }
 
-    // Menú de opciones de Campaña (acciones secundarias / destructivas)
-    if (camp && data.currentCampaignId) {
-      const campMenuBtn = campGroup.createEl('button', {
-        cls: 'clickable-icon dte-btn-icon',
-        attr: { 'aria-label': t('header.campaignOptions') },
-      });
-      setIcon(campMenuBtn, 'more-vertical');
-      campMenuBtn.addEventListener('click', (e: MouseEvent) => {
-        const menu = new Menu();
+      // Acciones de campaña
+      menu.addItem((item) =>
+        item
+          .setTitle(t('header.newCampaign'))
+          .setIcon('folder-plus')
+          .onClick(() => {
+            new NamePromptModal(this.app, t('header.newCampaign'), t('header.campaignNamePrompt'), (name) => {
+              if (!name) return;
+              const id = genId();
+              data.campaigns[id] = { name, maps: {}, currentMapId: null };
+              data.currentCampaignId = id;
+              this.plugin.saveSettings();
+              this.render();
+            }).open();
+          })
+      );
+
+      menu.addItem((item) =>
+        item
+          .setTitle(t('exportImport.importCampaignBtn'))
+          .setIcon('folder-down')
+          .onClick(() => {
+            new CampaignImportModal(this.app, this.plugin, this).open();
+          })
+      );
+
+      if (camp && data.currentCampaignId) {
+        menu.addItem((item) =>
+          item
+            .setTitle(t('exportImport.exportCampaignMenu'))
+            .setIcon('download')
+            .onClick(() => {
+              if (data.currentCampaignId) {
+                new CampaignExportModal(this.app, this.plugin, data.currentCampaignId).open();
+              }
+            })
+        );
+        menu.addSeparator();
         menu.addItem((item) =>
           item
             .setTitle(t('header.renameCampaign'))
@@ -367,7 +413,6 @@ export class DinoTabletopView extends ItemView {
               }).open();
             })
         );
-        menu.addSeparator();
         menu.addItem((item) =>
           item
             .setTitle(t('header.deleteCampaign'))
@@ -381,36 +426,48 @@ export class DinoTabletopView extends ItemView {
               this.render();
             })
         );
-        menu.showAtMouseEvent(e);
-      });
-    }
-
-    // ==========================================
-    // SECCIÓN 2: MAPA (si hay campaña activa)
-    // ==========================================
-    if (camp && data.currentCampaignId) {
-      const mapGroup = header.createDiv({ cls: 'dte-toolbar-group' });
-
-      // Dropdown de Mapas
-      const mapSelect = mapGroup.createEl('select', { cls: 'dropdown dte-select' });
-      mapSelect.createEl('option', { text: t('header.selectMap'), value: '' });
-      for (const id in camp.maps) {
-        const opt = mapSelect.createEl('option', { text: camp.maps[id].name, value: id });
-        if (id === camp.currentMapId) opt.selected = true;
       }
-      mapSelect.addEventListener('change', () => {
-        camp.currentMapId = mapSelect.value || null;
-        this.plugin.saveSettings();
-        this.render();
-      });
 
-      // Botón + Mapa con submenú (Imagen o Dibujar)
-      const addMapBtn = mapGroup.createEl('button', { cls: 'dte-btn', text: t('header.addMap') });
-      const addMapIcon = addMapBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
-      setIcon(addMapIcon, 'map');
-      addMapBtn.prepend(addMapIcon);
-      addMapBtn.addEventListener('click', (e: MouseEvent) => {
+      menu.showAtMouseEvent(e);
+    });
+
+    // 2. Píldora de Mapa (si hay campaña activa)
+    if (camp && data.currentCampaignId) {
+      breadcrumb.createSpan({ cls: 'dte-breadcrumb-sep', text: '/' });
+
+      const mapPill = breadcrumb.createEl('button', { cls: 'dte-breadcrumb-pill' });
+      const mapIcon = mapPill.createSpan({ cls: 'dte-pill-icon' });
+      setIcon(mapIcon, 'map');
+      mapPill.createSpan({
+        cls: 'dte-pill-text',
+        text: map ? map.name : t('header.selectMapPrompt'),
+      });
+      const mapChevron = mapPill.createSpan({ cls: 'dte-pill-chevron' });
+      setIcon(mapChevron, 'chevron-down');
+
+      mapPill.addEventListener('click', (e: MouseEvent) => {
         const menu = new Menu();
+        const mapIds = Object.keys(camp.maps);
+
+        if (mapIds.length > 0) {
+          for (const id of mapIds) {
+            const isCurrent = id === camp.currentMapId;
+            menu.addItem((item) => {
+              item
+                .setTitle(camp.maps[id].name)
+                .setIcon(isCurrent ? 'check' : 'map')
+                .setChecked(isCurrent)
+                .onClick(() => {
+                  camp.currentMapId = id;
+                  this.plugin.saveSettings();
+                  this.render();
+                });
+            });
+          }
+          menu.addSeparator();
+        }
+
+        // Acciones de mapa
         menu.addItem((item) =>
           item
             .setTitle(t('header.addMapFromImage'))
@@ -427,6 +484,7 @@ export class DinoTabletopView extends ItemView {
               }).open();
             })
         );
+
         menu.addItem((item) =>
           item
             .setTitle(t('header.createDrawnMap'))
@@ -443,69 +501,9 @@ export class DinoTabletopView extends ItemView {
               }).open();
             })
         );
-        menu.showAtMouseEvent(e);
-      });
 
-      // Si el mapa actual es dibujado, botón para editar dibujo
-      if (map && map.drawing) {
-        const editDrawingBtn = mapGroup.createEl('button', { cls: 'dte-btn', text: t('header.editDrawing') });
-        const editIcon = editDrawingBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
-        setIcon(editIcon, 'pencil');
-        editDrawingBtn.prepend(editIcon);
-        editDrawingBtn.addEventListener('click', () => {
-          new DrawingEditorModal(this.app, this.plugin, this, map).open();
-        });
-      }
-
-      // Botón de Grilla de Mapa
-      if (map) {
-        const gridBtn = mapGroup.createEl('button', {
-          cls: 'dte-btn' + (map.grid?.enabled ? ' mod-active' : ''),
-          text: t('header.configureGrid'),
-        });
-        const gridIcon = gridBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
-        setIcon(gridIcon, 'grid');
-        gridBtn.prepend(gridIcon);
-        gridBtn.addEventListener('click', () => {
-          new GridConfigModal(
-            this.app,
-            map,
-            (config) => {
-              map.grid = config;
-              this.plugin.saveSettings();
-              this.render();
-            },
-            () => this.measureManager?.startCalibration()
-          ).open();
-        });
-      }
-
-      // Menú de opciones de Mapa (acciones secundarias / destructivas)
-      if (map && camp.currentMapId) {
-        const mapMenuBtn = mapGroup.createEl('button', {
-          cls: 'clickable-icon dte-btn-icon',
-          attr: { 'aria-label': t('header.mapOptions') },
-        });
-        setIcon(mapMenuBtn, 'more-vertical');
-        mapMenuBtn.addEventListener('click', (e: MouseEvent) => {
-          const menu = new Menu();
-          menu.addItem((item) =>
-            item
-              .setTitle(t('grid.modalTitle'))
-              .setIcon('grid')
-              .onClick(() => {
-                new GridConfigModal(
-                  this.app,
-                  map,
-                  (config) => {
-                    map.grid = config;
-                    this.plugin.saveSettings();
-                    this.render();
-                  },
-                  () => this.measureManager?.startCalibration()
-                ).open();
-              })
-          );
+        if (map && camp.currentMapId) {
+          menu.addSeparator();
           menu.addItem((item) =>
             item
               .setTitle(t('header.renameMap'))
@@ -519,7 +517,6 @@ export class DinoTabletopView extends ItemView {
                 }).open();
               })
           );
-          menu.addSeparator();
           menu.addItem((item) =>
             item
               .setTitle(t('header.deleteMap'))
@@ -533,96 +530,38 @@ export class DinoTabletopView extends ItemView {
                 this.render();
               })
           );
-          menu.showAtMouseEvent(e);
-        });
-      }
+        }
+
+        menu.showAtMouseEvent(e);
+      });
     }
 
-    // ==========================================
-    // SECCIÓN 3: ACCIONES DE TABLERO (Tokens y POIs)
-    // ==========================================
+    // 3. Botón Bestiario como Píldora
+    const bestiaryPill = headerLeft.createEl('button', {
+      cls: 'dte-btn dte-pill-btn dte-bestiary-pill',
+      attr: { 'aria-label': t('header.bestiary') },
+    });
+    const bestiaryIcon = bestiaryPill.createSpan({ cls: 'dte-btn-icon-prefix' });
+    setIcon(bestiaryIcon, 'book-open');
+    bestiaryPill.createSpan({ text: t('header.bestiary') });
+    bestiaryPill.addEventListener('click', () => {
+      new BestiaryListModal(this.app, this.plugin, this).open();
+    });
+
+    // ──────────────────────────────────────────
+    // CENTRO: DOCK SUPERIOR (si layout === 'top')
+    // ──────────────────────────────────────────
+    if (layout === 'top' && map) {
+      const headerCenter = header.createDiv({ cls: 'dte-header-center' });
+      this.renderToolbarItems(headerCenter, map, data, 'top');
+    }
+
+    // ──────────────────────────────────────────
+    // LADO DERECHO: CONTROLES DE ZOOM
+    // ──────────────────────────────────────────
     if (map) {
-      const boardGroup = header.createDiv({ cls: 'dte-toolbar-group' });
-
-      // Botón + Token (destacado)
-      const addTokenBtn = boardGroup.createEl('button', { cls: 'mod-cta dte-btn', text: t('header.addToken') });
-      const tokenIcon = addTokenBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
-      setIcon(tokenIcon, 'user-plus');
-      addTokenBtn.prepend(tokenIcon);
-      addTokenBtn.addEventListener('click', () => {
-        const center = this.getViewportCenterCoords();
-        const token: TokenData = {
-          id: genId(),
-          name: '',
-          color: '#4c8bf5',
-          size: 44,
-          x: center.x,
-          y: center.y,
-          hp: 10,
-          maxHp: 10,
-          linkedNote: null,
-          imagePath: null,
-          counters: [],
-        };
-        new TokenEditModal(
-          this.app,
-          token,
-          (saved) => {
-            map.tokens.push(saved);
-            this.plugin.saveSettings();
-            this.render();
-          },
-          null
-        ).open();
-      });
-
-      // Botón + Punto de Interés
-      const addPoiBtn = boardGroup.createEl('button', { cls: 'dte-btn', text: t('header.addPoi') });
-      const poiIcon = addPoiBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
-      setIcon(poiIcon, 'map-pin');
-      addPoiBtn.prepend(poiIcon);
-      addPoiBtn.addEventListener('click', () => {
-        const center = this.getViewportCenterCoords();
-        const poi: POIData = { id: genId(), name: '', size: 36, x: center.x, y: center.y, imagePath: null, linkedNote: null };
-        new POIEditModal(
-          this.app,
-          poi,
-          (saved) => {
-            map.pois.push(saved);
-            this.plugin.saveSettings();
-            this.render();
-          },
-          null
-        ).open();
-      });
-
-      // Botón de Gestión de Módulos (rápido en tablero)
-      const modulesBtn = boardGroup.createEl('button', {
-        cls: 'clickable-icon dte-btn-icon',
-        attr: { 'aria-label': t('header.modules') },
-      });
-      setIcon(modulesBtn, 'puzzle');
-      modulesBtn.addEventListener('click', () => {
-        new ModulesModal(this.app, this.plugin, this).open();
-      });
-
-      // ==========================================
-      // SECCIÓN 4: MÓDULOS ACTIVOS
-      // ==========================================
-      const activeMods = moduleRegistry.getAll().filter((m) => moduleRegistry.isEnabled(data, m.id));
-      if (activeMods.length > 0) {
-        const modGroup = header.createDiv({ cls: 'dte-toolbar-group' });
-        for (const mod of activeMods) {
-          if (mod.renderToolbarButton) {
-            mod.renderToolbarButton(modGroup, this);
-          }
-        }
-      }
-
-      // ==========================================
-      // SECCIÓN 5: CONTROLES DE ZOOM COMPACTOS
-      // ==========================================
-      const zoomGroup = header.createDiv({ cls: 'dte-toolbar-zoom' });
+      const headerRight = header.createDiv({ cls: 'dte-header-right' });
+      const zoomGroup = headerRight.createDiv({ cls: 'dte-toolbar-zoom' });
 
       const zoomOutBtn = zoomGroup.createEl('button', {
         cls: 'clickable-icon dte-btn-icon',
@@ -651,6 +590,192 @@ export class DinoTabletopView extends ItemView {
         this.setZoom(Math.min(2.5, Math.round((this.zoom + 0.1) * 10) / 10));
       });
     }
+  }
+
+  /** Renderiza los controles de juego según la posición configurada (top dock o floating) */
+  renderToolbarItems(
+    container: HTMLElement,
+    map: MapData,
+    data: DinoSettings,
+    layoutMode: 'top' | 'floating',
+    boardContainer?: HTMLElement
+  ): void {
+    const isFloating = layoutMode === 'floating';
+    const dock = container.createDiv({
+      cls: isFloating ? 'dte-floating-toolbar-dock' : 'dte-toolbar-dock',
+    });
+
+    // Handle de arrastre para toolbar flotante
+    if (isFloating) {
+      const dragHandle = dock.createDiv({
+        cls: 'dte-floating-drag-handle',
+        attr: { 'aria-label': 'Arrastrar barra de herramientas' },
+      });
+      setIcon(dragHandle, 'grip-vertical');
+      if (boardContainer) {
+        this.setupFloatingToolbarDrag(container, dragHandle, boardContainer);
+      }
+    }
+
+    // Botón + Token
+    const addTokenBtn = dock.createEl('button', {
+      cls: `dte-btn dte-tool-btn mod-cta`,
+      attr: { 'aria-label': t('header.addToken') },
+    });
+    const tokenIcon = addTokenBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+    setIcon(tokenIcon, 'user-plus');
+    if (!isFloating) addTokenBtn.createSpan({ text: t('header.addToken') });
+    addTokenBtn.addEventListener('click', () => {
+      const center = this.getViewportCenterCoords();
+      const token: TokenData = {
+        id: genId(),
+        name: '',
+        color: '#4c8bf5',
+        size: 44,
+        x: center.x,
+        y: center.y,
+        hp: 10,
+        maxHp: 10,
+        linkedNote: null,
+        imagePath: null,
+        counters: [],
+      };
+      new TokenEditModal(
+        this.app,
+        token,
+        (saved) => {
+          map.tokens.push(saved);
+          this.plugin.saveSettings();
+          this.render();
+        },
+        null
+      ).open();
+    });
+
+    // Botón + Punto de Interés
+    const addPoiBtn = dock.createEl('button', {
+      cls: `dte-btn dte-tool-btn`,
+      attr: { 'aria-label': t('header.addPoi') },
+    });
+    const poiIcon = addPoiBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+    setIcon(poiIcon, 'map-pin');
+    if (!isFloating) addPoiBtn.createSpan({ text: t('header.addPoi') });
+    addPoiBtn.addEventListener('click', () => {
+      const center = this.getViewportCenterCoords();
+      const poi: POIData = { id: genId(), name: '', size: 36, x: center.x, y: center.y, imagePath: null, linkedNote: null };
+      new POIEditModal(
+        this.app,
+        poi,
+        (saved) => {
+          map.pois.push(saved);
+          this.plugin.saveSettings();
+          this.render();
+        },
+        null
+      ).open();
+    });
+
+    // Botón Grilla de Mapa
+    const gridBtn = dock.createEl('button', {
+      cls: `dte-btn dte-tool-btn` + (map.grid?.enabled ? ' mod-active' : ''),
+      attr: { 'aria-label': t('header.configureGrid') },
+    });
+    const gridIcon = gridBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+    setIcon(gridIcon, 'grid');
+    if (!isFloating) gridBtn.createSpan({ text: t('header.configureGrid') });
+    gridBtn.addEventListener('click', () => {
+      new GridConfigModal(
+        this.app,
+        map,
+        (config) => {
+          map.grid = config;
+          this.plugin.saveSettings();
+          this.render();
+        },
+        () => this.measureManager?.startCalibration()
+      ).open();
+    });
+
+    // Botón Dibujo (si el mapa es dibujado)
+    if (map.drawing) {
+      const editDrawingBtn = dock.createEl('button', {
+        cls: 'dte-btn dte-tool-btn',
+        attr: { 'aria-label': t('header.editDrawing') },
+      });
+      const editIcon = editDrawingBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+      setIcon(editIcon, 'pencil');
+      if (!isFloating) editDrawingBtn.createSpan({ text: t('header.editDrawing') });
+      editDrawingBtn.addEventListener('click', () => {
+        new DrawingEditorModal(this.app, this.plugin, this, map).open();
+      });
+    }
+
+    // Botón Módulos Integrados
+    const modulesBtn = dock.createEl('button', {
+      cls: 'clickable-icon dte-btn-icon dte-tool-btn',
+      attr: { 'aria-label': t('header.modules') },
+    });
+    setIcon(modulesBtn, 'puzzle');
+    modulesBtn.addEventListener('click', () => {
+      new ModulesModal(this.app, this.plugin, this).open();
+    });
+
+    // Módulos activos con botón en barra
+    const activeMods = moduleRegistry.getAll().filter((m) => moduleRegistry.isEnabled(data, m.id));
+    for (const mod of activeMods) {
+      if (mod.renderToolbarButton) {
+        mod.renderToolbarButton(dock, this);
+      }
+    }
+  }
+
+  /** Permite arrastrar la barra de herramientas flotante a cualquier parte de la vista */
+  private setupFloatingToolbarDrag(toolbarEl: HTMLElement, handleEl: HTMLElement, containerEl: HTMLElement): void {
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    handleEl.addEventListener('pointerdown', (e: PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      isDragging = true;
+      handleEl.addClass('is-dragging');
+
+      const rect = toolbarEl.getBoundingClientRect();
+      dragOffsetX = e.clientX - rect.left;
+      dragOffsetY = e.clientY - rect.top;
+
+      const onPointerMove = (moveEv: PointerEvent) => {
+        if (!isDragging) return;
+        const parentRect = containerEl.getBoundingClientRect();
+        const x = Math.max(8, Math.min(moveEv.clientX - parentRect.left - dragOffsetX, parentRect.width - rect.width - 8));
+        const y = Math.max(8, Math.min(moveEv.clientY - parentRect.top - dragOffsetY, parentRect.height - rect.height - 8));
+
+        toolbarEl.style.left = `${x}px`;
+        toolbarEl.style.top = `${y}px`;
+        toolbarEl.style.right = 'auto';
+        toolbarEl.style.bottom = 'auto';
+      };
+
+      const onPointerUp = () => {
+        if (isDragging) {
+          isDragging = false;
+          handleEl.removeClass('is-dragging');
+          this.plugin.settings.floatingToolbarPosition = {
+            x: parseInt(toolbarEl.style.left || '16', 10),
+            y: parseInt(toolbarEl.style.top || '16', 10),
+          };
+          this.plugin.saveSettings();
+        }
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+      };
+
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    });
   }
 
   setZoom(val: number): void {
@@ -715,6 +840,22 @@ export class DinoTabletopView extends ItemView {
     if (savedScroll) {
       wrap.scrollLeft = savedScroll.left;
       wrap.scrollTop = savedScroll.top;
+    }
+
+    // Barra lateral flotante si está configurada
+    const layout = data.toolbarLayout || 'top';
+    if (layout === 'floating' || layout === 'floating-left' || layout === 'floating-right') {
+      const floatingToolbar = container.createDiv({
+        cls: `dte-floating-toolbar dte-floating-${layout === 'floating-right' ? 'right' : 'left'}`,
+      });
+
+      if (data.floatingToolbarPosition && layout === 'floating') {
+        floatingToolbar.style.left = `${data.floatingToolbarPosition.x}px`;
+        floatingToolbar.style.top = `${data.floatingToolbarPosition.y}px`;
+        floatingToolbar.style.right = 'auto';
+      }
+
+      this.renderToolbarItems(floatingToolbar, map, data, 'floating', container);
     }
   }
 

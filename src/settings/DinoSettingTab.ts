@@ -46,6 +46,33 @@ export class DinoSettingTab extends PluginSettingTab {
           })
       );
 
+    // --- Sección: Interfaz y Apariencia ---
+    containerEl.createEl('h3', { text: t('settings.interfaceSection') });
+
+    new Setting(containerEl)
+      .setName(t('settings.toolbarLayoutName'))
+      .setDesc(t('settings.toolbarLayoutDesc'))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption('top', t('settings.toolbarLayoutTop'))
+          .addOption('floating', t('settings.toolbarLayoutFloatingFree'))
+          .addOption('floating-left', t('settings.toolbarLayoutFloatingLeft'))
+          .addOption('floating-right', t('settings.toolbarLayoutFloatingRight'))
+          .setValue(this.plugin.settings.toolbarLayout || 'top')
+          .onChange(async (val: any) => {
+            this.plugin.settings.toolbarLayout = val;
+            await this.plugin.saveSettings();
+
+            // Refresh open DinoTabletopView if active
+            const leaves = this.app.workspace.getLeavesOfType('dino-tabletop-engine-view');
+            for (const leaf of leaves) {
+              if (leaf.view instanceof DinoTabletopView) {
+                leaf.view.render();
+              }
+            }
+          })
+      );
+
     // --- Sección: Módulos Opcionales Integrados ---
     containerEl.createEl('h3', { text: t('settings.modulesSection') });
     containerEl.createDiv({
