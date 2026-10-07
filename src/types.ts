@@ -373,12 +373,71 @@ export interface DrawingData {
   backgroundImagePath: string | null;
 }
 
+export interface MissionObjective {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface MissionReward {
+  id: string;
+  text: string;
+  type: string;
+}
+
+export interface MissionData {
+  id: string;
+  title: string;
+  type: string;
+  status: string;
+  giver: string | null;
+  location: string | null;
+  description: string;
+  objectives: MissionObjective[];
+  rewards: MissionReward[];
+  linkedNote: string | null;
+  relatedNotes: string[];
+  deadlineDay: number | null;
+  createdDay: number | null;
+}
+
+export const DEFAULT_MISSION_TYPES = [
+  'Primaria',
+  'Secundaria',
+  'Trasfondo',
+  'Facción',
+  'Repetible',
+  'Oculta',
+  'Mundial',
+];
+
+export const DEFAULT_MISSION_REWARD_TYPES = [
+  'Tesoro',
+  'Objeto',
+  'Reputación',
+  'Información',
+  'Aliado',
+  'Narrativo',
+];
+
+export const DEFAULT_MISSION_STATUSES = [
+  'Activa',
+  'Completada',
+  'Fallida',
+  'En pausa',
+];
+
 export interface CampaignData {
   name: string;
   maps: Record<string, MapData>;
   currentMapId: string | null;
   diaryFolderPath?: string | null;
+  missionTypes?: string[];
+  missionRewardTypes?: string[];
+  missionStatuses?: string[];
+  missions?: Record<string, MissionData>;
 }
+
 
 export interface BestiaryEntry {
   id: string;
@@ -445,6 +504,7 @@ export const DEFAULT_SETTINGS: DinoSettings = {
     'measure': true,
     'wargame': false,
     'dice-tray': false,
+    'missions': false,
   },
   campaigns: {},
   currentCampaignId: null,

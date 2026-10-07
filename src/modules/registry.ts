@@ -6,6 +6,7 @@ import { CampaignDiaryModule } from './campaignDiary';
 import { MeasureModule } from './measure';
 import { WargameModule } from './wargame';
 import { DiceTrayModule } from './diceTray';
+import { MissionsModule } from './missions';
 import { DinoSettings } from '../types';
 
 class ModuleRegistry {
@@ -19,6 +20,7 @@ class ModuleRegistry {
     this.register(MeasureModule);
     this.register(WargameModule);
     this.register(DiceTrayModule);
+    this.register(MissionsModule);
   }
 
   register(module: EngineModule): void {

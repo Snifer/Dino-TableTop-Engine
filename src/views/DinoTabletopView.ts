@@ -50,6 +50,7 @@ import { CampaignDiaryPanel } from '../modules/campaignDiary';
 import { MeasureManager } from '../modules/measure';
 import { renderWargameBoard, WargamePhaseTrackerPanel } from '../modules/wargame';
 import { DiceTrayPanel } from '../modules/diceTray';
+import { MissionListPanel } from '../modules/missions';
 
 export interface InventoryPanelHandle {
   el: HTMLElement;
@@ -70,6 +71,7 @@ export class DinoTabletopView extends ItemView {
   timelinePanel: TimelinePanel | null;
   diaryPanel: CampaignDiaryPanel | null;
   diceTrayPanel: DiceTrayPanel | null;
+  missionsPanel: MissionListPanel | null;
   measureManager: MeasureManager | null;
   wargamePanel: WargamePhaseTrackerPanel | null;
 
@@ -84,6 +86,7 @@ export class DinoTabletopView extends ItemView {
     this.timelinePanel = null;
     this.diaryPanel = null;
     this.diceTrayPanel = null;
+    this.missionsPanel = null;
     this.measureManager = new MeasureManager(this);
     this.wargamePanel = null;
   }
@@ -112,6 +115,7 @@ export class DinoTabletopView extends ItemView {
     if (this.timelinePanel) this.timelinePanel.destroy();
     if (this.diaryPanel) this.diaryPanel.destroy();
     if (this.diceTrayPanel) this.diceTrayPanel.destroy();
+    if (this.missionsPanel) this.missionsPanel.destroy();
     if (this.wargamePanel) this.wargamePanel.destroy();
     for (const id in this.inventoryPanels) {
       this.inventoryPanels[id].close();
@@ -300,6 +304,21 @@ export class DinoTabletopView extends ItemView {
     } else if (this.diceTrayPanel) {
       this.diceTrayPanel.destroy();
       this.diceTrayPanel = null;
+    }
+
+    if (moduleRegistry.isEnabled(data, 'missions')) {
+      if (!this.missionsPanel) {
+        this.missionsPanel = new MissionListPanel(
+          this.app,
+          this.plugin,
+          this.panelsLayer
+        );
+      } else {
+        this.missionsPanel.build();
+      }
+    } else if (this.missionsPanel) {
+      this.missionsPanel.destroy();
+      this.missionsPanel = null;
     }
 
     const camp = this.getCurrentCampaign();

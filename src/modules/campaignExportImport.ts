@@ -130,6 +130,19 @@ export function collectCampaignDependencies(
     }
   }
 
+  // Escanear misiones de la campaña
+  if (campaign.missions) {
+    for (const missionId in campaign.missions) {
+      const mission = campaign.missions[missionId];
+      if (mission.linkedNote) notePaths.add(mission.linkedNote);
+      if (mission.relatedNotes) {
+        for (const notePath of mission.relatedNotes) {
+          if (notePath) notePaths.add(notePath);
+        }
+      }
+    }
+  }
+
   // 2. Diario de campaña (notas dentro de la carpeta del diario)
   if (options.includeDiary && campaign.diaryFolderPath) {
     const folder = plugin.app.vault.getAbstractFileByPath(campaign.diaryFolderPath);
