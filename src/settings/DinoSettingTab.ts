@@ -30,9 +30,10 @@ export class DinoSettingTab extends PluginSettingTab {
           .addOption('es', t('settings.langEs'))
           .addOption('en', t('settings.langEn'))
           .setValue(this.plugin.settings.language || 'auto')
-          .onChange(async (val: SupportedLanguage) => {
-            this.plugin.settings.language = val;
-            setLanguage(val);
+          .onChange(async (val: string) => {
+            const lang = val as SupportedLanguage;
+            this.plugin.settings.language = lang;
+            setLanguage(lang);
             await this.plugin.saveSettings();
             this.display();
 
