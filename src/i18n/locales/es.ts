@@ -75,6 +75,7 @@ export const es: Record<TranslationKey, string> = {
   'header.addMap': '+ Mapa',
   'header.addMapFromImage': 'Añadir mapa desde imagen...',
   'header.createDrawnMap': 'Crear mapa dibujado...',
+  'header.createCellMap': 'Crear pizarra de celdas (infinito)...',
   'header.editDrawing': 'Dibujo',
   'header.configureGrid': 'Grilla',
   'header.renameMap': 'Renombrar mapa',

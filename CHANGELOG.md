@@ -5,6 +5,58 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-10-14
+
+### 🇬🇧 English
+
+#### Added
+- **CellBoard (Interactive Cell Board Canvas):**
+  - New procedural grid-based board type (`cellMap`, `coordSpace: 'world'`) with infinite canvas support.
+  - Dedicated lateral tools dock (`CellBoardLateralToolbar`):
+    - **Move / Navigate:** Smooth viewport panning and cursor-anchored zoom.
+    - **Cell Painting & Erasing:** Tactical grid cell coloring with customizable palette and eraser mode.
+    - **Flood Fill:** Fast area filling for contiguous cell regions.
+    - **Borders & Walls:** Place and manage horizontal and vertical tactical wall segments.
+    - **Cellular Fog of War:** Interactive fog painting/revealing with auto-reveal based on token vision radius (`token.revealsFog`).
+    - **Advanced Selection Tool:** Marquee selection box, multi-entity group drag with grid snapping, copy/paste clipboard, and deletion with full Undo/Redo history.
+    - **Laser Pointer & Attention Ping:** Transient laser trails and animated ping markers for live table direction.
+- **Quest & Mission Logs Module:**
+  - Dedicated tracker panel for campaign quests, main/secondary objectives, rewards, and linked Markdown notes.
+
+#### Fixed
+- **World-Space Entity Dragging & Grid Snapping:**
+  - Fixed token and POI movement in CellBoard boards: resolved coordinate clamping bug where legacy percentage snap (`snapCoordsToGrid`) corrupted world pixel positions upon release.
+  - Added [snapWorldToCell](file:///Users/snifer/Downloads/dino-tabletop-engine/dino-tabletop-engine-src/src/modules/cellCoordinates.ts#L88) to align tokens cleanly centered within cell boundaries.
+  - Implemented relative delta dragging to eliminate pointer jumping when picking up tokens or POIs.
+  - Seamless delegation between the Select tool and entity drag handlers.
+
+---
+
+### 🇪🇸 Español
+
+#### Añadido
+- **CellBoard (Pizarra de Celdas Interactiva):**
+  - Nuevo tipo de mapa procedural basado en celdas (`cellMap`, `coordSpace: 'world'`) sobre un lienzo infinito.
+  - Barra lateral de herramientas tácticas (`CellBoardLateralToolbar`):
+    - **Mover / Navegar:** Panning fluido del viewport y zoom centrado en la posición del puntero.
+    - **Pintar y Borrar Celdas:** Pintado táctico directo sobre la grilla con selector de colores y borrador.
+    - **Rellenar Región (Flood Fill):** Relleno rápido de bloques de celdas contiguas.
+    - **Bordes y Muros:** Creación y gestión de paredes y barreras tácticas horizontales y verticales.
+    - **Niebla de Guerra Celular:** Pintado y revelado de celdas, con revelado automático por radio de visión del token (`token.revealsFog`).
+    - **Herramienta de Selección Avanzada:** Selección por recuadro (marquee), arrastre grupal con snap a la grilla, copiar/pegar y eliminación con historial completo de Deshacer / Rehacer (Undo / Redo).
+    - **Puntero Láser y Ping de Atención:** Trazos láser temporales y marcadores animados de atención en el tablero.
+- **Módulo de Misiones y Bitácora (Quest & Mission Logs):**
+  - Panel dedicado para gestionar misiones principales y secundarias, objetivos, recompensas y notas asociadas.
+
+#### Corregido
+- **Arrastre de Entidades y Ajuste a Grilla en Espacio de Mundo:**
+  - Corrección en el movimiento de tokens y POIs en CellBoard: resuelto el error donde el ajuste porcentual legacy (`snapCoordsToGrid`) rompía las coordenadas en píxeles al soltar el ratón.
+  - Incorporado [snapWorldToCell](file:///Users/snifer/Downloads/dino-tabletop-engine/dino-tabletop-engine-src/src/modules/cellCoordinates.ts#L88) para centrar tokens de manera precisa dentro de cada celda.
+  - Implementado arrastre por desplazamiento relativo (delta), eliminando saltos bruscos al hacer clic y arrastrar.
+  - Convivencia transparente entre la herramienta Selección y los controladores de movimiento de fichas.
+
+---
+
 ## [0.1.5] - 2026-10-06
 
 ### 🇬🇧 English

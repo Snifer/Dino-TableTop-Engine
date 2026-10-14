@@ -1,6 +1,6 @@
 import { App, Modal, Notice, Setting, TFile } from 'obsidian';
 import { BestiaryEntry, HP_KEYS, MAXHP_KEYS, IMAGE_KEYS, IMAGE_EXTS, MapData, TokenData } from '../types';
-import { genId, getIconClass, readFrontmatterStat, readFrontmatterImagePath } from '../utils';
+import { clamp, genId, getIconClass, readFrontmatterStat, readFrontmatterImagePath } from '../utils';
 import { t } from '../i18n';
 import { ItemEditModal } from './ItemEditModal';
 import { FileSuggestModal } from './FileSuggestModal';
@@ -622,13 +622,21 @@ export class BestiaryListModal extends Modal {
       if (foundMaxHp !== null) maxHp = foundMaxHp;
     }
     const center = this.view.getViewportCenterCoords ? this.view.getViewportCenterCoords() : { x: 50, y: 50 };
+    const isWorld = map.coordSpace === 'world' || !!map.cellMap;
+    const offsetStep = isWorld ? 24 : 2.5;
+    const nearbyCount = map.tokens.filter(
+      (t) => Math.abs(t.x - center.x) < (isWorld ? 60 : 6) && Math.abs(t.y - center.y) < (isWorld ? 60 : 6)
+    ).length;
+    const offsetX = (nearbyCount % 4) * offsetStep;
+    const offsetY = Math.floor(nearbyCount / 4) * offsetStep;
+
     const token: TokenData = {
       id: genId(),
       name: entry.name || 'Criatura',
       color: entry.color || '#8b3a3a',
       size: entry.size || 44,
-      x: center.x,
-      y: center.y,
+      x: isWorld ? Math.round(center.x + offsetX) : clamp(Math.round((center.x + offsetX) * 10) / 10, 5, 95),
+      y: isWorld ? Math.round(center.y + offsetY) : clamp(Math.round((center.y + offsetY) * 10) / 10, 5, 95),
       hp,
       maxHp,
       linkedNote: entry.linkedNote || null,

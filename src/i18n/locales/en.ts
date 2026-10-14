@@ -73,6 +73,7 @@ export const en = {
   'header.addMap': '+ Map',
   'header.addMapFromImage': 'Add map from image...',
   'header.createDrawnMap': 'Create drawn map...',
+  'header.createCellMap': 'Create cell board map (infinite)...',
   'header.editDrawing': 'Drawing',
   'header.configureGrid': 'Grid',
   'header.renameMap': 'Rename map',

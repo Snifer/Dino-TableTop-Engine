@@ -15,6 +15,8 @@ import {
   CounterData,
   InventoryItem,
   NotePanelHandle,
+  ToolContext,
+  MeasureUnit,
 } from '../types';
 import {
   genId,
@@ -42,6 +44,7 @@ import { BestiaryListModal } from '../modals/BestiaryModals';
 import { CampaignExportModal } from '../modals/CampaignExportModal';
 import { CampaignImportModal } from '../modals/CampaignImportModal';
 import { ModulesModal } from '../modals/ModulesModal';
+import { NewCellMapModal } from '../modals/CellMapModals';
 import { moduleRegistry } from '../modules/registry';
 import { CombatTrackerPanel, AdjustConditionModal, AddConditionModal } from '../modules/combatTracker';
 import { CardsPanel, findCardByInstanceId, resolveBackImage } from '../modules/cards';
@@ -51,6 +54,21 @@ import { MeasureManager } from '../modules/measure';
 import { renderWargameBoard, WargamePhaseTrackerPanel } from '../modules/wargame';
 import { DiceTrayPanel } from '../modules/diceTray';
 import { MissionListPanel } from '../modules/missions';
+import { toCss, fromPointer, snapWorldToCell } from '../modules/cellCoordinates';
+import { getCellStore } from '../modules/cellStore';
+import { globalViewportManager, globalHistoryManager, globalToolManager } from '../modules/cellBoardCore';
+import { registerCellBoardTools, cellToolState } from '../modules/cellBoardTools';
+import { CellBoardLateralToolbar } from '../modules/cellBoardLateralToolbar';
+import {
+  multiSelectionState,
+  selectAll,
+  copySelection,
+  deleteSelection,
+  nudgeSelection,
+  clearSelection,
+} from '../modules/cellBoardSelect';
+import { isPlayerViewActive, setPlayerViewActive, togglePlayerViewActive } from '../modules/playerView';
+import { broadcastPing, spawnPingEffect } from '../modules/laserPing';
 
 export interface InventoryPanelHandle {
   el: HTMLElement;
@@ -74,6 +92,8 @@ export class DinoTabletopView extends ItemView {
   missionsPanel: MissionListPanel | null;
   measureManager: MeasureManager | null;
   wargamePanel: WargamePhaseTrackerPanel | null;
+  lateralToolbar: CellBoardLateralToolbar | null;
+  private keydownListener: ((e: KeyboardEvent) => void) | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: any) {
     super(leaf);
@@ -89,6 +109,8 @@ export class DinoTabletopView extends ItemView {
     this.missionsPanel = null;
     this.measureManager = new MeasureManager(this);
     this.wargamePanel = null;
+    this.lateralToolbar = null;
+    registerCellBoardTools();
   }
 
   getViewType(): string {
@@ -117,6 +139,11 @@ export class DinoTabletopView extends ItemView {
     if (this.diceTrayPanel) this.diceTrayPanel.destroy();
     if (this.missionsPanel) this.missionsPanel.destroy();
     if (this.wargamePanel) this.wargamePanel.destroy();
+    if (this.lateralToolbar) this.lateralToolbar.destroy();
+    if (this.keydownListener) {
+      window.removeEventListener('keydown', this.keydownListener);
+      this.keydownListener = null;
+    }
     for (const id in this.inventoryPanels) {
       this.inventoryPanels[id].close();
     }
@@ -210,13 +237,23 @@ export class DinoTabletopView extends ItemView {
   }
 
   getViewportCenterCoords(): { x: number; y: number } {
+    const map = this.getCurrentMap();
+    const camp = this.getCurrentCampaign();
     const container = this.containerEl.children[1] as HTMLElement;
     const wrap = container?.querySelector('.dte-board-wrap') as HTMLElement | null;
     const inner = container?.querySelector('.dte-board-inner') as HTMLElement | null;
     if (!wrap || !inner) return { x: 50, y: 50 };
 
-    const innerRect = inner.getBoundingClientRect();
     const wrapRect = wrap.getBoundingClientRect();
+    if ((map?.coordSpace === 'world' || !!map?.cellMap) && camp?.currentMapId) {
+      const vp = globalViewportManager.getViewport(camp.currentMapId);
+      const scale = vp.scale || 1;
+      const worldX = (wrapRect.width / 2 - (vp.x || 0)) / scale;
+      const worldY = (wrapRect.height / 2 - (vp.y || 0)) / scale;
+      return { x: Math.round(worldX), y: Math.round(worldY) };
+    }
+
+    const innerRect = inner.getBoundingClientRect();
     if (innerRect.width <= 0 || innerRect.height <= 0) return { x: 50, y: 50 };
 
     const visibleCenterX = wrapRect.left + wrapRect.width / 2;
@@ -521,6 +558,44 @@ export class DinoTabletopView extends ItemView {
             })
         );
 
+        menu.addItem((item) =>
+          item
+            .setTitle(t('header.createCellMap'))
+            .setIcon('grid')
+            .onClick(() => {
+              new NewCellMapModal(this.app, (name, cellMapData, gridUnit, gridRealSize) => {
+                const id = genId();
+                camp.maps[id] = {
+                  name,
+                  imagePath: null,
+                  drawing: null,
+                  cellMap: cellMapData,
+                  coordSpace: 'world',
+                  tokens: [],
+                  pois: [],
+                  grid: {
+                    enabled: true,
+                    type: 'square',
+                    cellSizePx: cellMapData.cellSizePx,
+                    offsetX: 0,
+                    offsetY: 0,
+                    color: '#ffffff',
+                    opacity: 0.15,
+                    thickness: 1,
+                    showOverlay: true,
+                    diagonalRule: 'euclidean',
+                    snapTokens: true,
+                    cellRealSize: gridRealSize,
+                    unit: gridUnit as MeasureUnit,
+                  },
+                };
+                camp.currentMapId = id;
+                this.plugin.saveSettings();
+                this.render();
+              }).open();
+            })
+        );
+
         if (map && camp.currentMapId) {
           menu.addSeparator();
           menu.addItem((item) =>
@@ -806,7 +881,460 @@ export class DinoTabletopView extends ItemView {
     if (zoomLabel) zoomLabel.setText(`${Math.round(this.zoom * 100)}%`);
   }
 
+  requestRender(): void {
+    const map = this.getCurrentMap();
+    const camp = this.getCurrentCampaign();
+    if (map?.cellMap && camp?.currentMapId) {
+      this.renderCellBoardCanvas(map, camp.currentMapId);
+      this.updateWorldEntitiesTransform(map, camp.currentMapId);
+    } else {
+      this.render();
+    }
+  }
+
+  setupCellBoardShortcuts(map: MapData, mapId: string): void {
+    if (this.keydownListener) {
+      window.removeEventListener('keydown', this.keydownListener);
+      this.keydownListener = null;
+    }
+
+    this.keydownListener = async (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+
+      if (!this.containerEl.isShown()) return;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        await globalHistoryManager.undo(mapId);
+        if (this.lateralToolbar) this.lateralToolbar.refreshHistoryState();
+        this.requestRender();
+        return;
+      }
+
+      if (
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && e.shiftKey) ||
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y')
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        await globalHistoryManager.redo(mapId);
+        if (this.lateralToolbar) this.lateralToolbar.refreshHistoryState();
+        this.requestRender();
+        return;
+      }
+
+      // Ctrl+A / Cmd+A: Select all
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        e.stopPropagation();
+        selectAll(map);
+        globalToolManager.setActiveTool('select');
+        if (this.lateralToolbar) this.lateralToolbar.render();
+        return;
+      }
+
+      // Ctrl+C / Cmd+C: Copy selection
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        e.stopPropagation();
+        copySelection(map, mapId, this.plugin);
+        if (this.lateralToolbar) this.lateralToolbar.render();
+        return;
+      }
+
+      // Ctrl+V / Cmd+V: Paste mode
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (multiSelectionState.clipboard) {
+          multiSelectionState.isPasting = true;
+          globalToolManager.setActiveTool('select');
+          if (this.lateralToolbar) this.lateralToolbar.render();
+          new Notice('Haz clic en el mapa para colocar los elementos copiados');
+        }
+        return;
+      }
+
+      // Escape: Clear selection / cancel paste
+      if (e.key === 'Escape') {
+        clearSelection();
+        if (this.lateralToolbar) this.lateralToolbar.render();
+        return;
+      }
+
+      // Delete / Backspace: Delete selection
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (multiSelectionState.selectedTokenIds.size > 0 || multiSelectionState.selectedPoiIds.size > 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          await deleteSelection(map, mapId, this.plugin, this);
+          return;
+        }
+      }
+
+      // Arrow keys: Nudge selection
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        if (multiSelectionState.selectedTokenIds.size > 0 || multiSelectionState.selectedPoiIds.size > 0) {
+          e.preventDefault();
+          e.stopPropagation();
+          let dx = 0;
+          let dy = 0;
+          if (e.key === 'ArrowUp') dy = -1;
+          if (e.key === 'ArrowDown') dy = 1;
+          if (e.key === 'ArrowLeft') dx = -1;
+          if (e.key === 'ArrowRight') dx = 1;
+          await nudgeSelection(map, mapId, dx, dy, this.plugin, this);
+          return;
+        }
+      }
+
+      // Quick palette numbers 1..9
+      const num = parseInt(e.key, 10);
+      if (!isNaN(num) && num >= 1 && num <= 9 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        cellToolState.activeColorIndex = num;
+        if (this.lateralToolbar) this.lateralToolbar.render();
+        return;
+      }
+
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        const key = e.key.toUpperCase();
+        if (key === 'S') {
+          globalToolManager.setActiveTool('select');
+          if (this.lateralToolbar) this.lateralToolbar.render();
+        } else if (key === 'V') {
+          globalToolManager.setActiveTool('move');
+          if (this.lateralToolbar) this.lateralToolbar.render();
+        } else if (key === 'B') {
+          globalToolManager.setActiveTool('paint');
+          if (this.lateralToolbar) this.lateralToolbar.render();
+        } else if (key === 'E') {
+          globalToolManager.setActiveTool('erase');
+          if (this.lateralToolbar) this.lateralToolbar.render();
+        } else if (key === 'G') {
+          globalToolManager.setActiveTool('fill');
+          if (this.lateralToolbar) this.lateralToolbar.render();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', this.keydownListener);
+  }
+
+  renderCellBoard(container: HTMLElement, map: MapData, mapId: string): void {
+    const wrap = container.createDiv({ cls: 'dte-board-wrap dte-cell-board-wrap' });
+    wrap.createEl('canvas', { cls: 'dte-cell-map-canvas' }) as HTMLCanvasElement;
+    const inner = wrap.createDiv({ cls: 'dte-board-inner dte-cell-board-inner' });
+
+    const store = getCellStore(mapId, this.plugin);
+    store.loadFromDisk().then(() => {
+      this.renderCellBoardCanvas(map, mapId);
+    });
+
+    const vp = globalViewportManager.getViewport(mapId);
+    inner.style.transform = `translate(${vp.x}px, ${vp.y}px) scale(${vp.scale})`;
+    inner.style.transformOrigin = '0 0';
+
+    for (const poi of map.pois) {
+      this.renderPOI(inner, map, poi);
+    }
+    for (const token of map.tokens) {
+      this.renderToken(inner, map, token);
+    }
+    this.renderCardsLayer(inner, map);
+
+    const data = this.getData();
+    if (moduleRegistry.isEnabled(data, 'wargame')) {
+      renderWargameBoard(inner, map, this);
+    }
+    if (moduleRegistry.isEnabled(data, 'measure') && this.measureManager) {
+      this.measureManager.attachBoardListeners(inner, map);
+    }
+
+    wrap.addEventListener(
+      'wheel',
+      (e: WheelEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const factor = e.deltaY < 0 ? 1.12 : 0.88;
+        const rect = wrap.getBoundingClientRect();
+        globalViewportManager.zoomAtPointer(mapId, e.clientX, e.clientY, factor, rect);
+        this.requestRender();
+      },
+      { passive: false }
+    );
+
+    let isSpaceDown = false;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isSpaceDown && !(e.target as HTMLElement).matches('input, textarea')) {
+        isSpaceDown = true;
+        wrap.style.cursor = 'grab';
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        isSpaceDown = false;
+        const activeTool = globalToolManager.getActiveTool();
+        wrap.style.cursor = activeTool?.cursor || 'default';
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.button === 1 || isSpaceDown || globalToolManager.getActiveToolId() === 'move') {
+        e.preventDefault();
+        cellToolState.isPanning = true;
+        cellToolState.panStart = { x: e.clientX, y: e.clientY };
+        wrap.style.cursor = 'grabbing';
+        return;
+      }
+
+      if (e.altKey) {
+        const worldPos = fromPointer(map, e, wrap, globalViewportManager.getViewport(mapId));
+        spawnPingEffect(inner, worldPos.x, worldPos.y, cellToolState.pingColor, cellToolState.pingIcon);
+        broadcastPing({ x: worldPos.x, y: worldPos.y, color: cellToolState.pingColor, icon: cellToolState.pingIcon });
+        return;
+      }
+
+      const target = e.target as HTMLElement;
+      const isCanvasHit =
+        target.classList.contains('dte-board-wrap') ||
+        target.classList.contains('dte-cell-map-canvas') ||
+        target.classList.contains('dte-cell-board-inner');
+      const isEntityHit = !!target.closest('.dte-token, .dte-poi');
+      const activeToolId = globalToolManager.getActiveToolId();
+
+      // Allow event through to tools when clicking canvas OR when clicking
+      // tokens/POIs with the select tool active (the legacy per-element drag
+      // handlers yield to the select tool so it can manage selection & drag).
+      if (isCanvasHit || (isEntityHit && activeToolId === 'select')) {
+        const activeTool = globalToolManager.getActiveTool();
+        if (activeTool && activeTool.onPointerDown) {
+          const worldPos = fromPointer(map, e, wrap, globalViewportManager.getViewport(mapId));
+          const ctx: ToolContext = {
+            view: this,
+            map,
+            mapId,
+            viewport: globalViewportManager.getViewport(mapId),
+            containerEl: inner,
+          };
+          activeTool.onPointerDown(e, worldPos, ctx);
+          if (this.lateralToolbar) this.lateralToolbar.refreshHistoryState();
+        }
+      }
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (cellToolState.isPanning) {
+        const dx = e.clientX - cellToolState.panStart.x;
+        const dy = e.clientY - cellToolState.panStart.y;
+        cellToolState.panStart = { x: e.clientX, y: e.clientY };
+        globalViewportManager.pan(mapId, dx, dy);
+        this.requestRender();
+        return;
+      }
+
+      const activeTool = globalToolManager.getActiveTool();
+      if (activeTool && activeTool.onPointerMove) {
+        const worldPos = fromPointer(map, e, wrap, globalViewportManager.getViewport(mapId));
+        const ctx: ToolContext = {
+          view: this,
+          map,
+          mapId,
+          viewport: globalViewportManager.getViewport(mapId),
+          containerEl: inner,
+        };
+        activeTool.onPointerMove(e, worldPos, ctx);
+      }
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (cellToolState.isPanning) {
+        cellToolState.isPanning = false;
+        wrap.style.cursor = isSpaceDown ? 'grab' : globalToolManager.getActiveTool()?.cursor || 'default';
+        return;
+      }
+
+      const activeTool = globalToolManager.getActiveTool();
+      if (activeTool && activeTool.onPointerUp) {
+        const worldPos = fromPointer(map, e, wrap, globalViewportManager.getViewport(mapId));
+        const ctx: ToolContext = {
+          view: this,
+          map,
+          mapId,
+          viewport: globalViewportManager.getViewport(mapId),
+          containerEl: inner,
+        };
+        activeTool.onPointerUp(e, worldPos, ctx);
+        if (this.lateralToolbar) this.lateralToolbar.refreshHistoryState();
+      }
+    };
+
+    wrap.addEventListener('pointerdown', onPointerDown);
+    wrap.addEventListener('pointermove', onPointerMove);
+    wrap.addEventListener('pointerup', onPointerUp);
+
+    // Right-click context menu on canvas for quick entity creation
+    wrap.addEventListener('contextmenu', (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest('.dte-token, .dte-poi, .dte-card-on-table, .dte-panel, .dte-lateral-toolbar')) return;
+      e.preventDefault();
+      const worldPos = fromPointer(map, e, wrap, globalViewportManager.getViewport(mapId));
+      const menu = new Menu();
+      menu.addItem((item) =>
+        item
+          .setTitle('Añadir ficha aquí')
+          .setIcon('user-plus')
+          .onClick(() => {
+            const token: TokenData = {
+              id: genId(),
+              name: '',
+              color: '#4c8bf5',
+              size: 44,
+              x: Math.round(worldPos.x),
+              y: Math.round(worldPos.y),
+              hp: 10,
+              maxHp: 10,
+              linkedNote: null,
+              imagePath: null,
+              counters: [],
+            };
+            new TokenEditModal(
+              this.app,
+              token,
+              (saved) => {
+                map.tokens.push(saved);
+                this.plugin.saveSettings();
+                this.render();
+              },
+              null
+            ).open();
+          })
+      );
+      menu.addItem((item) =>
+        item
+          .setTitle('Añadir punto de interés aquí')
+          .setIcon('map-pin')
+          .onClick(() => {
+            const poi: POIData = {
+              id: genId(),
+              name: '',
+              size: 36,
+              x: Math.round(worldPos.x),
+              y: Math.round(worldPos.y),
+              imagePath: null,
+              linkedNote: null,
+            };
+            new POIEditModal(
+              this.app,
+              poi,
+              (saved) => {
+                map.pois.push(saved);
+                this.plugin.saveSettings();
+                this.render();
+              },
+              null
+            ).open();
+          })
+      );
+      menu.addItem((item) =>
+        item
+          .setTitle('Abrir Bestiario')
+          .setIcon('book-open')
+          .onClick(() => {
+            new BestiaryListModal(this.app, this.plugin, this).open();
+          })
+      );
+      menu.showAtMouseEvent(e);
+    });
+
+    // Floating toolbar if configured
+    const layout = data.toolbarLayout || 'top';
+    if (layout === 'floating' || layout === 'floating-left' || layout === 'floating-right') {
+      const floatingToolbar = container.createDiv({
+        cls: `dte-floating-toolbar dte-floating-${layout === 'floating-right' ? 'right' : 'left'}`,
+      });
+
+      if (data.floatingToolbarPosition && layout === 'floating') {
+        floatingToolbar.style.left = `${data.floatingToolbarPosition.x}px`;
+        floatingToolbar.style.top = `${data.floatingToolbarPosition.y}px`;
+        floatingToolbar.style.right = 'auto';
+      }
+
+      this.renderToolbarItems(floatingToolbar, map, data, 'floating', container);
+    }
+
+    if (this.lateralToolbar) {
+      this.lateralToolbar.destroy();
+    }
+    this.lateralToolbar = new CellBoardLateralToolbar(this, container, map, mapId, inner);
+    this.lateralToolbar.render();
+
+    this.renderCellBoardCanvas(map, mapId);
+    this.setupCellBoardShortcuts(map, mapId);
+  }
+
+  renderCellBoardCanvas(map: MapData, mapId: string): void {
+    if (!map.cellMap) return;
+    const container = this.containerEl.children[1] as HTMLElement;
+    const wrap = container?.querySelector('.dte-board-wrap') as HTMLElement | null;
+    const canvas = container?.querySelector('.dte-cell-map-canvas') as HTMLCanvasElement | null;
+    if (!wrap || !canvas) return;
+
+    const width = wrap.clientWidth || 800;
+    const height = wrap.clientHeight || 600;
+    const dpr = window.devicePixelRatio || 1;
+
+    if (canvas.width !== width * dpr || canvas.height !== height * dpr) {
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.save();
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
+
+    const vp = globalViewportManager.getViewport(mapId);
+    ctx.translate(vp.x, vp.y);
+    ctx.scale(vp.scale, vp.scale);
+
+    const minWorldX = -vp.x / vp.scale - 200;
+    const minWorldY = -vp.y / vp.scale - 200;
+    const maxWorldX = (width - vp.x) / vp.scale + 200;
+    const maxWorldY = (height - vp.y) / vp.scale + 200;
+
+    const store = getCellStore(mapId, this.plugin);
+    store.renderToCanvas(ctx, map.cellMap, minWorldX, minWorldY, maxWorldX, maxWorldY, map.fog, isPlayerViewActive);
+
+    ctx.restore();
+  }
+
+  updateWorldEntitiesTransform(map: MapData, mapId: string): void {
+    const container = this.containerEl.children[1] as HTMLElement;
+    const inner = container?.querySelector('.dte-board-inner') as HTMLElement | null;
+    if (!inner) return;
+
+    const vp = globalViewportManager.getViewport(mapId);
+    inner.style.transform = `translate(${vp.x}px, ${vp.y}px) scale(${vp.scale})`;
+    inner.style.transformOrigin = '0 0';
+  }
+
   renderBoard(container: HTMLElement, map: MapData, savedScroll?: { left: number; top: number } | null): void {
+    const camp = this.getCurrentCampaign();
+    if ((map.coordSpace === 'world' || map.cellMap) && camp?.currentMapId) {
+      this.renderCellBoard(container, map, camp.currentMapId);
+      return;
+    }
+
     const wrap = container.createDiv({ cls: 'dte-board-wrap' });
     const inner = wrap.createDiv({ cls: 'dte-board-inner' });
     inner.style.transform = `scale(${this.zoom})`;
@@ -1027,9 +1555,23 @@ export class DinoTabletopView extends ItemView {
   /* ---------------- Puntos de interés ---------------- */
 
   renderPOI(boardInner: HTMLElement, map: MapData, poi: POIData): void {
-    const el = boardInner.createDiv({ cls: 'dte-poi' });
-    el.style.left = poi.x + '%';
-    el.style.top = poi.y + '%';
+    if (isPlayerViewActive && poi.dmOnly) return;
+    const camp = this.getCurrentCampaign();
+    if (isPlayerViewActive && map.fog?.enabled && map.cellMap && camp?.currentMapId) {
+      const store = getCellStore(camp.currentMapId, this.plugin);
+      const cellSize = map.cellMap.cellSizePx || 48;
+      const cx = Math.floor(poi.x / cellSize);
+      const cy = Math.floor(poi.y / cellSize);
+      if (store.getFog(cx, cy) === 0) return;
+    }
+
+    const isSelected = multiSelectionState.selectedPoiIds.has(poi.id);
+    const el = boardInner.createDiv({ cls: `dte-poi ${isSelected ? 'is-selected-poi' : ''}` });
+    el.setAttribute('data-poi-id', poi.id);
+    const vp = camp?.currentMapId ? globalViewportManager.getViewport(camp.currentMapId) : undefined;
+    const pos = toCss(map, poi, vp);
+    el.style.left = pos.left;
+    el.style.top = pos.top;
     el.style.width = (poi.size || 36) + 'px';
     el.style.height = (poi.size || 36) + 'px';
 
@@ -1057,29 +1599,56 @@ export class DinoTabletopView extends ItemView {
     let moved = false;
     let startX = 0;
     let startY = 0;
+    let startWorldX = 0;
+    let startWorldY = 0;
+    let initialPoiX = 0;
+    let initialPoiY = 0;
 
     el.addEventListener('pointerdown', (e: PointerEvent) => {
+      // When the select tool is active, yield to the tool system so it can
+      // handle selection, multi-drag with snap-to-grid, and undo.
+      if (globalToolManager.getActiveToolId() === 'select') return;
       e.preventDefault();
       e.stopPropagation();
       dragging = true;
       moved = false;
       startX = e.clientX;
       startY = e.clientY;
+      initialPoiX = poi.x;
+      initialPoiY = poi.y;
+      const isWorld = map?.coordSpace === 'world' || !!map?.cellMap;
+      const refEl = isWorld && boardInner.parentElement ? boardInner.parentElement : boardInner;
+      const currentVp = camp?.currentMapId ? globalViewportManager.getViewport(camp.currentMapId) : vp;
+      const startPos = fromPointer(map, e, refEl, currentVp);
+      startWorldX = startPos.x;
+      startWorldY = startPos.y;
       el.setPointerCapture(e.pointerId);
     });
 
     el.addEventListener('pointermove', (e: PointerEvent) => {
       if (!dragging) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
-      const boardRect = boardInner.getBoundingClientRect();
-      const xPct = clamp(((e.clientX - boardRect.left) / boardRect.width) * 100, 0, 100);
-      const yPct = clamp(((e.clientY - boardRect.top) / boardRect.height) * 100, 0, 100);
-      poi.x = xPct;
-      poi.y = yPct;
-      el.style.left = xPct + '%';
-      el.style.top = yPct + '%';
+      const dxScreen = e.clientX - startX;
+      const dyScreen = e.clientY - startY;
+      if (Math.abs(dxScreen) > 3 || Math.abs(dyScreen) > 3) moved = true;
+
+      const isWorld = map?.coordSpace === 'world' || !!map?.cellMap;
+      const refEl = isWorld && boardInner.parentElement ? boardInner.parentElement : boardInner;
+      const currentVp = camp?.currentMapId ? globalViewportManager.getViewport(camp.currentMapId) : vp;
+      const currentPos = fromPointer(map, e, refEl, currentVp);
+      const deltaX = currentPos.x - startWorldX;
+      const deltaY = currentPos.y - startWorldY;
+
+      poi.x = initialPoiX + deltaX;
+      poi.y = initialPoiY + deltaY;
+
+      if (!isWorld) {
+        poi.x = Math.max(0, Math.min(100, poi.x));
+        poi.y = Math.max(0, Math.min(100, poi.y));
+      }
+
+      const css = toCss(map, poi, currentVp);
+      el.style.left = css.left;
+      el.style.top = css.top;
     });
 
     const endDrag = (e: PointerEvent) => {
@@ -1091,6 +1660,10 @@ export class DinoTabletopView extends ItemView {
         /* noop */
       }
       if (moved) {
+        const currentVp = camp?.currentMapId ? globalViewportManager.getViewport(camp.currentMapId) : vp;
+        const css = toCss(map, poi, currentVp);
+        el.style.left = css.left;
+        el.style.top = css.top;
         this.plugin.saveSettings();
       } else if (poi.linkedNote) {
         const f = this.app.vault.getAbstractFileByPath(poi.linkedNote);
@@ -1210,15 +1783,29 @@ export class DinoTabletopView extends ItemView {
   }
 
   renderToken(boardInner: HTMLElement, map: MapData, token: TokenData): void {
-    const el = boardInner.createDiv({ cls: 'dte-token' });
+    if (isPlayerViewActive && token.dmOnly) return;
+    const camp = this.getCurrentCampaign();
+    if (isPlayerViewActive && map.fog?.enabled && map.cellMap && camp?.currentMapId) {
+      const store = getCellStore(camp.currentMapId, this.plugin);
+      const cellSize = map.cellMap.cellSizePx || 48;
+      const cx = Math.floor(token.x / cellSize);
+      const cy = Math.floor(token.y / cellSize);
+      if (store.getFog(cx, cy) === 0) return;
+    }
+
+    const isSelected = multiSelectionState.selectedTokenIds.has(token.id);
+    const el = boardInner.createDiv({ cls: `dte-token ${isSelected ? 'is-selected-token' : ''}` });
+    el.setAttribute('data-token-id', token.id);
     if (map.combat?.active && map.combat.combatants.length > 0) {
       const activeCombatant = map.combat.combatants[map.combat.turnIndex];
       if (activeCombatant && activeCombatant.tokenId === token.id) {
         el.addClass('dte-token-active-turn');
       }
     }
-    el.style.left = token.x + '%';
-    el.style.top = token.y + '%';
+    const vp = camp?.currentMapId ? globalViewportManager.getViewport(camp.currentMapId) : undefined;
+    const pos = toCss(map, token, vp);
+    el.style.left = pos.left;
+    el.style.top = pos.top;
     el.style.width = (token.size || 44) + 'px';
     el.style.height = (token.size || 44) + 'px';
 
@@ -1239,13 +1826,18 @@ export class DinoTabletopView extends ItemView {
       circle.setText((token.name || '?').slice(0, 2).toUpperCase());
     }
 
-    const maxHp = token.maxHp || 1;
-    const ratio = clamp((token.hp ?? 0) / maxHp, 0, 1);
-    const barOuter = el.createDiv({ cls: 'dte-hpbar-outer' });
-    const barInner = barOuter.createDiv({ cls: 'dte-hpbar-inner' });
-    barInner.style.width = ratio * 100 + '%';
-    barInner.style.background = ratio > 0.66 ? '#4caf50' : ratio > 0.33 ? '#ffc107' : '#f44336';
-    el.createDiv({ cls: 'dte-token-label', text: `${token.hp ?? 0}/${maxHp}` });
+    const hpMode = isPlayerViewActive ? camp?.playerHpDisplay || 'bar' : 'exact';
+    if (hpMode !== 'hidden') {
+      const maxHp = token.maxHp || 1;
+      const ratio = clamp((token.hp ?? 0) / maxHp, 0, 1);
+      const barOuter = el.createDiv({ cls: 'dte-hpbar-outer' });
+      const barInner = barOuter.createDiv({ cls: 'dte-hpbar-inner' });
+      barInner.style.width = ratio * 100 + '%';
+      barInner.style.background = ratio > 0.66 ? '#4caf50' : ratio > 0.33 ? '#ffc107' : '#f44336';
+      if (hpMode === 'exact') {
+        el.createDiv({ cls: 'dte-token-label', text: `${token.hp ?? 0}/${maxHp}` });
+      }
+    }
 
     // Pinned inventory badges (replaces legacy counters)
     const badges = token.inventory ? token.inventory.items.filter((i) => i.pinned) : [];
@@ -1317,30 +1909,56 @@ export class DinoTabletopView extends ItemView {
     let moved = false;
     let startX = 0;
     let startY = 0;
+    let startWorldX = 0;
+    let startWorldY = 0;
+    let initialTokenX = 0;
+    let initialTokenY = 0;
 
     el.addEventListener('pointerdown', (e: PointerEvent) => {
+      // When the select tool is active, yield to the tool system so it can
+      // handle selection, multi-drag with snap-to-grid, and undo.
+      if (globalToolManager.getActiveToolId() === 'select') return;
       e.preventDefault();
       e.stopPropagation();
       dragging = true;
       moved = false;
       startX = e.clientX;
       startY = e.clientY;
+      initialTokenX = token.x;
+      initialTokenY = token.y;
+      const isWorld = map?.coordSpace === 'world' || !!map?.cellMap;
+      const refEl = isWorld && boardInner.parentElement ? boardInner.parentElement : boardInner;
+      const currentVp = camp?.currentMapId ? globalViewportManager.getViewport(camp.currentMapId) : vp;
+      const startPos = fromPointer(map, e, refEl, currentVp);
+      startWorldX = startPos.x;
+      startWorldY = startPos.y;
       el.setPointerCapture(e.pointerId);
     });
 
     el.addEventListener('pointermove', (e: PointerEvent) => {
       if (!dragging) return;
-      const dx = e.clientX - startX;
-      const dy = e.clientY - startY;
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+      const dxScreen = e.clientX - startX;
+      const dyScreen = e.clientY - startY;
+      if (Math.abs(dxScreen) > 3 || Math.abs(dyScreen) > 3) moved = true;
 
-      const boardRect = boardInner.getBoundingClientRect();
-      const xPct = clamp(((e.clientX - boardRect.left) / boardRect.width) * 100, 0, 100);
-      const yPct = clamp(((e.clientY - boardRect.top) / boardRect.height) * 100, 0, 100);
-      token.x = xPct;
-      token.y = yPct;
-      el.style.left = xPct + '%';
-      el.style.top = yPct + '%';
+      const isWorld = map?.coordSpace === 'world' || !!map?.cellMap;
+      const refEl = isWorld && boardInner.parentElement ? boardInner.parentElement : boardInner;
+      const currentVp = camp?.currentMapId ? globalViewportManager.getViewport(camp.currentMapId) : vp;
+      const currentPos = fromPointer(map, e, refEl, currentVp);
+      const deltaX = currentPos.x - startWorldX;
+      const deltaY = currentPos.y - startWorldY;
+
+      token.x = initialTokenX + deltaX;
+      token.y = initialTokenY + deltaY;
+
+      if (!isWorld) {
+        token.x = Math.max(0, Math.min(100, token.x));
+        token.y = Math.max(0, Math.min(100, token.y));
+      }
+
+      const css = toCss(map, token, currentVp);
+      el.style.left = css.left;
+      el.style.top = css.top;
     });
 
     const endDrag = (e: PointerEvent) => {
@@ -1352,13 +1970,38 @@ export class DinoTabletopView extends ItemView {
         /* noop */
       }
       if (moved) {
+        const isWorld = map?.coordSpace === 'world' || !!map?.cellMap;
+        const currentVp = camp?.currentMapId ? globalViewportManager.getViewport(camp.currentMapId) : vp;
+
         if (map.grid?.enabled && map.grid.snapTokens) {
-          const snapped = snapCoordsToGrid(token.x, token.y, map, boardInner);
-          token.x = snapped.x;
-          token.y = snapped.y;
-          el.style.left = token.x + '%';
-          el.style.top = token.y + '%';
+          if (isWorld) {
+            const cellSize = map.cellMap?.cellSizePx || map.grid.cellSizePx || 48;
+            const tokenSize = token.size || 44;
+            const snapped = snapWorldToCell(token.x + tokenSize / 2, token.y + tokenSize / 2, cellSize, false);
+            const padX = Math.max(0, Math.round((cellSize - tokenSize) / 2));
+            const padY = Math.max(0, Math.round((cellSize - tokenSize) / 2));
+            token.x = snapped.x + padX;
+            token.y = snapped.y + padY;
+          } else {
+            const snapped = snapCoordsToGrid(token.x, token.y, map, boardInner);
+            token.x = snapped.x;
+            token.y = snapped.y;
+          }
+          const css = toCss(map, token, currentVp);
+          el.style.left = css.left;
+          el.style.top = css.top;
         }
+
+        // Auto-reveal fog if token reveals fog
+        if (map.fog?.enabled && map.cellMap && camp?.currentMapId && token.revealsFog) {
+          const store = getCellStore(camp.currentMapId, this.plugin);
+          const cellSize = map.cellMap.cellSizePx || 48;
+          const cx = Math.floor((token.x + (token.size || 44) / 2) / cellSize);
+          const cy = Math.floor((token.y + (token.size || 44) / 2) / cellSize);
+          store.revealRadius(cx, cy, token.revealsFog.radiusCells || 3);
+          this.requestRender();
+        }
+
         this.plugin.saveSettings();
       } else {
         this.openDamageModal(map, token);

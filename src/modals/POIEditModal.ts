@@ -127,6 +127,15 @@ export class POIEditModal extends Modal {
           })
       );
 
+    new Setting(contentEl)
+      .setName('Solo Director / DM Only (Modo Testeo)')
+      .setDesc('Oculta este punto de interés de la vista de jugador y de la ventana de proyección.')
+      .addToggle((toggle) =>
+        toggle.setValue(!!this.poi.dmOnly).onChange((v) => {
+          this.poi.dmOnly = v;
+        })
+      );
+
     const btnRow = new Setting(contentEl);
     btnRow.addButton((b) =>
       b

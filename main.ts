@@ -12,6 +12,7 @@ import { genId, readFrontmatterStat, readFrontmatterImagePath } from './src/util
 import { setLanguage, t } from './src/i18n';
 import { DinoTabletopView } from './src/views/DinoTabletopView';
 import { DinoSettingTab } from './src/settings/DinoSettingTab';
+import { VIEW_TYPE_DINO_PROJECTION, DinoProjectionView, openProjectionWindow } from './src/modules/playerView';
 
 export default class DinoTabletopEnginePlugin extends Plugin {
   settings: DinoSettings;
@@ -85,6 +86,7 @@ export default class DinoTabletopEnginePlugin extends Plugin {
     }
 
     this.registerView(VIEW_TYPE_DINO, (leaf) => new DinoTabletopView(leaf, this));
+    this.registerView(VIEW_TYPE_DINO_PROJECTION, (leaf) => new DinoProjectionView(leaf, this));
 
     this.addRibbonIcon('swords', t('commands.openView'), () => this.activateView());
 
@@ -94,6 +96,12 @@ export default class DinoTabletopEnginePlugin extends Plugin {
       id: 'open-dino-tabletop-engine',
       name: t('commands.openView'),
       callback: () => this.activateView(),
+    });
+
+    this.addCommand({
+      id: 'open-player-projection-view',
+      name: 'Abrir ventana de proyección / Vista de jugador (Testeo)',
+      callback: () => openProjectionWindow(this.app, this),
     });
 
     this.addCommand({

@@ -62,6 +62,8 @@ export interface TokenData {
   inventory?: TokenInventory;
   counters?: CounterData[]; // legacy fallback for backward compatibility
   conditions?: ConditionData[];
+  dmOnly?: boolean;
+  revealsFog?: { radiusCells: number } | null;
 }
 
 export interface POIData {
@@ -74,6 +76,7 @@ export interface POIData {
   imagePath: string | null;
   icon?: string | null;
   linkedNote: string | null;
+  dmOnly?: boolean;
 }
 
 export interface CombatantData {
@@ -330,10 +333,48 @@ export interface WargameMatchData {
   objectives: WargameObjective[];
 }
 
+export type MapCoordSpace = 'percent' | 'world';
+
+export interface CellPaletteColor {
+  id?: string;
+  color: string;
+  label: string;
+}
+
+export interface CellEdgeStyle {
+  id: string;
+  name: string;
+  color: string;
+  thickness: number;
+  blocksVision?: boolean;
+  blocksMovement?: boolean;
+}
+
+export interface CellMapData {
+  cellSizePx: number;
+  palette: CellPaletteColor[];
+  edgeStyles: CellEdgeStyle[];
+  backgroundImagePath?: string | null;
+  backgroundOffsetX?: number;
+  backgroundOffsetY?: number;
+  backgroundScale?: number;
+  backgroundOpacity?: number;
+}
+
+export interface MapFogConfig {
+  enabled: boolean;
+  color?: string;
+  dmOpacity?: number;
+  playerOpacity?: number;
+}
+
 export interface MapData {
   name: string;
   imagePath: string | null;
   drawing: DrawingData | null;
+  cellMap?: CellMapData | null;
+  coordSpace?: MapCoordSpace;
+  fog?: MapFogConfig | null;
   tokens: TokenData[];
   pois: POIData[];
   combat?: CombatData | null;
@@ -341,6 +382,41 @@ export interface MapData {
   grid?: MapGridConfig;
   rulers?: MapRuler[];
   wargame?: WargameMatchData | null;
+}
+
+export interface ViewportState {
+  x: number;
+  y: number;
+  scale: number;
+}
+
+export interface UndoStep {
+  label: string;
+  undo: () => void | Promise<void>;
+  redo: () => void | Promise<void>;
+}
+
+export interface ToolContext {
+  view: any;
+  map: MapData;
+  mapId: string;
+  viewport: ViewportState;
+  containerEl: HTMLElement;
+}
+
+export interface ToolDefinition {
+  id: string;
+  label: string;
+  icon: string;
+  group?: 'navigate' | 'draw' | 'fog' | 'utility';
+  cursor?: string;
+  shortcut?: string;
+  available?: (map: MapData) => boolean;
+  onPointerDown?: (e: MouseEvent | PointerEvent, worldPos: { x: number; y: number }, ctx: ToolContext) => void;
+  onPointerMove?: (e: MouseEvent | PointerEvent, worldPos: { x: number; y: number }, ctx: ToolContext) => void;
+  onPointerUp?: (e: MouseEvent | PointerEvent, worldPos: { x: number; y: number }, ctx: ToolContext) => void;
+  onKeyDown?: (e: KeyboardEvent, ctx: ToolContext) => void;
+  renderOptions?: (el: HTMLElement, ctx: ToolContext, refresh: () => void) => void;
 }
 
 export interface DrawPoint {
@@ -436,6 +512,7 @@ export interface CampaignData {
   missionRewardTypes?: string[];
   missionStatuses?: string[];
   missions?: Record<string, MissionData>;
+  playerHpDisplay?: 'exact' | 'bar' | 'hidden';
 }
 
 

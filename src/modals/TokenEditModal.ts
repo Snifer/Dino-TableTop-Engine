@@ -234,6 +234,15 @@ export class TokenEditModal extends Modal {
       }).open();
     });
 
+    new Setting(contentEl)
+      .setName('Solo Director / DM Only (Modo Testeo)')
+      .setDesc('Oculta esta ficha de la vista de jugador y de la ventana de proyección.')
+      .addToggle((toggle) =>
+        toggle.setValue(!!this.token.dmOnly).onChange((v) => {
+          this.token.dmOnly = v;
+        })
+      );
+
     const btnRow = new Setting(contentEl);
     btnRow.addButton((b) =>
       b

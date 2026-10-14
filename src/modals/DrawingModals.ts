@@ -71,7 +71,10 @@ export class DrawingEditorModal extends Modal {
     this.plugin = plugin;
     this.view = view;
     this.map = map;
-    this.drawing = map.drawing as DrawingData;
+    if (!map.drawing) {
+      map.drawing = { width: 1200, height: 800, strokes: [], images: [], backgroundImagePath: null };
+    }
+    this.drawing = map.drawing;
     this.tool = 'pen';
     this.color = '#222222';
     this.strokeWidth = 4;
