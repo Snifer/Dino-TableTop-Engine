@@ -416,6 +416,7 @@ export interface ToolDefinition {
   onPointerMove?: (e: MouseEvent | PointerEvent, worldPos: { x: number; y: number }, ctx: ToolContext) => void;
   onPointerUp?: (e: MouseEvent | PointerEvent, worldPos: { x: number; y: number }, ctx: ToolContext) => void;
   onKeyDown?: (e: KeyboardEvent, ctx: ToolContext) => void;
+  onDeactivate?: (ctx: ToolContext) => void;
   renderOptions?: (el: HTMLElement, ctx: ToolContext, refresh: () => void) => void;
 }
 
@@ -513,6 +514,7 @@ export interface CampaignData {
   missionStatuses?: string[];
   missions?: Record<string, MissionData>;
   playerHpDisplay?: 'exact' | 'bar' | 'hidden';
+  oracleHistory?: OracleReadingEntry[];
 }
 
 
@@ -533,6 +535,9 @@ export interface BestiaryEntry {
 
 import { SupportedLanguage } from './i18n';
 export type { SupportedLanguage };
+
+import { OracleDeck, OracleCard, OracleReadingEntry, InterpretationRule } from './modules/oracle/types';
+export type { OracleDeck, OracleCard, OracleReadingEntry, InterpretationRule };
 
 export interface DiceTrayExpression {
   id: string;
@@ -568,6 +573,11 @@ export interface DinoSettings {
   activeRosterId?: string | null;
   /** Global Dice Tray settings & saved expressions */
   diceTray?: DiceTraySettings;
+  /** Global Oracle Decks & Settings */
+  oracleDecks?: OracleDeck[];
+  activeOracleDeckId?: string | null;
+  oracleResetQuestionOnDraw?: boolean;
+  oraclePanelPosition?: { x: number; y: number };
 }
 
 export const DEFAULT_SETTINGS: DinoSettings = {
@@ -582,6 +592,7 @@ export const DEFAULT_SETTINGS: DinoSettings = {
     'wargame': false,
     'dice-tray': false,
     'missions': false,
+    'oracle': false,
   },
   campaigns: {},
   currentCampaignId: null,
@@ -597,6 +608,10 @@ export const DEFAULT_SETTINGS: DinoSettings = {
     savedExpressions: [],
     panelPosition: { x: 80, y: 200 },
   },
+  oracleDecks: [],
+  activeOracleDeckId: null,
+  oracleResetQuestionOnDraw: true,
+  oraclePanelPosition: { x: 120, y: 120 },
 };
 
 export interface IconPack {

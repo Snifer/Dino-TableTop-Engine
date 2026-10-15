@@ -54,6 +54,7 @@ import { MeasureManager } from '../modules/measure';
 import { renderWargameBoard, WargamePhaseTrackerPanel } from '../modules/wargame';
 import { DiceTrayPanel } from '../modules/diceTray';
 import { MissionListPanel } from '../modules/missions';
+import { OraclePanel } from '../modules/oracle';
 import { toCss, fromPointer, snapWorldToCell } from '../modules/cellCoordinates';
 import { getCellStore } from '../modules/cellStore';
 import { globalViewportManager, globalHistoryManager, globalToolManager } from '../modules/cellBoardCore';
@@ -90,6 +91,7 @@ export class DinoTabletopView extends ItemView {
   diaryPanel: CampaignDiaryPanel | null;
   diceTrayPanel: DiceTrayPanel | null;
   missionsPanel: MissionListPanel | null;
+  oraclePanel: OraclePanel | null;
   measureManager: MeasureManager | null;
   wargamePanel: WargamePhaseTrackerPanel | null;
   lateralToolbar: CellBoardLateralToolbar | null;
@@ -107,6 +109,7 @@ export class DinoTabletopView extends ItemView {
     this.diaryPanel = null;
     this.diceTrayPanel = null;
     this.missionsPanel = null;
+    this.oraclePanel = null;
     this.measureManager = new MeasureManager(this);
     this.wargamePanel = null;
     this.lateralToolbar = null;
@@ -138,6 +141,7 @@ export class DinoTabletopView extends ItemView {
     if (this.diaryPanel) this.diaryPanel.destroy();
     if (this.diceTrayPanel) this.diceTrayPanel.destroy();
     if (this.missionsPanel) this.missionsPanel.destroy();
+    if (this.oraclePanel) this.oraclePanel.destroy();
     if (this.wargamePanel) this.wargamePanel.destroy();
     if (this.lateralToolbar) this.lateralToolbar.destroy();
     if (this.keydownListener) {
@@ -356,6 +360,21 @@ export class DinoTabletopView extends ItemView {
     } else if (this.missionsPanel) {
       this.missionsPanel.destroy();
       this.missionsPanel = null;
+    }
+
+    if (moduleRegistry.isEnabled(data, 'oracle')) {
+      if (!this.oraclePanel) {
+        this.oraclePanel = new OraclePanel(
+          this.app,
+          this.plugin,
+          this.panelsLayer
+        );
+      } else {
+        this.oraclePanel.build();
+      }
+    } else if (this.oraclePanel) {
+      this.oraclePanel.destroy();
+      this.oraclePanel = null;
     }
 
     const camp = this.getCurrentCampaign();
@@ -1003,20 +1022,33 @@ export class DinoTabletopView extends ItemView {
 
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
         const key = e.key.toUpperCase();
+        const deactivateCtx = {
+          view: this,
+          map,
+          mapId,
+          viewport: globalViewportManager.getViewport(mapId),
+          containerEl: (this.containerEl.querySelector('.dte-cell-board-inner') as HTMLElement) || this.containerEl,
+        };
         if (key === 'S') {
-          globalToolManager.setActiveTool('select');
+          globalToolManager.setActiveTool('select', deactivateCtx);
           if (this.lateralToolbar) this.lateralToolbar.render();
         } else if (key === 'V') {
-          globalToolManager.setActiveTool('move');
+          globalToolManager.setActiveTool('move', deactivateCtx);
           if (this.lateralToolbar) this.lateralToolbar.render();
         } else if (key === 'B') {
-          globalToolManager.setActiveTool('paint');
+          globalToolManager.setActiveTool('paint', deactivateCtx);
           if (this.lateralToolbar) this.lateralToolbar.render();
         } else if (key === 'E') {
-          globalToolManager.setActiveTool('erase');
+          globalToolManager.setActiveTool('erase', deactivateCtx);
           if (this.lateralToolbar) this.lateralToolbar.render();
         } else if (key === 'G') {
-          globalToolManager.setActiveTool('fill');
+          globalToolManager.setActiveTool('fill', deactivateCtx);
+          if (this.lateralToolbar) this.lateralToolbar.render();
+        } else if (key === 'R') {
+          globalToolManager.setActiveTool('rectPaint', deactivateCtx);
+          if (this.lateralToolbar) this.lateralToolbar.render();
+        } else if (key === 'L') {
+          globalToolManager.setActiveTool('laser', deactivateCtx);
           if (this.lateralToolbar) this.lateralToolbar.render();
         }
       }
@@ -1175,9 +1207,22 @@ export class DinoTabletopView extends ItemView {
       }
     };
 
+    const onPointerLeave = (e: PointerEvent) => {
+      if (cellToolState.isPanning) {
+        cellToolState.isPanning = false;
+        wrap.style.cursor = isSpaceDown ? 'grab' : globalToolManager.getActiveTool()?.cursor || 'default';
+      }
+      const activeTool = globalToolManager.getActiveTool();
+      if (activeTool && activeTool.id === 'laser') {
+        const dots = inner.querySelectorAll('.dte-laser-pointer-dot');
+        dots.forEach((d) => d.remove());
+      }
+    };
+
     wrap.addEventListener('pointerdown', onPointerDown);
     wrap.addEventListener('pointermove', onPointerMove);
     wrap.addEventListener('pointerup', onPointerUp);
+    wrap.addEventListener('pointerleave', onPointerLeave);
 
     // Right-click context menu on canvas for quick entity creation
     wrap.addEventListener('contextmenu', (e: MouseEvent) => {

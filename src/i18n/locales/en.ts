@@ -694,7 +694,22 @@ export const en = {
   'missions.selectPoi': 'Map POI',
   'missions.selectNote': 'Select note',
   'missions.createdDay': 'Creation Day',
+
+  // Oracle Module (Hierofante)
+  'modules.oracleName': 'Hierofante',
+  'modules.oracleShort': 'Hierofante',
+  'modules.oracleDesc': 'Solo RPG tarot module with interpretation rules, draw deck, and campaign reading log.',
+  'oracle.panelTitle': 'Hierofante',
+  'oracle.drawCard': 'Draw Card',
+  'oracle.shuffleDeck': 'Shuffle Deck',
+  'oracle.binaryMode': 'Yes/No Mode',
+  'oracle.eventMode': 'Random Event',
+  'oracle.historyTitle': 'Reading Log',
+  'oracle.emptyHistory': 'No cards have been drawn yet.',
+  'oracle.clearHistoryConfirm': 'Are you sure you want to clear the reading log?',
+  'oracle.exportHistory': 'Export',
+  'oracle.importHistory': 'Import',
 };
 
-
 export type TranslationKey = keyof typeof en;
+

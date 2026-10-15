@@ -132,6 +132,7 @@ export function registerCellBoardTools(): void {
     shortcut: 'V',
     available: () => true,
     onPointerDown: (e, worldPos, ctx) => {
+      if (e.button !== 0) return;
       cellToolState.isPanning = true;
       cellToolState.panStart = { x: e.clientX, y: e.clientY };
       ctx.containerEl.style.cursor = 'grabbing';
@@ -168,6 +169,7 @@ export function registerCellBoardTools(): void {
     shortcut: 'B',
     available: (map) => map.coordSpace === 'world' || !!map.cellMap,
     onPointerDown: (e, worldPos, ctx) => {
+      if (e.button !== 0) return;
       if (!ctx.map.cellMap) return;
       isPointerActive = true;
       currentStrokeCellChanges = [];
@@ -237,6 +239,7 @@ export function registerCellBoardTools(): void {
     shortcut: 'E',
     available: (map) => map.coordSpace === 'world' || !!map.cellMap,
     onPointerDown: (e, worldPos, ctx) => {
+      if (e.button !== 0) return;
       if (!ctx.map.cellMap) return;
       isPointerActive = true;
       currentStrokeCellChanges = [];
@@ -308,6 +311,7 @@ export function registerCellBoardTools(): void {
     shortcut: 'G',
     available: (map) => map.coordSpace === 'world' || !!map.cellMap,
     onPointerDown: (e, worldPos, ctx) => {
+      if (e.button !== 0) return;
       if (!ctx.map.cellMap) return;
       const store = getCellStore(ctx.mapId, ctx.view.plugin);
       const cellSize = ctx.map.cellMap.cellSizePx || 48;
@@ -354,6 +358,7 @@ export function registerCellBoardTools(): void {
     cursor: 'crosshair',
     available: (map) => map.coordSpace === 'world' || !!map.cellMap,
     onPointerDown: (e, worldPos, ctx) => {
+      if (e.button !== 0) return;
       if (!ctx.map.cellMap) return;
       isPointerActive = true;
       currentStrokeEdgeChanges = [];
@@ -419,6 +424,7 @@ export function registerCellBoardTools(): void {
     shortcut: 'F',
     available: (map) => map.coordSpace === 'world' || !!map.cellMap,
     onPointerDown: (e, worldPos, ctx) => {
+      if (e.button !== 0) return;
       if (!ctx.map.cellMap) return;
       if (!ctx.map.fog) {
         ctx.map.fog = { enabled: true, dmOpacity: 0.55 };
@@ -480,6 +486,7 @@ export function registerCellBoardTools(): void {
     shortcut: 'L',
     available: () => true,
     onPointerDown: (e, worldPos, ctx) => {
+      if (e.button !== 0) return;
       updateLaserOverlay(ctx.containerEl, worldPos.x, worldPos.y, cellToolState.laserColor, true);
       broadcastLaser({ x: worldPos.x, y: worldPos.y, color: cellToolState.laserColor, active: true });
     },
@@ -491,8 +498,128 @@ export function registerCellBoardTools(): void {
       updateLaserOverlay(ctx.containerEl, worldPos.x, worldPos.y, cellToolState.laserColor, false);
       broadcastLaser({ active: false });
     },
+    onDeactivate: (ctx) => {
+      // Remove laser dot when switching away from laser tool
+      const container = ctx?.containerEl || document;
+      const laserEl = container.querySelector('.dte-laser-pointer-dot');
+      if (laserEl) laserEl.remove();
+      document.querySelectorAll('.dte-laser-pointer-dot').forEach((el) => el.remove());
+      broadcastLaser({ active: false });
+    },
     renderOptions: (el, ctx, refresh) => {
       renderLaserToolbar(el, ctx, refresh);
+    },
+  });
+
+  // ─── 7b. RECTANGLE PAINT TOOL ───
+  let rectStartWorld: { x: number; y: number } | null = null;
+  let rectCurrentWorld: { x: number; y: number } | null = null;
+  let rectActive = false;
+
+  globalToolManager.registerTool({
+    id: 'rectPaint',
+    label: 'Pintar rectángulo',
+    icon: 'lucide-square',
+    group: 'draw',
+    cursor: 'crosshair',
+    shortcut: 'R',
+    available: (map) => map.coordSpace === 'world' || !!map.cellMap,
+    onPointerDown: (e, worldPos, ctx) => {
+      if (e.button !== 0) return;
+      if (!ctx.map.cellMap) return;
+      rectActive = true;
+      rectStartWorld = { x: worldPos.x, y: worldPos.y };
+      rectCurrentWorld = { x: worldPos.x, y: worldPos.y };
+    },
+    onPointerMove: (e, worldPos, ctx) => {
+      if (!rectActive || !rectStartWorld || !ctx.map.cellMap) return;
+      rectCurrentWorld = { x: worldPos.x, y: worldPos.y };
+
+      // Show visual preview rectangle
+      let previewEl = ctx.containerEl.querySelector('.dte-rect-paint-preview') as HTMLElement | null;
+      if (!previewEl) {
+        previewEl = ctx.containerEl.createDiv({ cls: 'dte-rect-paint-preview' });
+      }
+      const minX = Math.min(rectStartWorld.x, worldPos.x);
+      const minY = Math.min(rectStartWorld.y, worldPos.y);
+      const w = Math.abs(worldPos.x - rectStartWorld.x);
+      const h = Math.abs(worldPos.y - rectStartWorld.y);
+      previewEl.style.left = `${minX}px`;
+      previewEl.style.top = `${minY}px`;
+      previewEl.style.width = `${w}px`;
+      previewEl.style.height = `${h}px`;
+
+      const palette = ctx.map.cellMap?.palette || [];
+      const colorIdx = cellToolState.activeColorIndex;
+      const paletteColor = palette[colorIdx - 1]?.color || '#4c8bf5';
+      previewEl.style.setProperty('--dte-rect-preview-color', paletteColor);
+    },
+    onPointerUp: (e, worldPos, ctx) => {
+      if (!rectActive || !rectStartWorld || !ctx.map.cellMap) return;
+      rectActive = false;
+
+      // Remove preview
+      const previewEl = ctx.containerEl.querySelector('.dte-rect-paint-preview');
+      if (previewEl) previewEl.remove();
+
+      const cellSize = ctx.map.cellMap.cellSizePx || 48;
+      const store = getCellStore(ctx.mapId, ctx.view.plugin);
+      const x1 = Math.min(rectStartWorld.x, worldPos.x);
+      const x2 = Math.max(rectStartWorld.x, worldPos.x);
+      const y1 = Math.min(rectStartWorld.y, worldPos.y);
+      const y2 = Math.max(rectStartWorld.y, worldPos.y);
+
+      const minCell = worldToCell(x1, y1, cellSize);
+      const maxCell = worldToCell(x2, y2, cellSize);
+
+      const changes: Array<{ cellX: number; cellY: number; before: number; after: number }> = [];
+      const colorIdx = cellToolState.activeColorIndex;
+
+      for (let cy = minCell.cellY; cy <= maxCell.cellY; cy++) {
+        for (let cx = minCell.cellX; cx <= maxCell.cellX; cx++) {
+          const before = store.getCell(cx, cy);
+          if (before !== colorIdx) {
+            store.setCell(cx, cy, colorIdx);
+            changes.push({ cellX: cx, cellY: cy, before, after: colorIdx });
+          }
+        }
+      }
+
+      if (changes.length > 0) {
+        if (ctx.view?.requestRender) ctx.view.requestRender();
+
+        const mapId = ctx.mapId;
+        const plugin = ctx.view.plugin;
+        const undoStep: UndoStep = {
+          label: 'Pintar rectángulo',
+          undo: () => {
+            const s = getCellStore(mapId, plugin);
+            changes.forEach((c) => s.setCell(c.cellX, c.cellY, c.before));
+            if (ctx.view?.requestRender) ctx.view.requestRender();
+          },
+          redo: () => {
+            const s = getCellStore(mapId, plugin);
+            changes.forEach((c) => s.setCell(c.cellX, c.cellY, c.after));
+            if (ctx.view?.requestRender) ctx.view.requestRender();
+          },
+        };
+        globalHistoryManager.push(mapId, undoStep);
+      }
+
+      rectStartWorld = null;
+      rectCurrentWorld = null;
+    },
+    onDeactivate: (ctx) => {
+      const container = ctx?.containerEl || document;
+      const previewEl = container.querySelector('.dte-rect-paint-preview');
+      if (previewEl) previewEl.remove();
+      document.querySelectorAll('.dte-rect-paint-preview').forEach((el) => el.remove());
+      rectActive = false;
+      rectStartWorld = null;
+      rectCurrentWorld = null;
+    },
+    renderOptions: (el, ctx, refresh) => {
+      renderPaletteToolbar(el, ctx, refresh);
     },
   });
 
@@ -506,6 +633,7 @@ export function registerCellBoardTools(): void {
     shortcut: 'P',
     available: () => true,
     onPointerDown: (e, worldPos, ctx) => {
+      if (e.button !== 0) return;
       spawnPingEffect(ctx.containerEl, worldPos.x, worldPos.y, cellToolState.pingColor, cellToolState.pingIcon);
       broadcastPing({
         x: worldPos.x,

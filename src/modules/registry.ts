@@ -7,6 +7,7 @@ import { MeasureModule } from './measure';
 import { WargameModule } from './wargame';
 import { DiceTrayModule } from './diceTray';
 import { MissionsModule } from './missions';
+import { OracleModule } from './oracle';
 import { DinoSettings } from '../types';
 
 class ModuleRegistry {
@@ -21,6 +22,7 @@ class ModuleRegistry {
     this.register(WargameModule);
     this.register(DiceTrayModule);
     this.register(MissionsModule);
+    this.register(OracleModule);
   }
 
   register(module: EngineModule): void {

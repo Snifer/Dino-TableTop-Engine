@@ -696,5 +696,21 @@ export const es: Record<TranslationKey, string> = {
   'missions.selectPoi': 'POI del mapa',
   'missions.selectNote': 'Seleccionar nota',
   'missions.createdDay': 'Día de creación',
+
+  // Oracle Module (Hierofante)
+  'modules.oracleName': 'Hierofante',
+  'modules.oracleShort': 'Hierofante',
+  'modules.oracleDesc': 'Módulo de tarot para rol en solitario con reglas de interpretación, robo sin reposición e historial de lecturas por campaña.',
+  'oracle.panelTitle': 'Hierofante',
+  'oracle.drawCard': 'Sacar Carta',
+  'oracle.shuffleDeck': 'Barajar Mazo',
+  'oracle.binaryMode': 'Modo Sí/No',
+  'oracle.eventMode': 'Evento Aleatorio',
+  'oracle.historyTitle': 'Historial de Lecturas',
+  'oracle.emptyHistory': 'Aún no se han sacado cartas.',
+  'oracle.clearHistoryConfirm': '¿Estás seguro de que deseas limpiar el registro?',
+  'oracle.exportHistory': 'Exportar',
+  'oracle.importHistory': 'Importar',
 };
+
 

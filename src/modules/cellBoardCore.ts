@@ -166,9 +166,18 @@ export class ToolManager {
     return this.tools.get(this.activeToolId);
   }
 
-  public setActiveTool(id: string): boolean {
+  public setActiveTool(id: string, deactivateCtx?: { view: any; map: any; mapId: string; viewport: any; containerEl: HTMLElement }): boolean {
     if (!this.tools.has(id)) return false;
     if (this.activeToolId === id) return true;
+    // Call onDeactivate on the previous tool
+    const prevTool = this.tools.get(this.activeToolId);
+    if (prevTool?.onDeactivate) {
+      try {
+        prevTool.onDeactivate(deactivateCtx as any);
+      } catch (err) {
+        console.error('Error in tool onDeactivate:', err);
+      }
+    }
     this.activeToolId = id;
     this.onToolChangeListeners.forEach((fn) => fn(id));
     return true;

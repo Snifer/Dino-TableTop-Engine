@@ -7,6 +7,7 @@ import { TokenEditModal } from '../modals/TokenEditModal';
 import { POIEditModal } from '../modals/POIEditModal';
 import { BestiaryListModal } from '../modals/BestiaryModals';
 import { genId } from '../utils';
+import { updateLaserOverlay } from './laserPing';
 
 export class CellBoardLateralToolbar {
   private view: any;
@@ -18,6 +19,7 @@ export class CellBoardLateralToolbar {
   private bottomContextualBar: HTMLElement | null = null;
   private isCollapsed: boolean = false;
   private unsubscribeToolChange: (() => void) | null = null;
+  private static savedPosition: { left: number; top: number } | null = null;
 
   constructor(view: any, container: HTMLElement, map: MapData, mapId: string, boardInner: HTMLElement) {
     this.view = view;
@@ -36,6 +38,55 @@ export class CellBoardLateralToolbar {
 
     this.toolbarEl = this.container.createDiv({
       cls: `dte-lateral-toolbar ${this.isCollapsed ? 'is-collapsed' : ''}`,
+    });
+
+    if (CellBoardLateralToolbar.savedPosition) {
+      this.toolbarEl.style.left = `${CellBoardLateralToolbar.savedPosition.left}px`;
+      this.toolbarEl.style.top = `${CellBoardLateralToolbar.savedPosition.top}px`;
+    } else {
+      this.toolbarEl.style.top = '56px';
+      this.toolbarEl.style.left = '16px';
+    }
+
+    // ─── Drag handle for repositioning ───
+    const dragHandle = this.toolbarEl.createDiv({ cls: 'dte-lateral-drag-handle' });
+    setIcon(dragHandle, 'grip-vertical');
+    dragHandle.setAttribute('aria-label', 'Arrastrar barra de herramientas');
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let toolbarStartLeft = 0;
+    let toolbarStartTop = 0;
+
+    const onDragMove = (ev: PointerEvent) => {
+      if (!this.toolbarEl) return;
+      const dx = ev.clientX - dragStartX;
+      const dy = ev.clientY - dragStartY;
+      this.toolbarEl.style.left = `${toolbarStartLeft + dx}px`;
+      this.toolbarEl.style.top = `${toolbarStartTop + dy}px`;
+    };
+    const onDragEnd = (ev: PointerEvent) => {
+      dragHandle.releasePointerCapture(ev.pointerId);
+      window.removeEventListener('pointermove', onDragMove);
+      window.removeEventListener('pointerup', onDragEnd);
+      if (this.toolbarEl) {
+        CellBoardLateralToolbar.savedPosition = {
+          left: this.toolbarEl.offsetLeft,
+          top: this.toolbarEl.offsetTop,
+        };
+      }
+    };
+
+    dragHandle.addEventListener('pointerdown', (ev: PointerEvent) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (!this.toolbarEl) return;
+      dragStartX = ev.clientX;
+      dragStartY = ev.clientY;
+      toolbarStartLeft = this.toolbarEl.offsetLeft;
+      toolbarStartTop = this.toolbarEl.offsetTop;
+      dragHandle.setPointerCapture(ev.pointerId);
+      window.addEventListener('pointermove', onDragMove);
+      window.addEventListener('pointerup', onDragEnd);
     });
 
     // Top Header: Undo / Redo controls & quick actions
@@ -162,7 +213,14 @@ export class CellBoardLateralToolbar {
       }
 
       btn.addEventListener('click', () => {
-        globalToolManager.setActiveTool(tool.id);
+        const deactivateCtx: ToolContext = {
+          view: this.view,
+          map: this.map,
+          mapId: this.mapId,
+          viewport: globalViewportManager.getViewport(this.mapId),
+          containerEl: this.boardInner,
+        };
+        globalToolManager.setActiveTool(tool.id, deactivateCtx);
         this.render();
       });
     });

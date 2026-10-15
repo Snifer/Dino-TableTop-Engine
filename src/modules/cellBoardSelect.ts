@@ -2,6 +2,7 @@ import { MapData, POIData, TokenData, ToolContext, UndoStep } from '../types';
 import { cellToWorld, fromPointer, snapWorldToCell, toCss, worldToCell } from './cellCoordinates';
 import { CellStore, getCellStore } from './cellStore';
 import { globalHistoryManager, globalToolManager, globalViewportManager } from './cellBoardCore';
+import { cellToolState } from './cellBoardTools';
 import { genId } from '../utils';
 import { Notice, setIcon } from 'obsidian';
 
@@ -430,6 +431,7 @@ export function registerSelectTool(): void {
     shortcut: 'S',
     available: () => true,
     onPointerDown: (e, worldPos, ctx) => {
+      if (e.button !== 0) return;
       // 1. If currently in pasting ghost mode, place items
       if (multiSelectionState.isPasting && multiSelectionState.clipboard) {
         pasteClipboardAt(ctx.map, ctx.mapId, worldPos, ctx.view.plugin, ctx.view);
@@ -793,6 +795,21 @@ function renderSelectionToolbar(el: HTMLElement, ctx: ToolContext, refresh: () =
     delBtn.addEventListener('click', async () => {
       await deleteSelection(ctx.map, ctx.mapId, ctx.view.plugin, ctx.view);
     });
+
+    // Paint selected cells button
+    if (multiSelectionState.cellBounds && ctx.map.cellMap) {
+      const paintCellsBtn = bar.createEl('button', {
+        cls: 'dte-btn dte-pill-btn',
+        attr: { 'aria-label': 'Pintar celdas seleccionadas con el color activo' },
+      });
+      const paintIcon = paintCellsBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
+      setIcon(paintIcon, 'paint-bucket');
+      paintCellsBtn.createSpan({ text: 'Pintar celdas' });
+      paintCellsBtn.addEventListener('click', () => {
+        paintSelectedCells(ctx);
+        refresh();
+      });
+    }
   }
 
   // Paste button if clipboard available
@@ -808,5 +825,44 @@ function renderSelectionToolbar(el: HTMLElement, ctx: ToolContext, refresh: () =
       multiSelectionState.isPasting = !multiSelectionState.isPasting;
       refresh();
     });
+  }
+}
+
+export function paintSelectedCells(ctx: ToolContext): void {
+  if (!multiSelectionState.cellBounds || !ctx.map.cellMap) return;
+  const store = getCellStore(ctx.mapId, ctx.view.plugin);
+  const colorIdx = cellToolState.activeColorIndex;
+  const changes: Array<{ cellX: number; cellY: number; before: number; after: number }> = [];
+
+  for (let cy = multiSelectionState.cellBounds.minCellY; cy <= multiSelectionState.cellBounds.maxCellY; cy++) {
+    for (let cx = multiSelectionState.cellBounds.minCellX; cx <= multiSelectionState.cellBounds.maxCellX; cx++) {
+      const before = store.getCell(cx, cy);
+      if (before !== colorIdx) {
+        store.setCell(cx, cy, colorIdx);
+        changes.push({ cellX: cx, cellY: cy, before, after: colorIdx });
+      }
+    }
+  }
+
+  if (changes.length > 0) {
+    if (ctx.view?.requestRender) ctx.view.requestRender();
+
+    const mapId = ctx.mapId;
+    const plugin = ctx.view.plugin;
+    const undoStep: UndoStep = {
+      label: 'Pintar celdas seleccionadas',
+      undo: () => {
+        const s = getCellStore(mapId, plugin);
+        changes.forEach((c) => s.setCell(c.cellX, c.cellY, c.before));
+        if (ctx.view?.requestRender) ctx.view.requestRender();
+      },
+      redo: () => {
+        const s = getCellStore(mapId, plugin);
+        changes.forEach((c) => s.setCell(c.cellX, c.cellY, c.after));
+        if (ctx.view?.requestRender) ctx.view.requestRender();
+      },
+    };
+    globalHistoryManager.push(mapId, undoStep);
+    new Notice(`${changes.length} celdas pintadas`);
   }
 }

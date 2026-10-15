@@ -110,7 +110,7 @@ export class DinoSettingTab extends PluginSettingTab {
 
     const titleRow = aboutBox.createDiv({ cls: 'dte-settings-about-header' });
     titleRow.createEl('strong', { text: 'Dino Tabletop Engine' });
-    titleRow.createSpan({ cls: 'dte-settings-badge', text: 'ALPHA v0.1.3' });
+    titleRow.createSpan({ cls: 'dte-settings-badge', text: `ALPHA v${this.plugin.manifest?.version || '0.1.7'}` });
 
     const descEl = aboutBox.createDiv({ cls: 'dte-settings-about-desc' });
     descEl.createEl('p', {

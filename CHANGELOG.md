@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-10-15
+
+## 🇬🇧 English
+
+#### Added
+- **Hierofante Module (Solo RPG Oracle):**
+  - Tarot interpretation and oracle engine for solo RPG gaming based on *Hierofante*.
+  - 78 preloaded tarot cards with automated vault image matching.
+  - Declarative rules: Yes/No mode with variable difficulty (1–10) and Random Event mode with inverted complications.
+  - Campaign-bound reading history: all extracted cards are automatically logged and preserved across sessions and exports.
+  - Floating panel featuring unobscured full-card artwork view (`object-fit: contain`), 180° orientation rotation, and reading details.
+- **CellBoard Improvements:**
+  - Added "Pintar rectángulo" (`rectPaint`) tool and "Pintar celdas" in the selection toolbar to quickly paint cell areas by dragging a rectangle.
+  - Added drag handle to the lateral toolbar with position persistence so it can be moved freely without obscuring campaign headers or controls.
+  - Added right-click guards to all board drawing/moving tools to preserve the context menu.
+  - Fixed laser pointer remaining visible after switching tools or leaving the canvas.
+
+### 🇪🇸 Español
+
+#### Agregado
+- **Módulo Hierofante (Oráculo para Rol en Solitario):**
+  - Motor de consulta e interpretación de tarot para juegos en solitario basado en *Hierofante*.
+  - 78 cartas pre-cargadas con nombres, palos, palabras clave y emparejador masivo de imágenes desde la bóveda.
+  - Reglas declarativas: Modo Sí/No con dificultad configurable (1–10) y Evento aleatorio con giros para cartas invertidas.
+  - Historial persistente por campaña: cada carta extraída se registra automáticamente y se exporta/importa junto con la campaña.
+  - Panel flotante con vista completa de carta (`object-fit: contain`), giro de 180° y desglose de resultados.
+- **Mejoras en CellBoard:**
+  - Se agregó la herramienta "Pintar rectángulo" (`rectPaint`) y el botón "Pintar celdas" en la barra de selección para rellenar áreas rectangulares de celdas mediante arrastre.
+  - Barra de herramientas lateral ahora es arrastrable (con tirador de agarre) y guarda su posición para no solapar el selector de campañas.
+  - Se bloquearon las acciones de dibujo/movimiento con clic derecho para permitir el uso libre del menú contextual.
+  - Se solucionó el problema por el cual el puntero láser permanecía en pantalla tras cambiar de herramienta o salir del canvas.
+
+#
 ## [0.1.6] - 2026-10-14
 
 ### 🇬🇧 English
