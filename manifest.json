@@ -1,7 +1,7 @@
 {
   "id": "dino-tabletop-engine",
   "name": "Dino Tabletop Engine",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "minAppVersion": "1.5.0",
   "description": "System-agnostic virtual tabletop (VTT) with campaigns, tactical maps, procedural CellBoard, combat tracker, wargame, solo RPG oracle, and note linking via YAML frontmatter.",
   "author": "Snifer - Bastión del Dinosaurio",
