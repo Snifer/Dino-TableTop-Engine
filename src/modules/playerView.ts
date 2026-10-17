@@ -69,7 +69,6 @@ export class DinoProjectionView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
-    this.containerEl.style.position = 'relative';
     this.containerEl.addClass('dte-projection-root');
 
     // Live sync event listener
@@ -164,7 +163,6 @@ export class DinoProjectionView extends ItemView {
 
       const vp = globalViewportManager.getViewport(mapId);
       inner.style.transform = `translate(${vp.x}px, ${vp.y}px) scale(${vp.scale})`;
-      inner.style.transformOrigin = '0 0';
 
       // Load & render canvas
       const store = getCellStore(mapId, this.plugin);
@@ -196,7 +194,7 @@ export class DinoProjectionView extends ItemView {
       wrap.addEventListener('pointerdown', (e: PointerEvent) => {
         isPan = true;
         panStart = { x: e.clientX, y: e.clientY };
-        wrap.style.cursor = 'grabbing';
+        wrap.setCssStyles({ cursor: 'grabbing' });
       });
       wrap.addEventListener('pointermove', (e: PointerEvent) => {
         if (!isPan) return;
@@ -209,7 +207,7 @@ export class DinoProjectionView extends ItemView {
       });
       wrap.addEventListener('pointerup', () => {
         isPan = false;
-        wrap.style.cursor = 'default';
+        wrap.setCssStyles({ cursor: 'default' });
       });
     } else {
       // Legacy image/drawing map
@@ -296,15 +294,12 @@ export class DinoProjectionView extends ItemView {
     el.style.top = pos.top;
     el.style.width = (token.size || 44) + 'px';
     el.style.height = (token.size || 44) + 'px';
-    el.style.pointerEvents = 'none'; // Read-only in projection
 
     const circle = el.createDiv({ cls: 'dte-token-circle' });
     const imgFile = token.imagePath ? this.app.vault.getAbstractFileByPath(token.imagePath) : null;
     if (imgFile) {
       const src = this.app.vault.getResourcePath(imgFile as any);
       circle.style.backgroundImage = `url("${src}")`;
-      circle.style.backgroundSize = 'cover';
-      circle.style.backgroundPosition = 'center';
     } else {
       circle.style.background = token.color || '#4c8bf5';
       circle.setText((token.name || '?').slice(0, 2).toUpperCase());
@@ -350,12 +345,10 @@ export class DinoProjectionView extends ItemView {
     el.style.top = pos.top;
     el.style.width = (poi.size || 36) + 'px';
     el.style.height = (poi.size || 36) + 'px';
-    el.style.pointerEvents = 'none';
 
     const mark = el.createDiv({ cls: 'dte-poi-mark' });
     if (poi.color) {
       mark.style.background = poi.color;
-      mark.style.color = '#fff';
     }
     mark.setText('📍');
     if (poi.name) el.createDiv({ cls: 'dte-poi-label', text: poi.name });

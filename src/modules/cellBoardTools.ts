@@ -135,7 +135,7 @@ export function registerCellBoardTools(): void {
       if (e.button !== 0) return;
       cellToolState.isPanning = true;
       cellToolState.panStart = { x: e.clientX, y: e.clientY };
-      ctx.containerEl.style.cursor = 'grabbing';
+      ctx.containerEl.setCssStyles({ cursor: 'grabbing' });
     },
     onPointerMove: (e, worldPos, ctx) => {
       if (!cellToolState.isPanning) return;
@@ -150,7 +150,7 @@ export function registerCellBoardTools(): void {
     },
     onPointerUp: (e, worldPos, ctx) => {
       cellToolState.isPanning = false;
-      ctx.containerEl.style.cursor = 'grab';
+      ctx.containerEl.setCssStyles({ cursor: 'grab' });
     },
     renderOptions: (el, ctx) => {
       el.empty();

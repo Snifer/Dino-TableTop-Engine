@@ -43,8 +43,8 @@ export class CampaignImportModal extends Modal {
     const fileInput = dropZone.createEl('input', {
       type: 'file',
       attr: { accept: '.dinovtt,.zip' },
+      cls: 'dte-hidden',
     });
-    fileInput.style.display = 'none';
 
     dropZone.addEventListener('click', () => {
       fileInput.click();

@@ -41,11 +41,10 @@ export class CellBoardLateralToolbar {
     });
 
     if (CellBoardLateralToolbar.savedPosition) {
-      this.toolbarEl.style.left = `${CellBoardLateralToolbar.savedPosition.left}px`;
-      this.toolbarEl.style.top = `${CellBoardLateralToolbar.savedPosition.top}px`;
-    } else {
-      this.toolbarEl.style.top = '56px';
-      this.toolbarEl.style.left = '16px';
+      this.toolbarEl.setCssStyles({
+        left: `${CellBoardLateralToolbar.savedPosition.left}px`,
+        top: `${CellBoardLateralToolbar.savedPosition.top}px`,
+      });
     }
 
     // ─── Drag handle for repositioning ───
@@ -244,11 +243,7 @@ export class CellBoardLateralToolbar {
 
     if (this.boardInner) {
       this.boardInner.setAttribute('data-tool', activeToolId);
-      if (activeTool?.cursor) {
-        this.boardInner.style.cursor = activeTool.cursor;
-      } else {
-        this.boardInner.style.cursor = 'default';
-      }
+      this.boardInner.setCssStyles({ cursor: activeTool?.cursor || 'default' });
     }
 
     // Highlight button in sidebar
@@ -270,11 +265,11 @@ export class CellBoardLateralToolbar {
 
     const activeTool = globalToolManager.getActiveTool();
     if (!activeTool || !activeTool.renderOptions) {
-      this.bottomContextualBar.style.display = 'none';
+      this.bottomContextualBar.hide();
       return;
     }
 
-    this.bottomContextualBar.style.display = 'flex';
+    this.bottomContextualBar.show();
     const ctx: ToolContext = {
       view: this.view,
       map: this.map,

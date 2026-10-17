@@ -373,9 +373,6 @@ export class MeasureManager {
     // 1. Calibrating hint
     if (this.isCalibrating) {
       const hint = boardInner.createDiv({ cls: 'dte-measure-badge dte-calibrate-hint' });
-      hint.style.left = '50%';
-      hint.style.top = '20px';
-      hint.style.transform = 'translateX(-50%)';
       hint.setText(
         this.calibrateStep === 1
           ? t('measure.calibrateStep1')
@@ -466,13 +463,6 @@ export class MeasureManager {
     const svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('class', 'dte-measure-layer');
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    svg.style.position = 'absolute';
-    svg.style.top = '0';
-    svg.style.left = '0';
-    svg.style.width = '100%';
-    svg.style.height = '100%';
-    svg.style.pointerEvents = 'none';
-    svg.style.zIndex = '4';
 
     if (kind === 'line') {
       const line = document.createElementNS(svgNS, 'line');
@@ -552,13 +542,6 @@ export class MeasureManager {
     const svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('class', 'dte-pinned-rulers-layer');
     svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    svg.style.position = 'absolute';
-    svg.style.top = '0';
-    svg.style.left = '0';
-    svg.style.width = '100%';
-    svg.style.height = '100%';
-    svg.style.pointerEvents = 'none';
-    svg.style.zIndex = '3';
 
     for (const ruler of map.rulers) {
       const pxFrom = { x: (ruler.from.x / 100) * width, y: (ruler.from.y / 100) * height };

@@ -204,12 +204,6 @@ export class CampaignDiaryPanel {
     this.plugin = plugin;
 
     this.el = panelsLayer.createDiv({ cls: 'dte-panel dte-diary-panel' });
-    this.el.style.right = '16px';
-    this.el.style.bottom = '60px';
-    this.el.style.left = 'auto';
-    this.el.style.top = 'auto';
-    this.el.style.pointerEvents = 'auto';
-
     this.build();
   }
 
@@ -421,10 +415,12 @@ export class CampaignDiaryPanel {
         if (!parent) return;
         const x = Math.max(0, Math.min(ev.clientX - parent.left - this.dragOffsetX, parent.width - 150));
         const y = Math.max(0, Math.min(ev.clientY - parent.top - this.dragOffsetY, parent.height - 50));
-        this.el.style.left = `${x}px`;
-        this.el.style.top = `${y}px`;
-        this.el.style.right = 'auto';
-        this.el.style.bottom = 'auto';
+        this.el.setCssStyles({
+          left: `${x}px`,
+          top: `${y}px`,
+          right: 'auto',
+          bottom: 'auto',
+        });
       };
 
       const onMouseUp = () => {

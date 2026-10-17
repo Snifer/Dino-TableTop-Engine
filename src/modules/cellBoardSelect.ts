@@ -717,10 +717,6 @@ function renderGhostPreview(
   const dy = worldPos.y - clip.origin.y;
 
   ghost.empty();
-  ghost.style.left = '0px';
-  ghost.style.top = '0px';
-  ghost.style.position = 'absolute';
-  ghost.style.pointerEvents = 'none';
 
   clip.tokens.forEach((t) => {
     const itemEl = ghost!.createDiv({ cls: 'dte-token is-ghost-item' });

@@ -16,10 +16,10 @@ export class DinoSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl('h2', { text: t('settings.title') });
+    new Setting(containerEl).setName(t('settings.title')).setHeading();
 
     // --- Sección: General e Internacionalización ---
-    containerEl.createEl('h3', { text: t('settings.generalSection') });
+    new Setting(containerEl).setName(t('settings.generalSection')).setHeading();
 
     new Setting(containerEl)
       .setName(t('settings.languageName'))
@@ -48,7 +48,7 @@ export class DinoSettingTab extends PluginSettingTab {
       );
 
     // --- Sección: Interfaz y Apariencia ---
-    containerEl.createEl('h3', { text: t('settings.interfaceSection') });
+    new Setting(containerEl).setName(t('settings.interfaceSection')).setHeading();
 
     new Setting(containerEl)
       .setName(t('settings.toolbarLayoutName'))
@@ -75,7 +75,7 @@ export class DinoSettingTab extends PluginSettingTab {
       );
 
     // --- Sección: Módulos Opcionales Integrados ---
-    containerEl.createEl('h3', { text: t('settings.modulesSection') });
+    new Setting(containerEl).setName(t('settings.modulesSection')).setHeading();
     containerEl.createDiv({
       cls: 'dte-hint',
       text: t('settings.modulesSectionDesc'),
@@ -104,7 +104,7 @@ export class DinoSettingTab extends PluginSettingTab {
     }
 
     // --- Sección: Acerca de / About ---
-    containerEl.createEl('h3', { text: t('settings.aboutSection') });
+    new Setting(containerEl).setName(t('settings.aboutSection')).setHeading();
 
     const aboutBox = containerEl.createDiv({ cls: 'dte-settings-about-box' });
 

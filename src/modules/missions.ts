@@ -881,10 +881,12 @@ export class MissionListPanel {
         if (!parent) return;
         const x = Math.max(0, Math.min(ev.clientX - parent.left - this.dragOffsetX, parent.width - 200));
         const y = Math.max(0, Math.min(ev.clientY - parent.top - this.dragOffsetY, parent.height - 50));
-        this.el.style.left = `${x}px`;
-        this.el.style.top = `${y}px`;
-        this.el.style.right = 'auto';
-        this.el.style.bottom = 'auto';
+        this.el.setCssStyles({
+          left: `${x}px`,
+          top: `${y}px`,
+          right: 'auto',
+          bottom: 'auto',
+        });
       };
 
       const onMouseUp = () => {

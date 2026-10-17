@@ -183,17 +183,15 @@ export class DrawingEditorModal extends Modal {
       const sel = this.drawing.images.find((i) => i.id === this.selectedImageId);
       if (sel) {
         this.toolbarEl.createSpan({ text: ` ${t('drawing.size')} ` });
-        const wIn = this.toolbarEl.createEl('input', { type: 'number' }) as HTMLInputElement;
+        const wIn = this.toolbarEl.createEl('input', { type: 'number', cls: 'dte-input-sm' }) as HTMLInputElement;
         wIn.value = String(Math.round(sel.w));
-        wIn.style.width = '60px';
         wIn.addEventListener('input', () => {
           sel.w = Number(wIn.value) || sel.w;
           this.plugin.saveSettings();
           this.paintCanvas();
         });
-        const hIn = this.toolbarEl.createEl('input', { type: 'number' }) as HTMLInputElement;
+        const hIn = this.toolbarEl.createEl('input', { type: 'number', cls: 'dte-input-sm' }) as HTMLInputElement;
         hIn.value = String(Math.round(sel.h));
-        hIn.style.width = '60px';
         hIn.addEventListener('input', () => {
           sel.h = Number(hIn.value) || sel.h;
           this.plugin.saveSettings();

@@ -246,13 +246,6 @@ export function renderGridLayer(boardInner: HTMLElement, map: MapData): void {
   svg.setAttribute('class', 'dte-grid-layer');
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
   svg.setAttribute('preserveAspectRatio', 'none');
-  svg.style.position = 'absolute';
-  svg.style.top = '0';
-  svg.style.left = '0';
-  svg.style.width = '100%';
-  svg.style.height = '100%';
-  svg.style.pointerEvents = 'none';
-  svg.style.zIndex = '2';
 
   const path = document.createElementNS(svgNS, 'path');
   path.setAttribute('d', pathData);

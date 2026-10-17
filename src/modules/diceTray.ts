@@ -158,9 +158,11 @@ export class DiceTrayPanel {
   private setupPosition(): void {
     const s = this.plugin.settings as DinoSettings;
     const pos = s.diceTray?.panelPosition || { x: 80, y: 200 };
-    this.el.style.position = 'absolute';
-    this.el.style.left = `${pos.x}px`;
-    this.el.style.top = `${pos.y}px`;
+    this.el.setCssStyles({
+      position: 'absolute',
+      left: `${pos.x}px`,
+      top: `${pos.y}px`,
+    });
   }
 
   public build(): void {
@@ -198,7 +200,7 @@ export class DiceTrayPanel {
     setIcon(closeBtn, 'x');
     closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.el.style.display = 'none';
+      this.el.hide();
     });
 
     this.setupDrag(header);
@@ -486,13 +488,13 @@ export class DiceTrayPanel {
   }
 
   public open(): void {
-    this.el.style.display = 'flex';
+    this.el.show();
     this.minimized = false;
     this.build();
   }
 
   public show(): void {
-    this.el.style.display = 'flex';
+    this.el.show();
   }
 
   private setupDrag(header: HTMLElement): void {
@@ -511,10 +513,12 @@ export class DiceTrayPanel {
         const parent = this.container.getBoundingClientRect();
         const x = Math.max(0, Math.min(moveEv.clientX - parent.left - this.dragOffsetX, parent.width - 150));
         const y = Math.max(0, Math.min(moveEv.clientY - parent.top - this.dragOffsetY, parent.height - 50));
-        this.el.style.left = `${x}px`;
-        this.el.style.top = `${y}px`;
-        this.el.style.right = 'auto';
-        this.el.style.bottom = 'auto';
+        this.el.setCssStyles({
+          left: `${x}px`,
+          top: `${y}px`,
+          right: 'auto',
+          bottom: 'auto',
+        });
       };
 
       const onMouseUp = () => {

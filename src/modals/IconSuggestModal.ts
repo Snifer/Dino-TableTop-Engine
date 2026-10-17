@@ -111,7 +111,6 @@ export class IconSuggestModal extends Modal {
       cell.setAttribute('title', icon);
 
       const iconEl = cell.createEl('i', { cls: `ra ${icon}` });
-      iconEl.style.fontSize = '22px';
 
       const label = cell.createDiv({ cls: 'dte-icon-grid-label' });
       label.setText(icon.replace('ra-', ''));

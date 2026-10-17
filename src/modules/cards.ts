@@ -92,11 +92,6 @@ export class CardsPanel {
     this.onRenderCards = onRenderCards;
 
     this.el = panelsLayer.createDiv({ cls: 'dte-panel dte-cards-panel' });
-    this.el.style.right = '16px';
-    this.el.style.top = '60px';
-    this.el.style.left = 'auto';
-    this.el.style.pointerEvents = 'auto';
-
     this.build();
   }
 
@@ -135,18 +130,20 @@ export class CardsPanel {
       const rect = this.el.getBoundingClientRect();
       this.dragOffsetX = e.clientX - rect.left;
       this.dragOffsetY = e.clientY - rect.top;
-      header.style.cursor = 'grabbing';
+      header.addClass('is-grabbing');
       e.preventDefault();
     });
     window.addEventListener('pointermove', (e) => {
       if (!this.isDragging) return;
-      this.el.style.left = `${e.clientX - this.dragOffsetX}px`;
-      this.el.style.top = `${e.clientY - this.dragOffsetY}px`;
-      this.el.style.right = 'auto';
+      this.el.setCssStyles({
+        left: `${e.clientX - this.dragOffsetX}px`,
+        top: `${e.clientY - this.dragOffsetY}px`,
+        right: 'auto',
+      });
     });
     window.addEventListener('pointerup', () => {
       this.isDragging = false;
-      header.style.cursor = 'grab';
+      header.removeClass('is-grabbing');
     });
 
     const title = header.createDiv({ cls: 'dte-panel-title' });

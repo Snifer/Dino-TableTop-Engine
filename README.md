@@ -1,7 +1,7 @@
 # Dino Tabletop Engine 
 
 [![Version](https://img.shields.io/badge/version-0.1.4--alpha-orange.svg)](manifest.json)
-[![Obsidian](https://img.shields.io/badge/Obsidian-%3E%3D%200.15.0-7C3AED.svg)](https://obsidian.md)
+[![Obsidian](https://img.shields.io/badge/Obsidian-%3E%3D%201.5.0-7C3AED.svg)](https://obsidian.md)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![YouTube](https://img.shields.io/badge/YouTube-Bastion%20del%20Dinosaurio-red.svg?logo=youtube)](https://www.youtube.com/@SniferL4bs)
 

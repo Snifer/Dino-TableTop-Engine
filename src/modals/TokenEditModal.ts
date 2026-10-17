@@ -196,11 +196,9 @@ export class TokenEditModal extends Modal {
 
     // Editor de condiciones y efectos de estado
     this.token.conditions = this.token.conditions || [];
-    const condHeader = contentEl.createEl('h3', { text: t('modules.combatConditionTitle') });
-    condHeader.style.marginTop = '18px';
+    const condHeader = contentEl.createEl('h3', { text: t('modules.combatConditionTitle'), cls: 'dte-cond-header' });
 
     const condsWrap = contentEl.createDiv({ cls: 'dte-combat-conditions-row' });
-    condsWrap.style.marginBottom = '12px';
     for (let cIdx = 0; cIdx < this.token.conditions.length; cIdx++) {
       const cond = this.token.conditions[cIdx];
       const durText = cond.roundsRemaining !== null ? `${cond.roundsRemaining}r` : '∞';
@@ -221,11 +219,9 @@ export class TokenEditModal extends Modal {
     }
 
     const addCondBtn = condsWrap.createEl('button', {
-      cls: 'dte-btn',
+      cls: 'dte-btn dte-btn-cond-add',
       text: t('modules.combatAddCondition'),
     });
-    addCondBtn.style.fontSize = '11px';
-    addCondBtn.style.height = '24px';
     addCondBtn.addEventListener('click', () => {
       new AddConditionModal(this.app, (newCond) => {
         this.token.conditions = this.token.conditions || [];

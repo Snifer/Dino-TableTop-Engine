@@ -197,8 +197,6 @@ export class WargameRosterListModal extends Modal {
         const af = this.app.vault.getAbstractFileByPath(unit.imagePath);
         if (af instanceof TFile) {
           thumb.style.backgroundImage = `url("${this.app.vault.getResourcePath(af)}")`;
-          thumb.style.backgroundSize = 'cover';
-          thumb.style.backgroundPosition = 'center';
         }
       } else {
         thumb.setText((unit.name || '?').slice(0, 2).toUpperCase());

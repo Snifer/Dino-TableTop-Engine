@@ -462,12 +462,9 @@ export class BestiaryListModal extends Modal {
       const imgFile = entry.imagePath ? this.app.vault.getAbstractFileByPath(entry.imagePath) : null;
       if (imgFile) {
         thumb.style.backgroundImage = `url("${this.app.vault.getResourcePath(imgFile as TFile)}")`;
-        thumb.style.backgroundSize = 'cover';
-        thumb.style.backgroundPosition = 'center';
       } else if (entry.icon) {
         const iconCls = getIconClass(entry.icon, 'ra');
-        const iconEl = thumb.createEl('i', { cls: iconCls });
-        iconEl.style.fontSize = '18px';
+        thumb.createEl('i', { cls: iconCls });
       } else {
         thumb.setText((entry.name || '?').slice(0, 2).toUpperCase());
       }
@@ -564,7 +561,7 @@ export class BestiaryListModal extends Modal {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = '.json';
-    fileInput.style.display = 'none';
+    fileInput.addClass('dte-hidden');
 
     fileInput.addEventListener('change', async () => {
       const file = fileInput.files?.[0];

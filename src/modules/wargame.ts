@@ -122,13 +122,6 @@ function renderWargameZones(
   const svg = document.createElementNS(svgNS, 'svg');
   svg.setAttribute('class', 'dte-wargame-zones-layer');
   svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.style.position = 'absolute';
-  svg.style.top = '0';
-  svg.style.left = '0';
-  svg.style.width = '100%';
-  svg.style.height = '100%';
-  svg.style.pointerEvents = 'none';
-  svg.style.zIndex = '1';
 
   for (const zone of wargame.zones) {
     const color = zone.color || '#10b981';
@@ -138,8 +131,6 @@ function renderWargameZones(
 
     const g = document.createElementNS(svgNS, 'g');
     g.setAttribute('class', 'dte-wargame-zone-group');
-    g.style.pointerEvents = 'all';
-    g.style.cursor = 'grab';
 
     let shapeEl: SVGElement | null = null;
     let labelEl: SVGTextElement | null = null;
@@ -248,7 +239,7 @@ function renderWargameZones(
       startX = e.clientX;
       startY = e.clientY;
       initialPoints = zone.points.map((p) => ({ x: p.x, y: p.y }));
-      g.style.cursor = 'grabbing';
+      g.classList.add('is-grabbing');
       g.setPointerCapture(e.pointerId);
     });
 
@@ -273,7 +264,7 @@ function renderWargameZones(
     const endZoneDrag = (e: PointerEvent) => {
       if (!draggingZone) return;
       draggingZone = false;
-      g.style.cursor = 'grab';
+      g.classList.remove('is-grabbing');
       try {
         g.releasePointerCapture(e.pointerId);
       } catch (err) {
@@ -521,8 +512,6 @@ function renderWargameModels(
         const af = view.app.vault.getAbstractFileByPath(unit.imagePath);
         if (af instanceof TFile) {
           circle.style.backgroundImage = `url("${view.app.vault.getResourcePath(af)}")`;
-          circle.style.backgroundSize = 'cover';
-          circle.style.backgroundPosition = 'center';
         }
       } else {
         circle.style.background = unitColor;
@@ -748,13 +737,10 @@ export class WargamePhaseTrackerPanel {
 
   private init(): void {
     if (!this.view.panelsLayer) {
-      this.view.containerEl.style.position = 'relative';
       this.view.panelsLayer = this.view.containerEl.createDiv({ cls: 'dte-panels-layer' });
     }
 
     this.el = this.view.panelsLayer.createDiv({ cls: 'dte-wargame-panel' });
-    this.el.style.left = '24px';
-    this.el.style.top = '64px';
 
     this.render();
   }
@@ -899,7 +885,6 @@ export class WargamePhaseTrackerPanel {
           badge.style.borderColor = controlledSide.color;
         } else {
           badge.setText(t('wargame.uncontrolled'));
-          badge.style.color = 'var(--text-muted)';
         }
       }
     }
@@ -980,9 +965,11 @@ export class WargamePhaseTrackerPanel {
       initialLeft = rect.left - parentRect.left;
       initialTop = rect.top - parentRect.top;
 
-      this.el.style.left = `${initialLeft}px`;
-      this.el.style.top = `${initialTop}px`;
-      this.el.style.right = 'auto';
+      this.el.setCssStyles({
+        left: `${initialLeft}px`,
+        top: `${initialTop}px`,
+        right: 'auto',
+      });
 
       header.setPointerCapture(e.pointerId);
     });
@@ -991,8 +978,10 @@ export class WargamePhaseTrackerPanel {
       if (!isDragging) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
-      this.el.style.left = `${initialLeft + dx}px`;
-      this.el.style.top = `${initialTop + dy}px`;
+      this.el.setCssStyles({
+        left: `${initialLeft + dx}px`,
+        top: `${initialTop + dy}px`,
+      });
     });
 
     const endDrag = (e: PointerEvent) => {
