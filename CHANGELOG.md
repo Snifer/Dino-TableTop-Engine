@@ -5,9 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-10-17
+
+### 🇬🇧 English
+
+#### Added
+- **Official MIT License:** Added root `LICENSE` file adhering to Obsidian Community Plugins requirements.
+
+#### Changed
+- **Obsidian API Compatibility:** Bumped `minAppVersion` to `1.5.0` in `manifest.json` ensuring compatibility with modern Obsidian APIs (`obsidianmd/no-unsupported-api`).
+- **Standardized Description:** Formatted manifest description in English without redundant name prefix or forbidden keywords.
+- **Settings UI Canonization:** Refactored settings tab headings to use `new Setting(containerEl).setName(...).setHeading()` for consistent typography and theme integration.
+- **CSS Architecture & Linting (`no-static-styles-assignment`):**
+  - Refactored static inline style assignments across views, modales, and modules into dedicated CSS classes in `styles.css`.
+  - Adopted Obsidian element helpers (`setCssStyles`, `.hide()`, `.show()`) for dynamic positioning and visibility toggles.
+  - Removed deprecated `speak: none` property from embedded icon font styles.
+
+### 🇪🇸 Español
+
+#### Agregado
+- **Licencia MIT Oficial:** Se agregó el archivo `LICENSE` en la raíz del repositorio cumpliendo con las directrices de plugins comunitarios de Obsidian.
+
+
+#### Modificado
+- **Compatibilidad con API de Obsidian:** Se actualizó `minAppVersion` a `1.5.0` en `manifest.json`, resolviendo advertencias de APIs no soportadas (`obsidianmd/no-unsupported-api`).
+- **Descripción Estandarizada:** Se actualizó la descripción del manifiesto en inglés, sin prefijo redundante del nombre ni uso de la palabra "Obsidian".
+- **Encabezados en Ajustes:** Se migraron los encabezados de la pestaña de configuración a `new Setting(containerEl).setName(...).setHeading()` garantizando integración nativa con cualquier tema.
+- **Arquitectura CSS y Limpieza de Estilos (`no-static-styles-assignment`):**
+  - Se eliminaron las asignaciones de estilos estáticos en línea en vistas, modales y módulos, migrándolos a clases reutilizables en `styles.css`.
+  - Se adoptaron los métodos nativos de Obsidian (`setCssStyles`, `.hide()`, `.show()`) para transformaciones dinámicas y visibilidad.
+  - Se eliminó la propiedad obsoleta `speak: none` de los estilos de la fuente de iconos embebida.
+
+#
 ## [0.1.7] - 2026-10-15
 
-## 🇬🇧 English
+### 🇬🇧 English
 
 #### Added
 - **Hierofante Module (Solo RPG Oracle):**
