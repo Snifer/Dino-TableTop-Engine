@@ -5,6 +5,7 @@ import {
   MapRuler,
   MeasureUnit,
   DiagonalRule,
+  IDinoTabletopView,
 } from '../types';
 import { clamp, genId } from '../utils';
 import { getGridDimensions } from '../grid';
@@ -152,7 +153,7 @@ export function getWargameArcPrefix(
 }
 
 export class MeasureManager {
-  private view: any;
+  private view: IDinoTabletopView;
   active: boolean = false;
   mode: 'line' | 'radius' = 'line';
   private isMeasuring: boolean = false;
@@ -170,7 +171,7 @@ export class MeasureManager {
   private calibrateStep: 1 | 2 = 1;
   private calibratePt1: { x: number; y: number } | null = null;
 
-  constructor(view: any) {
+  constructor(view: IDinoTabletopView) {
     this.view = view;
   }
 
@@ -619,14 +620,14 @@ export const MeasureModule: EngineModule = {
   descKey: 'modules.measureDesc',
   icon: 'ruler',
   defaultEnabled: true,
-  renderToolbarButton(container: HTMLElement, view: any): void {
+  renderToolbarButton(container: HTMLElement, view: IDinoTabletopView): void {
     const map = view.getCurrentMap();
     if (!map) return;
 
     if (!view.measureManager) {
       view.measureManager = new MeasureManager(view);
     }
-    const mgr: MeasureManager = view.measureManager;
+    const mgr = view.measureManager as MeasureManager;
 
     const measureBtn = container.createEl('button', {
       cls: 'dte-btn' + (mgr.active ? ' mod-active' : ''),

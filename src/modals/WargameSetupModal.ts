@@ -9,6 +9,7 @@ import {
   WargameObjective,
   WargameRoster,
   WargameRosterUnit,
+  IDinoTabletopView,
 } from '../types';
 import { genId } from '../utils';
 import { t } from '../i18n';
@@ -16,11 +17,11 @@ import { NamePromptModal } from './NamePromptModal';
 import { WargameRosterListModal } from './WargameRosterModals';
 
 export class WargameSetupModal extends Modal {
-  view: any;
+  view: IDinoTabletopView;
   map: MapData;
   activeTab: 'general' | 'sides' | 'deploy' | 'objectives' | 'zones' = 'general';
 
-  constructor(app: App, view: any, map: MapData) {
+  constructor(app: App, view: IDinoTabletopView, map: MapData) {
     super(app);
     this.view = view;
     this.map = map;

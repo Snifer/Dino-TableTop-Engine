@@ -7,7 +7,7 @@ export class OracleCardEditModal extends Modal {
 
   constructor(app: App, card: OracleCard, onSave: (updated: OracleCard) => void) {
     super(app);
-    this.card = JSON.parse(JSON.stringify(card));
+    this.card = JSON.parse(JSON.stringify(card)) as OracleCard;
     this.onSave = onSave;
   }
 

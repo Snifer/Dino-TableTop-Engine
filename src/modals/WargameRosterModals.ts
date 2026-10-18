@@ -4,6 +4,8 @@ import {
   WargameRosterUnit,
   WargameArcs,
   IMAGE_EXTS,
+  DinoPlugin,
+  IDinoTabletopView,
 } from '../types';
 import { genId } from '../utils';
 import { t } from '../i18n';
@@ -11,11 +13,11 @@ import { FileSuggestModal } from './FileSuggestModal';
 import { NamePromptModal } from './NamePromptModal';
 
 export class WargameRosterListModal extends Modal {
-  plugin: any;
-  view: any;
+  plugin: DinoPlugin;
+  view: IDinoTabletopView;
   selectedRosterId: string | null;
 
-  constructor(app: App, plugin: any, view: any) {
+  constructor(app: App, plugin: DinoPlugin, view: IDinoTabletopView) {
     super(app);
     this.plugin = plugin;
     this.view = view;

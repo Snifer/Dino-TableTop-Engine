@@ -1,13 +1,13 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import { SupportedLanguage } from '../types';
+import { SupportedLanguage, DinoPlugin, ToolbarLayout } from '../types';
 import { setLanguage, t } from '../i18n';
 import { moduleRegistry } from '../modules/registry';
 import { DinoTabletopView } from '../views/DinoTabletopView';
 
 export class DinoSettingTab extends PluginSettingTab {
-  plugin: any;
+  plugin: DinoPlugin;
 
-  constructor(app: App, plugin: any) {
+  constructor(app: App, plugin: DinoPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
@@ -60,8 +60,8 @@ export class DinoSettingTab extends PluginSettingTab {
           .addOption('floating-left', t('settings.toolbarLayoutFloatingLeft'))
           .addOption('floating-right', t('settings.toolbarLayoutFloatingRight'))
           .setValue(this.plugin.settings.toolbarLayout || 'top')
-          .onChange(async (val: any) => {
-            this.plugin.settings.toolbarLayout = val;
+          .onChange(async (val: string) => {
+            this.plugin.settings.toolbarLayout = val as ToolbarLayout;
             await this.plugin.saveSettings();
 
             // Refresh open DinoTabletopView if active

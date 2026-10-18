@@ -3,6 +3,7 @@ import {
   VIEW_TYPE_DINO,
   DEFAULT_SETTINGS,
   DinoSettings,
+  DinoPlugin,
   TokenData,
   HP_KEYS,
   MAXHP_KEYS,
@@ -14,11 +15,24 @@ import { DinoTabletopView } from './src/views/DinoTabletopView';
 import { DinoSettingTab } from './src/settings/DinoSettingTab';
 import { VIEW_TYPE_DINO_PROJECTION, DinoProjectionView, openProjectionWindow } from './src/modules/playerView';
 
-export default class DinoTabletopEnginePlugin extends Plugin {
+interface LegacyCounterItem {
+  id: string;
+  label: string;
+  value: number;
+  max: number;
+}
+
+interface LegacyWithCounters {
+  counters?: LegacyCounterItem[];
+  inventory?: unknown;
+}
+
+export default class DinoTabletopEnginePlugin extends Plugin implements DinoPlugin {
   settings: DinoSettings;
 
   async onload(): Promise<void> {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const loadedData = (await this.loadData()) as Partial<DinoSettings> | null;
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData ?? {});
     if (!this.settings.bestiary) this.settings.bestiary = {};
     if (!this.settings.language) this.settings.language = 'auto';
 
@@ -34,9 +48,10 @@ export default class DinoTabletopEnginePlugin extends Plugin {
             const map = camp.maps[mapId];
             if (map.tokens) {
               for (const tok of map.tokens) {
-                if ((tok as any).counters && (tok as any).counters.length && !tok.inventory) {
+                const legacyTok = tok as unknown as LegacyWithCounters;
+                if (legacyTok.counters && legacyTok.counters.length && !tok.inventory) {
                   tok.inventory = {
-                    items: (tok as any).counters.map((c: any) => ({
+                    items: legacyTok.counters.map((c) => ({
                       id: c.id,
                       label: c.label,
                       value: c.value,
@@ -48,7 +63,7 @@ export default class DinoTabletopEnginePlugin extends Plugin {
                     })),
                     capacity: { mode: 'none', value: 0, label: '' },
                   };
-                  delete (tok as any).counters;
+                  delete legacyTok.counters;
                   migrated = true;
                 }
               }
@@ -61,9 +76,10 @@ export default class DinoTabletopEnginePlugin extends Plugin {
     if (this.settings.bestiary) {
       for (const bId in this.settings.bestiary) {
         const entry = this.settings.bestiary[bId];
-        if ((entry as any).counters && (entry as any).counters.length && !entry.inventory) {
+        const legacyEntry = entry as unknown as LegacyWithCounters;
+        if (legacyEntry.counters && legacyEntry.counters.length && !entry.inventory) {
           entry.inventory = {
-            items: (entry as any).counters.map((c: any) => ({
+            items: legacyEntry.counters.map((c) => ({
               id: c.id,
               label: c.label,
               value: c.value,
@@ -75,7 +91,7 @@ export default class DinoTabletopEnginePlugin extends Plugin {
             })),
             capacity: { mode: 'none', value: 0, label: '' },
           };
-          delete (entry as any).counters;
+          delete legacyEntry.counters;
           migrated = true;
         }
       }

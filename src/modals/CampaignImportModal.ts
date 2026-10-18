@@ -1,16 +1,16 @@
 import { App, Modal, Setting, Notice, setIcon } from 'obsidian';
-import type DinoTabletopEnginePlugin from '../../main';
+import { DinoPlugin } from '../types';
 import { DinoTabletopView } from '../views/DinoTabletopView';
 import { importCampaignFromBuffer } from '../modules/campaignExportImport';
 import { t } from '../i18n';
 
 export class CampaignImportModal extends Modal {
-  plugin: DinoTabletopEnginePlugin;
+  plugin: DinoPlugin;
   view: DinoTabletopView;
   selectedFile: File | null = null;
   customFolder: string = '';
 
-  constructor(app: App, plugin: DinoTabletopEnginePlugin, view: DinoTabletopView) {
+  constructor(app: App, plugin: DinoPlugin, view: DinoTabletopView) {
     super(app);
     this.plugin = plugin;
     this.view = view;

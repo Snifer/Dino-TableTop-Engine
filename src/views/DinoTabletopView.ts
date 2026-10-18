@@ -7,6 +7,8 @@ import {
   IMAGE_EXTS,
   WEIGHT_KEYS,
   DinoSettings,
+  DinoPlugin,
+  IDinoTabletopView,
   CampaignData,
   MapData,
   TokenData,
@@ -78,8 +80,8 @@ export interface InventoryPanelHandle {
   close: () => void;
 }
 
-export class DinoTabletopView extends ItemView {
-  plugin: any;
+export class DinoTabletopView extends ItemView implements IDinoTabletopView {
+  plugin: DinoPlugin;
   zoom: number;
   metaListener: any;
   panelsLayer: HTMLElement;
@@ -97,7 +99,7 @@ export class DinoTabletopView extends ItemView {
   lateralToolbar: CellBoardLateralToolbar | null;
   private keydownListener: ((e: KeyboardEvent) => void) | null = null;
 
-  constructor(leaf: WorkspaceLeaf, plugin: any) {
+  constructor(leaf: WorkspaceLeaf, plugin: DinoPlugin) {
     super(leaf);
     this.plugin = plugin;
     this.zoom = 1;

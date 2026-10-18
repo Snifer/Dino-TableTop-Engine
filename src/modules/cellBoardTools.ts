@@ -53,8 +53,8 @@ export const cellToolState: CellToolState = {
 export function initDefaultCellMapData(): CellMapData {
   return {
     cellSizePx: 48,
-    palette: JSON.parse(JSON.stringify(DEFAULT_CELL_PALETTE)),
-    edgeStyles: JSON.parse(JSON.stringify(DEFAULT_EDGE_STYLES)),
+    palette: JSON.parse(JSON.stringify(DEFAULT_CELL_PALETTE)) as CellPaletteColor[],
+    edgeStyles: JSON.parse(JSON.stringify(DEFAULT_EDGE_STYLES)) as CellEdgeStyle[],
     backgroundImagePath: null,
     backgroundOffsetX: 0,
     backgroundOffsetY: 0,

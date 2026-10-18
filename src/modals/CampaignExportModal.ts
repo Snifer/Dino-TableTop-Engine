@@ -1,11 +1,10 @@
 import { App, Modal, Setting, Notice } from 'obsidian';
-import type DinoTabletopEnginePlugin from '../../main';
-import { CampaignData } from '../types';
+import { CampaignData, DinoPlugin } from '../types';
 import { exportCampaignToFile, CampaignExportOptions } from '../modules/campaignExportImport';
 import { t } from '../i18n';
 
 export class CampaignExportModal extends Modal {
-  plugin: DinoTabletopEnginePlugin;
+  plugin: DinoPlugin;
   campaignId: string;
   campaign: CampaignData;
   availablePacks: string[];
@@ -18,7 +17,7 @@ export class CampaignExportModal extends Modal {
     selectedPacks: [],
   };
 
-  constructor(app: App, plugin: DinoTabletopEnginePlugin, campaignId: string) {
+  constructor(app: App, plugin: DinoPlugin, campaignId: string) {
     super(app);
     this.plugin = plugin;
     this.campaignId = campaignId;
@@ -132,9 +131,9 @@ export class CampaignExportModal extends Modal {
           .addOption('all', t('exportImport.bestiaryModeAll'))
           .addOption('none', t('exportImport.bestiaryModeNone'))
           .setValue(this.options.bestiaryMode)
-          .onChange((v: any) => {
-            this.options.bestiaryMode = v;
-            updatePacksVisibility(v);
+          .onChange((v: string) => {
+            this.options.bestiaryMode = v as CampaignExportOptions['bestiaryMode'];
+            updatePacksVisibility(this.options.bestiaryMode);
           });
       });
 

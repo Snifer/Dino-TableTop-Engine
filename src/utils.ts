@@ -10,14 +10,17 @@ export async function renderMarkdownInto(
   el: HTMLElement,
   markdown: string,
   sourcePath: string,
-  component: any
+  component: unknown
 ): Promise<void> {
   el.empty();
-  const AnyMarkdownRenderer = MarkdownRenderer as any;
-  if (typeof AnyMarkdownRenderer.render === 'function') {
-    await AnyMarkdownRenderer.render(app, markdown, el, sourcePath, component);
-  } else if (typeof AnyMarkdownRenderer.renderMarkdown === 'function') {
-    await AnyMarkdownRenderer.renderMarkdown(markdown, el, sourcePath, component);
+  const renderer = MarkdownRenderer as unknown as {
+    render?: (app: App, markdown: string, el: HTMLElement, sourcePath: string, component: unknown) => Promise<void>;
+    renderMarkdown?: (markdown: string, el: HTMLElement, sourcePath: string, component: unknown) => Promise<void>;
+  };
+  if (typeof renderer.render === 'function') {
+    await renderer.render(app, markdown, el, sourcePath, component);
+  } else if (typeof renderer.renderMarkdown === 'function') {
+    await renderer.renderMarkdown(markdown, el, sourcePath, component);
   }
 }
 
@@ -33,11 +36,12 @@ export function readFrontmatterStat(app: App, path: string, keys: string[]): num
   const file = app.vault.getAbstractFileByPath(path);
   if (!file) return null;
   const cache = app.metadataCache.getFileCache(file as TFile);
-  const fm = cache && cache.frontmatter;
+  const fm = cache?.frontmatter as Record<string, unknown> | undefined;
   if (!fm) return null;
   for (const k of keys) {
-    if (fm[k] !== undefined && fm[k] !== null && !isNaN(Number(fm[k]))) {
-      return Number(fm[k]);
+    const val = fm[k];
+    if (val !== undefined && val !== null && !isNaN(Number(val))) {
+      return Number(val);
     }
   }
   return null;
@@ -51,20 +55,21 @@ export function readFrontmatterImagePath(app: App, notePath: string, keys: strin
   const file = app.vault.getAbstractFileByPath(notePath);
   if (!file) return null;
   const cache = app.metadataCache.getFileCache(file as TFile);
-  const fm = cache && cache.frontmatter;
+  const fm = cache?.frontmatter as Record<string, unknown> | undefined;
   if (!fm) return null;
   for (const k of keys) {
-    let val = fm[k];
-    if (val === undefined || val === null) continue;
-    if (Array.isArray(val)) val = val[0];
-    val = String(val).trim();
-    if (!val) continue;
-    let clean = val.replace(/^!?\[\[/, '').replace(/\]\]$/, '');
-    clean = clean.split('|')[0].trim();
+    const rawVal = fm[k];
+    if (rawVal === undefined || rawVal === null) continue;
+    const val = Array.isArray(rawVal) ? String(rawVal[0]) : String(rawVal);
+    const trimmed = val.trim();
+    if (!trimmed) continue;
+    let clean = trimmed.replace(/^!?\[\[/, '').replace(/\]\]$/, '');
+    clean = clean.split('|')[0]?.trim() ?? '';
+    if (!clean) continue;
     const dest = app.metadataCache.getFirstLinkpathDest(clean, notePath);
-    if (dest) return (dest as TFile).path;
+    if (dest) return dest.path;
     const direct = app.vault.getAbstractFileByPath(clean);
-    if (direct) return (direct as TFile).path;
+    if (direct) return direct.path;
   }
   return null;
 }
@@ -73,11 +78,12 @@ export function readFrontmatterWeight(app: App, notePath: string, keys: string[]
   const file = app.vault.getAbstractFileByPath(notePath);
   if (!file) return null;
   const cache = app.metadataCache.getFileCache(file as TFile);
-  const fm = cache && cache.frontmatter;
+  const fm = cache?.frontmatter as Record<string, unknown> | undefined;
   if (!fm) return null;
   for (const k of keys) {
-    if (fm[k] !== undefined && fm[k] !== null && !isNaN(Number(fm[k]))) {
-      return Number(fm[k]);
+    const val = fm[k];
+    if (val !== undefined && val !== null && !isNaN(Number(val))) {
+      return Number(val);
     }
   }
   return null;

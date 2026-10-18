@@ -1,6 +1,5 @@
 import { App, Notice, TFile, TFolder } from 'obsidian';
 import JSZip from 'jszip';
-import type DinoTabletopEnginePlugin from '../../main';
 import {
   CampaignData,
   BestiaryEntry,
@@ -10,6 +9,7 @@ import {
   TokenData,
   POIData,
   MapData,
+  DinoPlugin,
 } from '../types';
 import { genId } from '../utils';
 import { t } from '../i18n';
@@ -63,7 +63,7 @@ async function ensureFolder(app: App, folderPath: string): Promise<void> {
 /** Escanea todos los assets y notas usados en la campaña y en el bestiario seleccionado */
 export function collectCampaignDependencies(
   campaign: CampaignData,
-  plugin: DinoTabletopEnginePlugin,
+  plugin: DinoPlugin,
   options: CampaignExportOptions
 ): {
   imagePaths: Set<string>;
@@ -207,7 +207,7 @@ export function collectCampaignDependencies(
  * Exporta la campaña activa empaquetando todo en un archivo .dinovtt
  */
 export async function exportCampaignToFile(
-  plugin: DinoTabletopEnginePlugin,
+  plugin: DinoPlugin,
   campaignId: string,
   options: CampaignExportOptions
 ): Promise<void> {
@@ -274,7 +274,7 @@ export async function exportCampaignToFile(
     appName: 'Dino Tabletop Engine',
     exportedAt: new Date().toISOString(),
     campaignName: campaign.name,
-    campaign: JSON.parse(JSON.stringify(campaign)),
+    campaign: JSON.parse(JSON.stringify(campaign)) as CampaignData,
     bestiaryEntries: bestiaryEntries.length ? bestiaryEntries : undefined,
     assetMap,
     noteMap,
@@ -308,7 +308,7 @@ export async function exportCampaignToFile(
  * Importa un paquete .dinovtt y remapea notas, imágenes y criaturas en el Vault
  */
 export async function importCampaignFromBuffer(
-  plugin: DinoTabletopEnginePlugin,
+  plugin: DinoPlugin,
   dataBuffer: ArrayBuffer,
   customTargetFolder?: string
 ): Promise<string> {
@@ -319,7 +319,7 @@ export async function importCampaignFromBuffer(
   }
 
   const manifestStr = await manifestFile.async('string');
-  const manifest: CampaignPackageManifest = JSON.parse(manifestStr);
+  const manifest = JSON.parse(manifestStr) as CampaignPackageManifest;
 
   const campaign = manifest.campaign;
   if (!campaign || !campaign.name) {
@@ -454,7 +454,7 @@ export async function importCampaignFromBuffer(
     const existingPacks = new Set(plugin.settings.bestiaryPacks);
 
     for (const entry of manifest.bestiaryEntries) {
-      const clonedEntry: BestiaryEntry = JSON.parse(JSON.stringify(entry));
+      const clonedEntry = JSON.parse(JSON.stringify(entry)) as BestiaryEntry;
       clonedEntry.imagePath = remapAsset(clonedEntry.imagePath);
       clonedEntry.linkedNote = remapNote(clonedEntry.linkedNote);
 

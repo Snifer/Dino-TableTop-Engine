@@ -1,4 +1,4 @@
-import { CellEdgeStyle, CellMapData, CellPaletteColor, MapFogConfig } from '../types';
+import { CellEdgeStyle, CellMapData, CellPaletteColor, MapFogConfig, DinoPlugin } from '../types';
 
 export const CHUNK_SIZE = 32;
 
@@ -122,11 +122,11 @@ export class CellStore {
   private mapId: string;
   private chunks: Map<string, ChunkMemoryData> = new Map();
   private saveTimeout: any = null;
-  private plugin: any;
+  private plugin: DinoPlugin;
   private isSaving: boolean = false;
   private pendingSave: boolean = false;
 
-  constructor(mapId: string, plugin: any) {
+  constructor(mapId: string, plugin: DinoPlugin) {
     this.mapId = mapId;
     this.plugin = plugin;
   }
@@ -553,7 +553,7 @@ export class CellStore {
       }
 
       const raw = await adapter.read(filePath);
-      const data: SerializedMapFile = JSON.parse(raw);
+      const data = JSON.parse(raw) as SerializedMapFile;
 
       this.chunks.clear();
 

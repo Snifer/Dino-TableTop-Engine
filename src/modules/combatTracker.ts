@@ -1,7 +1,7 @@
 import { App, Modal, Notice, Setting, setIcon, TFile } from 'obsidian';
 import { EngineModule } from './types';
 import { t } from '../i18n';
-import { CombatantData, CombatData, ConditionData, MapData, TokenData } from '../types';
+import { CombatantData, CombatData, ConditionData, MapData, TokenData, IDinoTabletopView } from '../types';
 import { clamp, genId, getIconClass } from '../utils';
 import { DamageModal } from '../modals/DamageModal';
 
@@ -193,11 +193,11 @@ export class AdjustConditionModal extends Modal {
 }
 
 export class AddTokensToCombatModal extends Modal {
-  view: any;
+  view: IDinoTabletopView;
   map: MapData;
   onAdded: () => void;
 
-  constructor(app: App, view: any, map: MapData, onAdded: () => void) {
+  constructor(app: App, view: IDinoTabletopView, map: MapData, onAdded: () => void) {
     super(app);
     this.view = view;
     this.map = map;
@@ -381,11 +381,11 @@ export class ManualCombatantModal extends Modal {
 }
 
 export class CombatTrackerPanel {
-  view: any;
+  view: IDinoTabletopView;
   el: HTMLElement;
   isMinimized: boolean;
 
-  constructor(view: any) {
+  constructor(view: IDinoTabletopView) {
     this.view = view;
     this.isMinimized = false;
     this.init();

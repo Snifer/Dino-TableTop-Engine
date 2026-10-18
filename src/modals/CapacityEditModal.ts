@@ -26,8 +26,8 @@ export class CapacityEditModal extends Modal {
           .addOption('weight', t('inventory.capacityModeWeight'))
           .addOption('slots', t('inventory.capacityModeSlots'))
           .setValue(this.capacity.mode || 'none')
-          .onChange((v: any) => {
-            this.capacity.mode = v;
+          .onChange((v: string) => {
+            this.capacity.mode = v as 'none' | 'weight' | 'slots';
             this.onOpen();
           })
       );

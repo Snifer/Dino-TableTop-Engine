@@ -1,5 +1,15 @@
 import { App, Modal, Setting } from 'obsidian';
-import { DrawPoint, DrawStroke, DrawTool, DrawingData, DrawingImage, IMAGE_EXTS, MapData } from '../types';
+import {
+  DrawPoint,
+  DrawStroke,
+  DrawTool,
+  DrawingData,
+  DrawingImage,
+  IMAGE_EXTS,
+  MapData,
+  DinoPlugin,
+  IDinoTabletopView,
+} from '../types';
 import { genId } from '../utils';
 import { t } from '../i18n';
 import { paintDrawingOnCanvas } from '../drawing';
@@ -52,8 +62,8 @@ export class NewDrawnMapModal extends Modal {
 }
 
 export class DrawingEditorModal extends Modal {
-  plugin: any;
-  view: any;
+  plugin: DinoPlugin;
+  view: IDinoTabletopView;
   map: MapData;
   drawing: DrawingData;
   tool: DrawTool;
@@ -66,7 +76,7 @@ export class DrawingEditorModal extends Modal {
   toolbarEl: HTMLElement;
   canvas: HTMLCanvasElement;
 
-  constructor(app: App, plugin: any, view: any, map: MapData) {
+  constructor(app: App, plugin: DinoPlugin, view: IDinoTabletopView, map: MapData) {
     super(app);
     this.plugin = plugin;
     this.view = view;

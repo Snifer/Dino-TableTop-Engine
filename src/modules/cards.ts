@@ -7,6 +7,7 @@ import {
   CardRotationMode,
   DeckData,
   DinoSettings,
+  DinoPlugin,
   MapData,
 } from '../types';
 import { genId } from '../utils';
@@ -78,7 +79,7 @@ export function resolveBackImage(deck: DeckData, card: CardDefinition | undefine
 
 export class CardsPanel {
   app: App;
-  plugin: any;
+  plugin: DinoPlugin;
   el: HTMLElement;
   private minimized = false;
   private dragOffsetX = 0;
@@ -86,7 +87,7 @@ export class CardsPanel {
   private isDragging = false;
   private onRenderCards: () => void;
 
-  constructor(app: App, plugin: any, panelsLayer: HTMLElement, onRenderCards: () => void) {
+  constructor(app: App, plugin: DinoPlugin, panelsLayer: HTMLElement, onRenderCards: () => void) {
     this.app = app;
     this.plugin = plugin;
     this.onRenderCards = onRenderCards;
@@ -293,11 +294,11 @@ export class CardsPanel {
 // ─── Deck Manager Modal ───────────────────────────────────────────────────────
 
 export class DeckManagerModal extends Modal {
-  plugin: any;
+  plugin: DinoPlugin;
   onClose_cb: () => void;
   private selectedDeckId: string | null = null;
 
-  constructor(app: App, plugin: any, onClose_cb: () => void) {
+  constructor(app: App, plugin: DinoPlugin, onClose_cb: () => void) {
     super(app);
     this.plugin = plugin;
     this.onClose_cb = onClose_cb;

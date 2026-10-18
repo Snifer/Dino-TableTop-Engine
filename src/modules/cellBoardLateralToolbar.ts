@@ -1,5 +1,5 @@
 import { setIcon } from 'obsidian';
-import { MapData, POIData, TokenData, ToolContext } from '../types';
+import { MapData, POIData, TokenData, ToolContext, IDinoTabletopView } from '../types';
 import { globalHistoryManager, globalToolManager, globalViewportManager } from './cellBoardCore';
 import { cellToolState } from './cellBoardTools';
 import { isPlayerViewActive, togglePlayerViewActive, openProjectionWindow } from './playerView';
@@ -10,7 +10,7 @@ import { genId } from '../utils';
 import { updateLaserOverlay } from './laserPing';
 
 export class CellBoardLateralToolbar {
-  private view: any;
+  private view: IDinoTabletopView;
   private container: HTMLElement;
   private map: MapData;
   private mapId: string;
@@ -21,7 +21,7 @@ export class CellBoardLateralToolbar {
   private unsubscribeToolChange: (() => void) | null = null;
   private static savedPosition: { left: number; top: number } | null = null;
 
-  constructor(view: any, container: HTMLElement, map: MapData, mapId: string, boardInner: HTMLElement) {
+  constructor(view: IDinoTabletopView, container: HTMLElement, map: MapData, mapId: string, boardInner: HTMLElement) {
     this.view = view;
     this.container = container;
     this.map = map;

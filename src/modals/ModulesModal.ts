@@ -1,12 +1,13 @@
 import { App, Modal, Setting } from 'obsidian';
+import { DinoPlugin, IDinoTabletopView } from '../types';
 import { moduleRegistry } from '../modules/registry';
 import { t } from '../i18n';
 
 export class ModulesModal extends Modal {
-  plugin: any;
-  view: any;
+  plugin: DinoPlugin;
+  view: IDinoTabletopView;
 
-  constructor(app: App, plugin: any, view: any) {
+  constructor(app: App, plugin: DinoPlugin, view: IDinoTabletopView) {
     super(app);
     this.plugin = plugin;
     this.view = view;

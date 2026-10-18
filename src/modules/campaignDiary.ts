@@ -1,8 +1,9 @@
 import { App, TFile, TFolder, TAbstractFile, setIcon, Notice } from 'obsidian';
 import { EngineModule } from './types';
 import { t, TranslationKey } from '../i18n';
-import { DinoSettings, CampaignData } from '../types';
+import { DinoSettings, CampaignData, DinoPlugin } from '../types';
 import { genId } from '../utils';
+import { formatTimeline } from './timeline';
 
 function getConfiguredFolder(app: App, campaign: CampaignData): TFolder | null {
   const path = campaign.diaryFolderPath;
@@ -37,16 +38,14 @@ function buildTree(folder: TFolder): TreeNode[] {
 }
 
 /** Suggest a filename for a new diary entry */
-function suggestEntryName(app: App, plugin: any): string {
-  const settings = plugin.settings as DinoSettings;
+function suggestEntryName(app: App, plugin: DinoPlugin): string {
+  const settings = plugin.settings;
 
   // Try to get in-game date from timeline module if active
   if (settings.enabledModules?.['timeline'] && settings.currentTimelineId) {
     const tl = settings.timelines?.[settings.currentTimelineId];
     if (tl) {
-      // Dynamic import avoided — use the exported formatTimeline if available
       try {
-        const { formatTimeline } = require('./timeline');
         const formatted = formatTimeline(tl);
         if (formatted && formatted.trim()) {
           return `${formatted}`;
@@ -191,7 +190,7 @@ class NewEntryModal extends Modal {
 
 export class CampaignDiaryPanel {
   app: App;
-  plugin: any;
+  plugin: DinoPlugin;
   el: HTMLElement;
   minimized = false;
   private dragOffsetX = 0;
@@ -199,7 +198,7 @@ export class CampaignDiaryPanel {
   private isDragging = false;
   private collapsedFolders: Set<string> = new Set();
 
-  constructor(app: App, plugin: any, panelsLayer: HTMLElement) {
+  constructor(app: App, plugin: DinoPlugin, panelsLayer: HTMLElement) {
     this.app = app;
     this.plugin = plugin;
 
