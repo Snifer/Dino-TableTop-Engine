@@ -1,7 +1,6 @@
 import { App, Modal, Setting } from 'obsidian';
 import { CellMapData } from '../types';
 import { initDefaultCellMapData } from '../modules/cellBoardTools';
-import { t } from '../i18n';
 
 export class NewCellMapModal extends Modal {
   private onSubmit: (name: string, cellMapData: CellMapData, gridUnit: string, gridRealSize: number) => void;
@@ -41,7 +40,6 @@ export class NewCellMapModal extends Modal {
         slider
           .setLimits(24, 96, 4)
           .setValue(this.cellSizePx)
-          .setDynamicTooltip()
           .onChange((val) => {
             this.cellSizePx = val;
           })

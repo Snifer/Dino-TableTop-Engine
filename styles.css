@@ -7,24 +7,28 @@
 }
 
 .dte-hidden {
-  display: none !important;
+  display: none;
 }
 
+input.dte-input-sm,
 .dte-input-sm {
-  width: 60px !important;
+  width: 60px;
 }
 
+h3.dte-cond-header,
 .dte-cond-header {
-  margin-top: 18px !important;
+  margin-top: 18px;
 }
 
+button.dte-btn-cond-add,
 .dte-btn-cond-add {
-  font-size: 11px !important;
-  height: 24px !important;
+  font-size: 11px;
+  height: 24px;
 }
 
+button.dte-btn-modal-add,
 .dte-btn-modal-add {
-  margin-top: 12px !important;
+  margin-top: 12px;
 }
 
 .dte-measure-layer {
@@ -49,12 +53,14 @@
 }
 
 .dte-projection-root {
-  position: relative !important;
+  position: relative;
 }
 
+.dte-token.is-player-view-token,
+.dte-poi.is-player-view-poi,
 .is-player-view-token,
 .is-player-view-poi {
-  pointer-events: none !important;
+  pointer-events: none;
 }
 
 .dte-header {
@@ -326,9 +332,11 @@
   gap: 1px;
 }
 
+button.dte-btn.dte-btn-segment,
+button.dte-btn-segment,
 .dte-btn-segment {
-  border: none !important;
-  background: transparent !important;
+  border: none;
+  background: transparent;
   height: 24px;
   padding: 0 8px;
   font-size: 11px;
@@ -336,14 +344,18 @@
   color: var(--text-muted);
 }
 
+button.dte-btn.dte-btn-segment:hover,
+button.dte-btn-segment:hover,
 .dte-btn-segment:hover {
   color: var(--text-normal);
-  background-color: var(--background-modifier-hover) !important;
+  background-color: var(--background-modifier-hover);
 }
 
+button.dte-btn.dte-btn-segment.mod-active,
+button.dte-btn-segment.mod-active,
 .dte-btn-segment.mod-active {
-  background-color: var(--interactive-accent) !important;
-  color: var(--text-on-accent) !important;
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
   font-weight: 500;
 }
 
@@ -454,8 +466,10 @@
   z-index: 2;
 }
 
-.dte-measuring-cursor {
-  cursor: crosshair !important;
+.dte-board-inner.dte-measuring-cursor,
+.dte-measuring-cursor,
+.dte-measuring-cursor * {
+  cursor: crosshair;
 }
 
 .dte-measure-badge {
@@ -1168,15 +1182,19 @@
   margin-top: 4px;
 }
 
+button.mod-cta.dte-btn-youtube,
+button.dte-btn-youtube,
 .dte-btn-youtube {
-  background: #cc0000 !important;
-  color: #ffffff !important;
+  background: #cc0000;
+  color: #ffffff;
   font-weight: 600;
   border: none;
 }
 
+button.mod-cta.dte-btn-youtube:hover,
+button.dte-btn-youtube:hover,
 .dte-btn-youtube:hover {
-  background: #ff0000 !important;
+  background: #ff0000;
 }
 
 /* --- Módulo: Combat Tracker (Floating Panel & Map Integration) --- */
@@ -2472,12 +2490,8 @@
    CALENDARS & CLOCKS MODAL STYLES (Modernized & Polished)
    ═══════════════════════════════════════════════════════════ */
 
+.modal.dte-modal-large,
 .dte-modal-large {
-  width: 880px !important;
-  max-width: 95vw !important;
-}
-
-.modal:has(.dte-modal-large) {
   width: 880px;
   max-width: 95vw;
 }
@@ -3297,7 +3311,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 2.5px solid #4c8bf5;
+  border: 2.5px solid var(--dte-model-border-color, #4c8bf5);
   background-size: cover;
   background-position: center;
   display: flex;
@@ -3311,7 +3325,7 @@
 }
 
 .dte-model-out-of-cohesion .dte-wargame-model-circle {
-  border: 2.5px dashed #ef4444 !important;
+  border: 2.5px dashed #ef4444;
   box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
   animation: dtePulseCohesion 1.5s infinite;
 }
@@ -4162,7 +4176,7 @@
 .ra,
 [class^="ra-"],
 [class*=" ra-"] {
-  font-family: "RPG-Awesome" !important;
+  font-family: "RPG-Awesome";
   font-style: normal;
   font-weight: normal;
   font-variant: normal;
@@ -4946,14 +4960,14 @@
   outline: 2px solid var(--interactive-accent);
   outline-offset: 3px;
   box-shadow: 0 0 12px rgba(var(--interactive-accent-rgb, 100, 150, 255), 0.7);
-  z-index: 50 !important;
+  z-index: 50;
 }
 
 .dte-poi.is-selected-poi {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 3px;
   box-shadow: 0 0 12px rgba(var(--interactive-accent-rgb, 100, 150, 255), 0.7);
-  z-index: 50 !important;
+  z-index: 50;
 }
 
 .dte-marquee-overlay {

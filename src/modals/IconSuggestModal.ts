@@ -44,7 +44,7 @@ export class IconSuggestModal extends Modal {
     this.renderGrid();
 
     // Focus search
-    setTimeout(() => this.searchEl.focus(), 50);
+    window.setTimeout(() => this.searchEl.focus(), 50);
   }
 
   private renderPackPills(): void {
@@ -110,7 +110,7 @@ export class IconSuggestModal extends Modal {
       const cell = gridContainer.createDiv({ cls: 'dte-icon-grid-cell' });
       cell.setAttribute('title', icon);
 
-      const iconEl = cell.createEl('i', { cls: `ra ${icon}` });
+      cell.createEl('i', { cls: `ra ${icon}` });
 
       const label = cell.createDiv({ cls: 'dte-icon-grid-label' });
       label.setText(icon.replace('ra-', ''));

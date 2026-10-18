@@ -289,7 +289,7 @@ export class DrawingEditorModal extends Modal {
         draggingImage = null;
         try {
           this.canvas.releasePointerCapture(e.pointerId);
-        } catch (err) {
+        } catch {
           /* noop */
         }
         return;
@@ -305,7 +305,7 @@ export class DrawingEditorModal extends Modal {
       }
       try {
         this.canvas.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch {
         /* noop */
       }
     };

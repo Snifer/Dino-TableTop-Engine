@@ -15,7 +15,6 @@ import {
   POIData,
   DrawingData,
   CounterData,
-  InventoryItem,
   NotePanelHandle,
   ToolContext,
   MeasureUnit,
@@ -35,7 +34,6 @@ import { renderGridLayer, snapCoordsToGrid } from '../grid';
 import { FileSuggestModal } from '../modals/FileSuggestModal';
 import { NamePromptModal } from '../modals/NamePromptModal';
 import { DamageModal } from '../modals/DamageModal';
-import { AdjustCounterModal } from '../modals/AdjustCounterModal';
 import { TokenEditModal } from '../modals/TokenEditModal';
 import { ItemEditModal } from '../modals/ItemEditModal';
 import { CapacityEditModal } from '../modals/CapacityEditModal';
@@ -70,7 +68,7 @@ import {
   nudgeSelection,
   clearSelection,
 } from '../modules/cellBoardSelect';
-import { isPlayerViewActive, setPlayerViewActive, togglePlayerViewActive } from '../modules/playerView';
+import { isPlayerViewActive } from '../modules/playerView';
 import { broadcastPing, spawnPingEffect } from '../modules/laserPing';
 
 export interface InventoryPanelHandle {
@@ -921,7 +919,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
       this.keydownListener = null;
     }
 
-    this.keydownListener = async (e: KeyboardEvent) => {
+    const asyncKeydownHandler = async (e: KeyboardEvent): Promise<void> => {
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
         return;
@@ -1056,6 +1054,10 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
           if (this.lateralToolbar) this.lateralToolbar.render();
         }
       }
+    };
+
+    this.keydownListener = (e: KeyboardEvent): void => {
+      void asyncKeydownHandler(e);
     };
 
     window.addEventListener('keydown', this.keydownListener);
@@ -1704,7 +1706,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
       dragging = false;
       try {
         el.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch {
         /* noop */
       }
       if (moved) {
@@ -2012,7 +2014,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
       dragging = false;
       try {
         el.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch {
         /* noop */
       }
       if (moved) {
@@ -2489,11 +2491,11 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
       })
       .catch(() => {});
 
-    let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+    let saveTimeout: number | null = null;
     const scheduleSave = () => {
       handle.rawContent = textarea.value;
-      if (saveTimeout) clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(() => {
+      if (saveTimeout) window.clearTimeout(saveTimeout);
+      saveTimeout = window.setTimeout(() => {
         this.app.vault.modify(file, textarea.value).catch(() => {});
       }, 600);
     };
@@ -2508,7 +2510,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
         toggleBtn.setText(t('panel.previewMode'));
         textarea.focus();
       } else {
-        if (saveTimeout) clearTimeout(saveTimeout);
+        if (saveTimeout) window.clearTimeout(saveTimeout);
         handle.rawContent = textarea.value;
         this.app.vault.modify(file, handle.rawContent).catch(() => {});
         handle.mode = 'preview';
@@ -2520,7 +2522,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
     });
 
     closeBtn.addEventListener('click', () => {
-      if (saveTimeout) clearTimeout(saveTimeout);
+      if (saveTimeout) window.clearTimeout(saveTimeout);
       const finalContent = handle.mode === 'edit' ? textarea.value : handle.rawContent;
       this.app.vault.modify(file, finalContent).catch(() => {});
       el.remove();
@@ -2554,7 +2556,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
       dragging = false;
       try {
         header.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch {
         /* noop */
       }
       el.removeClass('dte-note-panel-dragging');

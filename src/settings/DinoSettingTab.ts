@@ -13,6 +13,14 @@ export class DinoSettingTab extends PluginSettingTab {
   }
 
   display(): void {
+    this.renderSettings();
+  }
+
+  getSettingDefinitions(): [] {
+    return [];
+  }
+
+  private renderSettings(): void {
     const { containerEl } = this;
     containerEl.empty();
 
@@ -35,7 +43,7 @@ export class DinoSettingTab extends PluginSettingTab {
             this.plugin.settings.language = lang;
             setLanguage(lang);
             await this.plugin.saveSettings();
-            this.display();
+            this.renderSettings();
 
             // Refresh open DinoTabletopView if active
             const leaves = this.app.workspace.getLeavesOfType('dino-tabletop-engine-view');

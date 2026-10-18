@@ -6,9 +6,6 @@ import {
   DeckData,
   TimelineData,
   ClockData,
-  TokenData,
-  POIData,
-  MapData,
   DinoPlugin,
 } from '../types';
 import { genId } from '../utils';

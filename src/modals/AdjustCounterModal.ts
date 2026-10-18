@@ -36,7 +36,7 @@ export class AdjustCounterModal extends Modal {
     btnRow.addButton((b) =>
       b
         .setButtonText(t('counters.subtractBtn'))
-        .setWarning()
+        .setDestructive()
         .onClick(() => {
           this.close();
           this.onApply(-Math.abs(amount));

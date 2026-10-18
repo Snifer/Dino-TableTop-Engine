@@ -2,18 +2,13 @@ import { App, Modal, Setting, setIcon } from 'obsidian';
 import {
   MapData,
   WargameMatchData,
-  WargameSide,
   WargameUnitOnTable,
   WargameModel,
-  WargameZone,
-  WargameObjective,
   WargameRoster,
-  WargameRosterUnit,
   IDinoTabletopView,
 } from '../types';
 import { genId } from '../utils';
 import { t } from '../i18n';
-import { NamePromptModal } from './NamePromptModal';
 import { WargameRosterListModal } from './WargameRosterModals';
 
 export class WargameSetupModal extends Modal {

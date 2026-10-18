@@ -33,7 +33,7 @@ export class WargameWoundModal extends Modal {
     statusEl.setText(`${this.model.woundsCurrent} / ${this.model.woundsMax} ${t('wargame.woundsLabel')}`);
 
     let delta = 1;
-    const deltaSetting = new Setting(contentEl)
+    new Setting(contentEl)
       .setName(t('common.amount'))
       .addText((tx) => {
         tx.inputEl.type = 'number';

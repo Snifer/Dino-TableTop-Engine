@@ -81,7 +81,7 @@ export class CardsPanel {
   app: App;
   plugin: DinoPlugin;
   el: HTMLElement;
-  private minimized = false;
+  minimized = false;
   private dragOffsetX = 0;
   private dragOffsetY = 0;
   private isDragging = false;
@@ -455,7 +455,7 @@ export class DeckManagerModal extends Modal {
     new Setting(container).addButton((btn) => {
       btn
         .setButtonText('Eliminar mazo')
-        .setWarning()
+        .setDestructive()
         .onClick(async () => {
           delete this.settings.decks[deck.id];
           this.selectedDeckId = null;

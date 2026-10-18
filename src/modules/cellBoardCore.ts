@@ -1,4 +1,4 @@
-import { ToolDefinition, UndoStep, ViewportState, MapData } from '../types';
+import { ToolDefinition, UndoStep, ViewportState } from '../types';
 
 export class ViewportManager {
   private viewports: Map<string, ViewportState> = new Map();

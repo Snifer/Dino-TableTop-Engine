@@ -1,4 +1,4 @@
-import { MapData, MapGridConfig, GridType, GridSizeMode, GridHexOrientation } from './types';
+import { MapData, MapGridConfig, GridHexOrientation } from './types';
 import { clamp } from './utils';
 
 export function getDefaultGridConfig(): MapGridConfig {

@@ -1,5 +1,5 @@
 import { App, MarkdownRenderer, TFile } from 'obsidian';
-import { CounterData, HP_KEYS, MAXHP_KEYS, IMAGE_KEYS } from './types';
+import { CounterData } from './types';
 
 /**
  * Renderiza markdown a HTML dentro de `el`, usando la API disponible según la

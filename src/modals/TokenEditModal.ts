@@ -48,7 +48,6 @@ export class TokenEditModal extends Modal {
         s
           .setLimits(20, 120, 2)
           .setValue(this.token.size || 44)
-          .setDynamicTooltip()
           .onChange((v) => (this.token.size = v))
       );
 
@@ -196,7 +195,7 @@ export class TokenEditModal extends Modal {
 
     // Editor de condiciones y efectos de estado
     this.token.conditions = this.token.conditions || [];
-    const condHeader = contentEl.createEl('h3', { text: t('modules.combatConditionTitle'), cls: 'dte-cond-header' });
+    contentEl.createEl('h3', { text: t('modules.combatConditionTitle'), cls: 'dte-cond-header' });
 
     const condsWrap = contentEl.createDiv({ cls: 'dte-combat-conditions-row' });
     for (let cIdx = 0; cIdx < this.token.conditions.length; cIdx++) {
@@ -254,7 +253,7 @@ export class TokenEditModal extends Modal {
       btnRow.addButton((b) =>
         b
           .setButtonText(t('token.deleteBtn'))
-          .setWarning()
+          .setDestructive()
           .onClick(() => {
             if (!confirm(t('token.deleteConfirm', { name: this.token.name || t('common.unnamed') }))) return;
             this.close();

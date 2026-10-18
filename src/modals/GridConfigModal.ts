@@ -3,7 +3,6 @@ import {
   MapData,
   MapGridConfig,
   GridType,
-  GridSizeMode,
   GridHexOrientation,
   DiagonalRule,
   MeasureUnit,
@@ -123,7 +122,6 @@ export class GridConfigModal extends Modal {
           slider
             .setLimits(15, 300, 1)
             .setValue(this.gridConfig.cellSizePx || this.gridConfig.cellSize || 50)
-            .setDynamicTooltip()
             .onChange((v) => {
               this.gridConfig.cellSizePx = v;
               this.gridConfig.cellSize = v;
@@ -211,7 +209,6 @@ export class GridConfigModal extends Modal {
             slider
               .setLimits(5, 100, 5)
               .setValue(Math.round((this.gridConfig.opacity ?? 0.35) * 100))
-              .setDynamicTooltip()
               .onChange((v) => {
                 this.gridConfig.opacity = v / 100;
               })
@@ -225,7 +222,6 @@ export class GridConfigModal extends Modal {
             slider
               .setLimits(1, 5, 1)
               .setValue(this.gridConfig.thickness || 1)
-              .setDynamicTooltip()
               .onChange((v) => {
                 this.gridConfig.thickness = v;
               })

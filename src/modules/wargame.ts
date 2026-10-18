@@ -1,16 +1,13 @@
-import { App, Menu, Modal, Notice, Setting, setIcon, TFile } from 'obsidian';
+import { Menu, Notice, setIcon, TFile } from 'obsidian';
 import { EngineModule } from './types';
 import {
   MapData,
   WargameMatchData,
-  WargameSide,
   WargameUnitOnTable,
   WargameModel,
-  WargameZone,
-  WargameObjective,
   WargameArcs,
 } from '../types';
-import { clamp, genId } from '../utils';
+import { clamp } from '../utils';
 import { getGridDimensions } from '../grid';
 import { MM_PER_UNIT } from './measure';
 import { t } from '../i18n';
@@ -94,7 +91,6 @@ export function renderWargameBoard(boardInner: HTMLElement, map: MapData, view: 
 
   if (!map.wargame || !map.wargame.enabled) return;
 
-  const wargame = map.wargame;
   const { width, height } = getGridDimensions(map, boardInner);
   if (width <= 0 || height <= 0) return;
 
@@ -267,7 +263,7 @@ function renderWargameZones(
       g.classList.remove('is-grabbing');
       try {
         g.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch {
         /* noop */
       }
       if (moved) {
@@ -370,8 +366,8 @@ function renderWargameObjectives(boardInner: HTMLElement, map: MapData, view: an
       el.style.borderColor = controlledSide.color;
     }
 
-    const flagIcon = el.createSpan({ cls: 'dte-obj-icon', text: '🚩' });
-    const labelSpan = el.createSpan({ cls: 'dte-obj-label', text: obj.label });
+    el.createSpan({ cls: 'dte-obj-icon', text: '🚩' });
+    el.createSpan({ cls: 'dte-obj-label', text: obj.label });
 
     if (controlledSide) {
       const ownerSpan = el.createSpan({ cls: 'dte-obj-owner', text: `(${controlledSide.name})` });
@@ -414,7 +410,7 @@ function renderWargameObjectives(boardInner: HTMLElement, map: MapData, view: an
       dragging = false;
       try {
         el.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch {
         /* noop */
       }
       if (moved) {
@@ -506,7 +502,7 @@ function renderWargameModels(
 
       // Model Circle
       const circle = el.createDiv({ cls: 'dte-wargame-model-circle' });
-      circle.style.borderColor = unitColor;
+      circle.style.setProperty('--dte-model-border-color', unitColor);
 
       if (unit.imagePath) {
         const af = view.app.vault.getAbstractFileByPath(unit.imagePath);
@@ -578,7 +574,7 @@ function renderWargameModels(
         draggingModel = false;
         try {
           el.releasePointerCapture(e.pointerId);
-        } catch (err) {
+        } catch {
           /* noop */
         }
         if (moved) {
@@ -623,7 +619,7 @@ function renderWargameModels(
         rotating = false;
         try {
           rotateHandle.releasePointerCapture(e.pointerId);
-        } catch (err) {
+        } catch {
           /* noop */
         }
         view.plugin.saveSettings();
@@ -989,7 +985,7 @@ export class WargamePhaseTrackerPanel {
       isDragging = false;
       try {
         header.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch {
         /* noop */
       }
     };

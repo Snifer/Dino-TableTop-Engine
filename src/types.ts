@@ -9,6 +9,14 @@ export interface DinoPlugin extends Plugin {
   getOpenDinoView(): IDinoTabletopView | null;
 }
 
+/** Minimal interface shared by all floating/dockable panels */
+export interface IPanel {
+  open?(): void;
+  build?(): void;
+  destroy?(): void;
+  minimized?: boolean;
+}
+
 export interface IDinoTabletopView {
   app: App;
   leaf: WorkspaceLeaf;
@@ -23,7 +31,15 @@ export interface IDinoTabletopView {
   requestRender?(): void;
   applyTokenDelta?(map: MapData, token: TokenData, delta: number): void;
   measureManager?: unknown;
-  combatPanel?: any;
+  combatPanel?: IPanel | null;
+  cardsPanel?: IPanel | null;
+  timelinePanel?: IPanel | null;
+  diaryPanel?: IPanel | null;
+  diceTrayPanel?: IPanel | null;
+  missionsPanel?: IPanel | null;
+  oraclePanel?: IPanel | null;
+  wargamePanel?: IPanel | null;
+  playerViewPanel?: IPanel | null;
 }
 
 export const HP_KEYS = ['hp', 'HP', 'puntosDeVida', 'puntos_de_vida', 'vida', 'Vida', 'PV', 'pv'];

@@ -37,7 +37,7 @@ export class DamageModal extends Modal {
     btnRow.addButton((b) =>
       b
         .setButtonText(t('token.applyDamageBtn'))
-        .setWarning()
+        .setDestructive()
         .onClick(() => {
           this.close();
           this.onApply(-Math.abs(amount));

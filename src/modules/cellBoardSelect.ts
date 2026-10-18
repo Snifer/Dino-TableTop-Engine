@@ -1,7 +1,7 @@
 import { MapData, POIData, TokenData, ToolContext, UndoStep } from '../types';
-import { cellToWorld, fromPointer, snapWorldToCell, toCss, worldToCell } from './cellCoordinates';
-import { CellStore, getCellStore } from './cellStore';
-import { globalHistoryManager, globalToolManager, globalViewportManager } from './cellBoardCore';
+import { toCss, worldToCell } from './cellCoordinates';
+import { getCellStore } from './cellStore';
+import { globalHistoryManager, globalToolManager } from './cellBoardCore';
 import { cellToolState } from './cellBoardTools';
 import { genId } from '../utils';
 import { Notice, setIcon } from 'obsidian';

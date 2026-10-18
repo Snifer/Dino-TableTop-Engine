@@ -321,7 +321,7 @@ export class MeasureManager {
       this.isMeasuring = false;
       try {
         boardInner.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch {
         /* noop */
       }
 
@@ -410,7 +410,7 @@ export class MeasureManager {
       badge.style.left = r.to.x + '%';
       badge.style.top = r.to.y + '%';
 
-      const label = badge.createSpan({ text: r.result.summary });
+      badge.createSpan({ text: r.result.summary });
 
       // Pin button
       const pinBtn = badge.createEl('button', {

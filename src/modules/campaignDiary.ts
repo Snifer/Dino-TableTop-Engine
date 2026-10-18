@@ -2,7 +2,6 @@ import { App, TFile, TFolder, TAbstractFile, setIcon, Notice } from 'obsidian';
 import { EngineModule } from './types';
 import { t, TranslationKey } from '../i18n';
 import { DinoSettings, CampaignData, DinoPlugin } from '../types';
-import { genId } from '../utils';
 import { formatTimeline } from './timeline';
 
 function getConfiguredFolder(app: App, campaign: CampaignData): TFolder | null {
@@ -346,7 +345,7 @@ export class CampaignDiaryPanel {
           const leaf = this.app.workspace.getLeaf('split');
           await leaf.openFile(newFile);
           new Notice(t('diary.entryCreated').replace('{name}', filename));
-        } catch (err) {
+        } catch {
           new Notice(t('diary.createError'));
         }
       }).open();

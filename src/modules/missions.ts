@@ -1,12 +1,10 @@
-import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
+import { App, Menu, Modal, Notice, setIcon } from 'obsidian';
 import { EngineModule } from './types';
 import { t, TranslationKey } from '../i18n';
 import {
   CampaignData,
   DinoSettings,
   MissionData,
-  MissionObjective,
-  MissionReward,
   DEFAULT_MISSION_TYPES,
   DEFAULT_MISSION_REWARD_TYPES,
   DEFAULT_MISSION_STATUSES,
@@ -327,7 +325,7 @@ export class MissionEditModal extends Modal {
         const opt = typeSelect.createEl('option', { value: tType, text: tType });
         if (tType === this.mission.type) opt.selected = true;
       }
-      const newOpt = typeSelect.createEl('option', { value: '__new__', text: `+ ${t('missions.newType')}` });
+      typeSelect.createEl('option', { value: '__new__', text: `+ ${t('missions.newType')}` });
       if (!campaign.missionTypes!.includes(this.mission.type)) {
         const customOpt = typeSelect.createEl('option', { value: this.mission.type, text: this.mission.type });
         customOpt.selected = true;
@@ -401,7 +399,7 @@ export class MissionEditModal extends Modal {
       });
       setIcon(poiBtn, 'map-pin');
       poiBtn.addEventListener('click', () => {
-        const menu = new (require('obsidian').Menu)();
+        const menu = new Menu();
         for (const poi of currentMap.pois) {
           menu.addItem((item: any) => {
             item.setTitle(poi.name || 'POI sin nombre').onClick(() => {
@@ -410,7 +408,8 @@ export class MissionEditModal extends Modal {
             });
           });
         }
-        menu.showAtEl(poiBtn);
+        const rect = poiBtn.getBoundingClientRect();
+        menu.showAtPosition({ x: rect.left, y: rect.bottom });
       });
     }
 

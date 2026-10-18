@@ -1,13 +1,11 @@
 import { setIcon } from 'obsidian';
 import { MapData, POIData, TokenData, ToolContext, IDinoTabletopView } from '../types';
 import { globalHistoryManager, globalToolManager, globalViewportManager } from './cellBoardCore';
-import { cellToolState } from './cellBoardTools';
 import { isPlayerViewActive, togglePlayerViewActive, openProjectionWindow } from './playerView';
 import { TokenEditModal } from '../modals/TokenEditModal';
 import { POIEditModal } from '../modals/POIEditModal';
 import { BestiaryListModal } from '../modals/BestiaryModals';
 import { genId } from '../utils';
-import { updateLaserOverlay } from './laserPing';
 
 export class CellBoardLateralToolbar {
   private view: IDinoTabletopView;

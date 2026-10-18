@@ -89,7 +89,6 @@ export class BestiaryEntryEditModal extends Modal {
         s
           .setLimits(20, 120, 2)
           .setValue(this.entry.size || 44)
-          .setDynamicTooltip()
           .onChange((v) => (this.entry.size = v))
       );
 
@@ -262,7 +261,7 @@ export class BestiaryEntryEditModal extends Modal {
       btnRow.addButton((b) =>
         b
           .setButtonText(t('common.delete'))
-          .setWarning()
+          .setDestructive()
           .onClick(() => {
             if (!confirm(t('bestiary.deleteConfirm', { name: this.entry.name || t('common.unnamed') }))) return;
             this.close();
@@ -614,7 +613,7 @@ export class BestiaryListModal extends Modal {
         await this.plugin.saveSettings();
         new Notice(t('bestiary.importSuccess', { count: importedCount }));
         this.renderModal();
-      } catch (err) {
+      } catch {
         new Notice(t('bestiary.importError'));
       }
     });

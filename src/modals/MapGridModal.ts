@@ -96,7 +96,6 @@ export class MapGridModal extends Modal {
             slider
               .setLimits(15, 200, 5)
               .setValue(this.gridConfig.cellSize || 50)
-              .setDynamicTooltip()
               .onChange((v) => {
                 this.gridConfig.cellSize = v;
               })
@@ -109,7 +108,6 @@ export class MapGridModal extends Modal {
             slider
               .setLimits(4, 100, 2)
               .setValue(this.gridConfig.columns || 20)
-              .setDynamicTooltip()
               .onChange((v) => {
                 this.gridConfig.columns = v;
               })
@@ -144,7 +142,6 @@ export class MapGridModal extends Modal {
           slider
             .setLimits(10, 100, 5)
             .setValue(Math.round((this.gridConfig.opacity ?? 0.35) * 100))
-            .setDynamicTooltip()
             .onChange((v) => {
               this.gridConfig.opacity = v / 100;
             })
@@ -158,7 +155,6 @@ export class MapGridModal extends Modal {
           slider
             .setLimits(1, 5, 1)
             .setValue(this.gridConfig.thickness || 1)
-            .setDynamicTooltip()
             .onChange((v) => {
               this.gridConfig.thickness = v;
             })

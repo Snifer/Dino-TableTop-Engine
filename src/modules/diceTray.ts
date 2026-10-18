@@ -1,7 +1,7 @@
 import { App, MarkdownRenderer, Menu, setIcon } from 'obsidian';
 import { EngineModule } from './types';
 import { t, TranslationKey } from '../i18n';
-import { DinoSettings, DiceTrayExpression, DinoPlugin } from '../types';
+import { DinoSettings, DinoPlugin } from '../types';
 import { genId } from '../utils';
 import { NamePromptModal } from '../modals/NamePromptModal';
 
@@ -44,7 +44,7 @@ export function isDiceRollerAvailable(app: App): boolean {
 /** Parse and calculate fallback rolls if plugin doesn't produce DOM */
 function evaluateDiceFallback(formula: string): { total: number; rolls: number[] } | null {
   try {
-    const match = formula.replace(/\s+/g, '').match(/^(\d*)d(\d+)([\+\-]\d+)?$/i);
+    const match = formula.replace(/\s+/g, '').match(/^(\d*)d(\d+)([+-]\d+)?$/i);
     if (!match) return null;
     const count = parseInt(match[1] || '1', 10);
     const sides = parseInt(match[2], 10);
@@ -264,14 +264,14 @@ export class DiceTrayPanel {
         attr: { 'aria-label': `1${die} (Double click for count)` },
       });
       
-      let clickTimeout: any = null;
+      let clickTimeout: number | null = null;
       dieBtn.addEventListener('click', () => {
         if (clickTimeout) {
-          clearTimeout(clickTimeout);
+          window.clearTimeout(clickTimeout);
           clickTimeout = null;
           return;
         }
-        clickTimeout = setTimeout(() => {
+        clickTimeout = window.setTimeout(() => {
           clickTimeout = null;
           this.rollExpression(`1${die}`, die);
         }, 220);
@@ -279,7 +279,7 @@ export class DiceTrayPanel {
 
       dieBtn.addEventListener('dblclick', () => {
         if (clickTimeout) {
-          clearTimeout(clickTimeout);
+          window.clearTimeout(clickTimeout);
           clickTimeout = null;
         }
         new NamePromptModal(

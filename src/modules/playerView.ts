@@ -1,6 +1,6 @@
-import { App, ItemView, Notice, Platform, setIcon, WorkspaceLeaf } from 'obsidian';
+import { App, ItemView, Notice, Platform, WorkspaceLeaf } from 'obsidian';
 import { CampaignData, MapData, POIData, TokenData } from '../types';
-import { clamp, getIconClass } from '../utils';
+import { clamp } from '../utils';
 import { toCss } from './cellCoordinates';
 import { getCellStore } from './cellStore';
 import { globalViewportManager } from './cellBoardCore';

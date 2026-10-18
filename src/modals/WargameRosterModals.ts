@@ -2,7 +2,6 @@ import { App, Modal, Setting, setIcon, TFile } from 'obsidian';
 import {
   WargameRoster,
   WargameRosterUnit,
-  WargameArcs,
   IMAGE_EXTS,
   DinoPlugin,
   IDinoTabletopView,
@@ -296,7 +295,6 @@ export class WargameUnitEditModal extends Modal {
         sl
           .setLimits(1, 50, 1)
           .setValue(this.unit.modelsCount || 1)
-          .setDynamicTooltip()
           .onChange((v) => (this.unit.modelsCount = v))
       );
 
@@ -307,7 +305,6 @@ export class WargameUnitEditModal extends Modal {
         sl
           .setLimits(1, 30, 1)
           .setValue(this.unit.woundsPerModel || 1)
-          .setDynamicTooltip()
           .onChange((v) => (this.unit.woundsPerModel = v))
       );
 
@@ -324,7 +321,6 @@ export class WargameUnitEditModal extends Modal {
         sl
           .setLimits(20, 100, 2)
           .setValue(this.unit.baseSizePx || 36)
-          .setDynamicTooltip()
           .onChange((v) => (this.unit.baseSizePx = v))
       );
 

@@ -4,6 +4,7 @@ import { t } from '../i18n';
 import { CombatantData, CombatData, ConditionData, MapData, TokenData, IDinoTabletopView } from '../types';
 import { clamp, genId, getIconClass } from '../utils';
 import { DamageModal } from '../modals/DamageModal';
+import { NamePromptModal } from '../modals/NamePromptModal';
 
 export const PRESET_CONDITIONS: Array<{ name: string; icon: string; color: string; defaultRounds: number | null }> = [
   { name: 'Envenenado', icon: '🧪', color: '#10b981', defaultRounds: 3 },
@@ -546,19 +547,24 @@ export class CombatTrackerPanel {
         initBadge.addEventListener('click', (e) => {
           e.stopPropagation();
           const currentVal = c.initiative !== null ? String(c.initiative) : '';
-          const newVal = prompt(t('modules.combatInitiativePrompt', { name: c.name }), currentVal);
-          if (newVal !== null) {
-            const num = newVal.trim() === '' ? null : Number(newVal);
-            c.initiative = num;
-            // Re-sort descending
-            combat.combatants.sort((a, b) => {
-              if (a.initiative === null && b.initiative === null) return 0;
-              if (a.initiative === null) return 1;
-              if (b.initiative === null) return -1;
-              return b.initiative - a.initiative;
-            });
-            this.saveAndRefresh();
-          }
+          new NamePromptModal(
+            this.view.app,
+            t('modules.combatInitiativePrompt', { name: c.name }),
+            '',
+            (newVal) => {
+              const num = newVal.trim() === '' ? null : Number(newVal);
+              c.initiative = num;
+              // Re-sort descending
+              combat.combatants.sort((a, b) => {
+                if (a.initiative === null && b.initiative === null) return 0;
+                if (a.initiative === null) return 1;
+                if (b.initiative === null) return -1;
+                return b.initiative - a.initiative;
+              });
+              this.saveAndRefresh();
+            },
+            currentVal,
+          ).open();
         });
 
         // Thumbnail
@@ -778,7 +784,7 @@ export class CombatTrackerPanel {
       dragging = false;
       try {
         header.releasePointerCapture(e.pointerId);
-      } catch (err) {
+      } catch {
         /* noop */
       }
       this.el.removeClass('dte-note-panel-dragging');

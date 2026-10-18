@@ -1,4 +1,4 @@
-import { CellEdgeStyle, CellMapData, CellPaletteColor, MapFogConfig, DinoPlugin } from '../types';
+import { CellEdgeStyle, CellMapData, MapFogConfig, DinoPlugin } from '../types';
 
 export const CHUNK_SIZE = 32;
 
@@ -465,7 +465,8 @@ export class CellStore {
    * File path for this map's cell data.
    */
   public getFilePath(): string {
-    const basePath = this.plugin?.manifest?.dir || '.obsidian/plugins/dino-tabletop-engine';
+    const configDir = this.plugin?.app?.vault?.configDir ?? '.obsidian';
+    const basePath = this.plugin?.manifest?.dir || `${configDir}/plugins/dino-tabletop-engine`;
     return `${basePath}/maps/${this.mapId}.json`;
   }
 
@@ -474,9 +475,9 @@ export class CellStore {
    */
   public scheduleSave(): void {
     if (this.saveTimeout) {
-      clearTimeout(this.saveTimeout);
+      window.clearTimeout(this.saveTimeout);
     }
-    this.saveTimeout = setTimeout(() => {
+    this.saveTimeout = window.setTimeout(() => {
       this.saveToDisk();
     }, 500);
   }

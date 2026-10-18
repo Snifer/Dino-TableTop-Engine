@@ -37,7 +37,6 @@ export class POIEditModal extends Modal {
         s
           .setLimits(16, 100, 2)
           .setValue(this.poi.size || 36)
-          .setDynamicTooltip()
           .onChange((v) => (this.poi.size = v))
       );
 
@@ -151,7 +150,7 @@ export class POIEditModal extends Modal {
       btnRow.addButton((b) =>
         b
           .setButtonText(t('poi.deleteBtn'))
-          .setWarning()
+          .setDestructive()
           .onClick(() => {
             if (!confirm(t('poi.deleteConfirm', { name: this.poi.name || t('common.unnamed') }))) return;
             this.close();

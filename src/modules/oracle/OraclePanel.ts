@@ -12,7 +12,7 @@ export class OraclePanel {
   private plugin: any;
   private container: HTMLElement;
   public el: HTMLElement;
-  private minimized = false;
+  minimized = false;
 
   // Active state
   private activeTab: 'draw' | 'history' = 'draw';
@@ -75,7 +75,6 @@ export class OraclePanel {
   }
 
   private initDeck(): void {
-    const deck = this.getActiveDeck();
     this.shuffleDeck(false);
   }
 
