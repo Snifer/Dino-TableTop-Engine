@@ -171,10 +171,10 @@ export class OraclePanel {
     }
 
     // Fallback in settings if no active campaign
-    if (!(s as any)._orphanOracleHistory) {
-      (s as any)._orphanOracleHistory = [];
+    if (!s._orphanOracleHistory) {
+      s._orphanOracleHistory = [];
     }
-    return (s as any)._orphanOracleHistory;
+    return s._orphanOracleHistory;
   }
 
   private async saveHistoryEntry(entry: OracleReadingEntry): Promise<void> {

@@ -1,4 +1,4 @@
-import { DinoPlugin, MapData, POIData, TokenData, ToolContext, UndoStep } from '../types';
+import { DinoPlugin, IDinoTabletopView, MapData, POIData, TokenData, ToolContext, UndoStep } from '../types';
 import { toCss, worldToCell } from './cellCoordinates';
 import { getCellStore } from './cellStore';
 import { globalHistoryManager, globalToolManager } from './cellBoardCore';
@@ -183,8 +183,8 @@ export function pasteClipboardAt(
   map: MapData,
   mapId: string,
   targetPos: { x: number; y: number },
-  plugin: any,
-  view: any
+  plugin: DinoPlugin,
+  view: IDinoTabletopView
 ): boolean {
   const clip = multiSelectionState.clipboard;
   if (!clip) return false;
@@ -289,7 +289,7 @@ export function pasteClipboardAt(
 /**
  * Deletes all currently selected tokens and POIs.
  */
-export async function deleteSelection(map: MapData, mapId: string, plugin: any, view: any): Promise<boolean> {
+export async function deleteSelection(map: MapData, mapId: string, plugin: DinoPlugin, view: IDinoTabletopView): Promise<boolean> {
   const tokenCount = multiSelectionState.selectedTokenIds.size;
   const poiCount = multiSelectionState.selectedPoiIds.size;
   if (tokenCount === 0 && poiCount === 0 && !multiSelectionState.cellBounds) return false;

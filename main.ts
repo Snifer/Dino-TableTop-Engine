@@ -109,7 +109,7 @@ export default class DinoTabletopEnginePlugin extends Plugin implements DinoPlug
     this.addSettingTab(new DinoSettingTab(this.app, this));
 
     this.addCommand({
-      id: 'open-dino-tabletop-engine',
+      id: 'open-view',
       name: t('commands.openView'),
       callback: () => this.activateView(),
     });

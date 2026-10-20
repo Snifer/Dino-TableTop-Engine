@@ -623,6 +623,7 @@ export interface DinoSettings {
   oraclePanelPosition?: { x: number; y: number };
   enableCustomFont?: boolean;
   customFontPrefix?: string;
+  _orphanOracleHistory?: OracleReadingEntry[];
 }
 
 export const DEFAULT_SETTINGS: DinoSettings = {

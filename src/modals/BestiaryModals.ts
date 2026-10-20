@@ -510,9 +510,13 @@ export class BestiaryListModal extends Modal {
       });
 
       actions.createEl('button', { text: t('common.edit'), cls: 'dte-btn' }).addEventListener('click', () => {
+        const clonedEntry: BestiaryEntry = {
+          ...entry,
+          counters: (entry.counters || []).map((c) => ({ ...c })),
+        };
         new BestiaryEntryEditModal(
           this.app,
-          Object.assign({}, entry, { counters: (entry.counters || []).map((c: any) => Object.assign({}, c)) }),
+          clonedEntry,
           this.getPacksList(),
           (saved) => {
             this.plugin.settings.bestiary[entry.id] = saved;
