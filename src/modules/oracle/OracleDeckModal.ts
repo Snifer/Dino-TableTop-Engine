@@ -10,7 +10,7 @@ export class OracleDeckModal extends Modal {
 
   constructor(app: App, deck: OracleDeck, onSave: (deck: OracleDeck) => void) {
     super(app);
-    this.deck = JSON.parse(JSON.stringify(deck));
+    this.deck = JSON.parse(JSON.stringify(deck)) as OracleDeck;
     this.onSave = onSave;
   }
 

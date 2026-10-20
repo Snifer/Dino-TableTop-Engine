@@ -1,4 +1,4 @@
-import { ToolDefinition, UndoStep, ViewportState } from '../types';
+import { ToolContext, ToolDefinition, UndoStep, ViewportState } from '../types';
 
 export class ViewportManager {
   private viewports: Map<string, ViewportState> = new Map();
@@ -166,14 +166,14 @@ export class ToolManager {
     return this.tools.get(this.activeToolId);
   }
 
-  public setActiveTool(id: string, deactivateCtx?: { view: any; map: any; mapId: string; viewport: any; containerEl: HTMLElement }): boolean {
+  public setActiveTool(id: string, deactivateCtx?: ToolContext): boolean {
     if (!this.tools.has(id)) return false;
     if (this.activeToolId === id) return true;
     // Call onDeactivate on the previous tool
     const prevTool = this.tools.get(this.activeToolId);
-    if (prevTool?.onDeactivate) {
+    if (prevTool?.onDeactivate && deactivateCtx) {
       try {
-        prevTool.onDeactivate(deactivateCtx as any);
+        prevTool.onDeactivate(deactivateCtx);
       } catch (err) {
         console.error('Error in tool onDeactivate:', err);
       }

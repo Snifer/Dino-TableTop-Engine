@@ -1,9 +1,11 @@
-import { App, Menu, Modal, Notice, setIcon } from 'obsidian';
+import { App, Menu, MenuItem, Modal, Notice, setIcon } from 'obsidian';
 import { EngineModule } from './types';
-import { t, TranslationKey } from '../i18n';
+import { t } from '../i18n';
 import {
   CampaignData,
+  DinoPlugin,
   DinoSettings,
+  IDinoTabletopView,
   MissionData,
   DEFAULT_MISSION_TYPES,
   DEFAULT_MISSION_REWARD_TYPES,
@@ -31,9 +33,9 @@ export function formatDeadline(
   let currentDay: number | null = null;
   let unit = 'días';
 
-  if ((campaign as any).calendar && typeof (campaign as any).calendar.currentDay === 'number') {
-    currentDay = (campaign as any).calendar.currentDay;
-    if ((campaign as any).calendar.unit) unit = (campaign as any).calendar.unit;
+  if (campaign.calendar && typeof campaign.calendar.currentDay === 'number') {
+    currentDay = campaign.calendar.currentDay;
+    if (campaign.calendar.unit) unit = campaign.calendar.unit;
   } else if (settings.currentTimelineId && settings.timelines?.[settings.currentTimelineId]) {
     const tl = settings.timelines[settings.currentTimelineId];
     currentDay = tl.counter;
@@ -87,11 +89,11 @@ export function getMissionTypeColor(type: string): string {
 // ─── Modal 1: Configurar Tipos, Recompensas y Estados ──────────────────────────────
 
 export class MissionConfigModal extends Modal {
-  plugin: any;
-  view: any;
+  plugin: DinoPlugin;
+  view: IDinoTabletopView;
   onSave: () => void;
 
-  constructor(app: App, plugin: any, view: any, onSave: () => void) {
+  constructor(app: App, plugin: DinoPlugin, view: IDinoTabletopView, onSave: () => void) {
     super(app);
     this.plugin = plugin;
     this.view = view;
@@ -119,12 +121,12 @@ export class MissionConfigModal extends Modal {
     this.renderConfigSection(
       contentEl,
       t('missions.configTypes'),
-      campaign.missionTypes!,
+      campaign.missionTypes || [],
       (val) => {
         campaign.missionTypes!.push(val);
       },
       (val) => {
-        const count = (Object.values(campaign.missions || {}) as MissionData[]).filter((m) => m.type === val).length;
+        const count = Object.values(campaign.missions || {}).filter((m) => m.type === val).length;
         if (count > 0) {
           if (!confirm(t('missions.deleteInUse', { name: val, count: String(count) }))) return false;
         }
@@ -137,12 +139,12 @@ export class MissionConfigModal extends Modal {
     this.renderConfigSection(
       contentEl,
       t('missions.configRewardTypes'),
-      campaign.missionRewardTypes!,
+      campaign.missionRewardTypes || [],
       (val) => {
         campaign.missionRewardTypes!.push(val);
       },
       (val) => {
-        const count = (Object.values(campaign.missions || {}) as MissionData[]).filter((m) =>
+        const count = Object.values(campaign.missions || {}).filter((m) =>
           m.rewards.some((r) => r.type === val)
         ).length;
         if (count > 0) {
@@ -157,12 +159,12 @@ export class MissionConfigModal extends Modal {
     this.renderConfigSection(
       contentEl,
       t('missions.configStatuses'),
-      campaign.missionStatuses!,
+      campaign.missionStatuses || [],
       (val) => {
         campaign.missionStatuses!.push(val);
       },
       (val) => {
-        const count = (Object.values(campaign.missions || {}) as MissionData[]).filter((m) => m.status === val).length;
+        const count = Object.values(campaign.missions || {}).filter((m) => m.status === val).length;
         if (count > 0) {
           if (!confirm(t('missions.deleteInUse', { name: val, count: String(count) }))) return false;
         }
@@ -241,12 +243,12 @@ export class MissionConfigModal extends Modal {
 // ─── Modal 2: Crear / Editar Misión ───────────────────────────────────────────
 
 export class MissionEditModal extends Modal {
-  plugin: any;
-  view: any;
+  plugin: DinoPlugin;
+  view: IDinoTabletopView;
   mission: MissionData;
   onSave: () => void;
 
-  constructor(app: App, plugin: any, view: any, mission: MissionData | null, onSave: () => void) {
+  constructor(app: App, plugin: DinoPlugin, view: IDinoTabletopView, mission: MissionData | null, onSave: () => void) {
     super(app);
     this.plugin = plugin;
     this.view = view;
@@ -259,7 +261,7 @@ export class MissionEditModal extends Modal {
     const defaultStatus = campaign?.missionStatuses?.[0] || 'Activa';
 
     this.mission = mission
-      ? JSON.parse(JSON.stringify(mission))
+      ? (JSON.parse(JSON.stringify(mission)) as MissionData)
       : {
           id: genId(),
           title: '',
@@ -401,7 +403,7 @@ export class MissionEditModal extends Modal {
       poiBtn.addEventListener('click', () => {
         const menu = new Menu();
         for (const poi of currentMap.pois) {
-          menu.addItem((item: any) => {
+          menu.addItem((item: MenuItem) => {
             item.setTitle(poi.name || 'POI sin nombre').onClick(() => {
               this.mission.location = poi.name;
               locInput.value = poi.name;
@@ -655,7 +657,7 @@ export class MissionEditModal extends Modal {
 
 export class MissionListPanel {
   app: App;
-  plugin: any;
+  plugin: DinoPlugin;
   container: HTMLElement;
   el: HTMLElement;
   minimized: boolean;
@@ -665,7 +667,7 @@ export class MissionListPanel {
   private dragOffsetX: number;
   private dragOffsetY: number;
 
-  constructor(app: App, plugin: any, container: HTMLElement) {
+  constructor(app: App, plugin: DinoPlugin, container: HTMLElement) {
     this.app = app;
     this.plugin = plugin;
     this.container = container;
@@ -701,7 +703,7 @@ export class MissionListPanel {
 
     this.el.removeClass('is-minimized');
 
-    const view = this.plugin.getActiveDinoView?.() || this.app.workspace.getLeavesOfType('dino-tabletop-engine-view')?.[0]?.view;
+    const view = this.plugin.getOpenDinoView?.() || (this.app.workspace.getLeavesOfType('dino-tabletop-engine-view')?.[0]?.view as unknown as IDinoTabletopView | undefined);
     const campaign = view?.getCurrentCampaign?.();
 
     if (campaign) ensureCampaignMissionsData(campaign);
@@ -805,7 +807,7 @@ export class MissionListPanel {
     container: HTMLElement,
     mission: MissionData,
     campaign: CampaignData,
-    view: any
+    view: IDinoTabletopView | undefined
   ): void {
     const row = container.createDiv({ cls: 'dte-mission-row' });
 
@@ -906,7 +908,7 @@ export class MissionListPanel {
 
 // ─── Toolbar Button ────────────────────────────────────────────────────────────
 
-export function renderMissionsToolbarButton(container: HTMLElement, view: any): void {
+export function renderMissionsToolbarButton(container: HTMLElement, view: IDinoTabletopView): void {
   const btn = container.createEl('button', {
     cls: 'dte-btn',
     title: t('missions.title'),
@@ -926,8 +928,8 @@ export function renderMissionsToolbarButton(container: HTMLElement, view: any): 
 
 export const MissionsModule: EngineModule = {
   id: 'missions',
-  nameKey: 'modules.missionsName' as TranslationKey,
-  descKey: 'modules.missionsDesc' as TranslationKey,
+  nameKey: 'modules.missionsName',
+  descKey: 'modules.missionsDesc',
   icon: 'flag',
   defaultEnabled: false,
   renderToolbarButton: renderMissionsToolbarButton,

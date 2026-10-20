@@ -1,5 +1,5 @@
 import { App, Notice, TFile, setIcon } from 'obsidian';
-import { DinoSettings } from '../../types';
+import { DinoPlugin, DinoSettings } from '../../types';
 import { OracleDeck, OracleCard, OracleReadingEntry, InterpretationRule } from './types';
 import { evaluateRule, EvaluationResult } from './ruleEngine';
 import { createHierofanteDeck } from './deckImporter';
@@ -9,7 +9,7 @@ import { genId } from '../../utils';
 
 export class OraclePanel {
   private app: App;
-  private plugin: any;
+  private plugin: DinoPlugin;
   private container: HTMLElement;
   public el: HTMLElement;
   minimized = false;
@@ -26,7 +26,7 @@ export class OraclePanel {
   private currentQuestion = '';
   private isConfigOpen = false;
 
-  constructor(app: App, plugin: any, container: HTMLElement) {
+  constructor(app: App, plugin: DinoPlugin, container: HTMLElement) {
     this.app = app;
     this.plugin = plugin;
     this.container = container;
@@ -775,14 +775,15 @@ export class OraclePanel {
 
     try {
       const text = await file.text();
-      const parsed = JSON.parse(text);
+      const parsed: unknown = JSON.parse(text);
 
       if (!Array.isArray(parsed)) {
         new Notice('El archivo importado no es válido', 3000);
         return;
       }
 
-      const isValid = parsed.every(
+      const items = parsed as OracleReadingEntry[];
+      const isValid = items.every(
         (item) => item && item.date && item.card && item.type && item.orientation
       );
 
@@ -797,13 +798,13 @@ export class OraclePanel {
 
       const targetList = this.getCampaignHistory();
       if (shouldAppend) {
-        for (const item of parsed) {
+        for (const item of items) {
           if (!item.id) item.id = genId();
           targetList.push(item);
         }
       } else {
         targetList.length = 0;
-        for (const item of parsed) {
+        for (const item of items) {
           if (!item.id) item.id = genId();
           targetList.push(item);
         }
@@ -812,8 +813,9 @@ export class OraclePanel {
       await this.plugin.saveSettings();
       new Notice('Registro importado correctamente', 3000);
       this.build();
-    } catch (err: any) {
-      new Notice(`Error al importar el archivo: ${err.message || err}`, 3000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      new Notice(`Error al importar el archivo: ${msg}`, 3000);
     } finally {
       input.value = '';
     }

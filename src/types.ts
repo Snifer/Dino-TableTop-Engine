@@ -557,6 +557,7 @@ export interface CampaignData {
   missions?: Record<string, MissionData>;
   playerHpDisplay?: 'exact' | 'bar' | 'hidden';
   oracleHistory?: OracleReadingEntry[];
+  calendar?: { currentDay?: number; unit?: string };
 }
 
 

@@ -1,5 +1,5 @@
-import { App, ItemView, Notice, Platform, WorkspaceLeaf } from 'obsidian';
-import { CampaignData, MapData, POIData, TokenData } from '../types';
+import { App, ItemView, Notice, Platform, TFile, WorkspaceLeaf } from 'obsidian';
+import { CampaignData, DinoPlugin, MapData, POIData, TokenData, ViewportState } from '../types';
 import { clamp } from '../utils';
 import { toCss } from './cellCoordinates';
 import { getCellStore } from './cellStore';
@@ -23,19 +23,18 @@ export function togglePlayerViewActive(): boolean {
 /**
  * Opens a secondary projection popout window (Desktop only).
  */
-export async function openProjectionWindow(app: App, plugin: any): Promise<WorkspaceLeaf | null> {
+export async function openProjectionWindow(app: App, plugin: DinoPlugin): Promise<WorkspaceLeaf | null> {
   if (Platform.isMobile) {
     new Notice('La ventana de proyección en ventana separada solo está disponible en Obsidian Desktop.');
     return null;
   }
 
-  const workspace = app.workspace as any;
-  if (typeof workspace.openPopoutLeaf !== 'function') {
+  if (typeof app.workspace.openPopoutLeaf !== 'function') {
     new Notice('Tu versión de Obsidian no soporta ventanas popout.');
     return null;
   }
 
-  const leaf: WorkspaceLeaf = workspace.openPopoutLeaf();
+  const leaf: WorkspaceLeaf = app.workspace.openPopoutLeaf();
   await leaf.setViewState({
     type: VIEW_TYPE_DINO_PROJECTION,
     active: true,
@@ -45,13 +44,13 @@ export async function openProjectionWindow(app: App, plugin: any): Promise<Works
 }
 
 export class DinoProjectionView extends ItemView {
-  plugin: any;
+  plugin: DinoPlugin;
   zoom: number = 1;
-  private mapUpdateListener: any = null;
-  private laserListener: any = null;
-  private pingListener: any = null;
+  private mapUpdateListener: EventListener | null = null;
+  private laserListener: EventListener | null = null;
+  private pingListener: EventListener | null = null;
 
-  constructor(leaf: WorkspaceLeaf, plugin: any) {
+  constructor(leaf: WorkspaceLeaf, plugin: DinoPlugin) {
     super(leaf);
     this.plugin = plugin;
   }
@@ -78,7 +77,7 @@ export class DinoProjectionView extends ItemView {
     window.addEventListener('dino-tabletop:map-updated', this.mapUpdateListener);
 
     // Laser pointer sync listener
-    this.laserListener = (e: CustomEvent<LaserEventDetail>) => {
+    this.laserListener = ((e: CustomEvent<LaserEventDetail>) => {
       const inner = this.containerEl.querySelector('.dte-board-inner') as HTMLElement | null;
       if (!inner) return;
       const d = e.detail;
@@ -87,19 +86,19 @@ export class DinoProjectionView extends ItemView {
       } else {
         updateLaserOverlay(inner, d.x, d.y, d.color || '#ff3838', true);
       }
-    };
-    window.addEventListener('dino-tabletop:laser', this.laserListener as any);
+    }) as EventListener;
+    window.addEventListener('dino-tabletop:laser', this.laserListener);
 
     // Attention ping sync listener
-    this.pingListener = (e: CustomEvent<PingEventDetail>) => {
+    this.pingListener = ((e: CustomEvent<PingEventDetail>) => {
       const inner = this.containerEl.querySelector('.dte-board-inner') as HTMLElement | null;
       if (!inner) return;
       const d = e.detail;
       if (d && d.x !== undefined && d.y !== undefined) {
         spawnPingEffect(inner, d.x, d.y, d.color, d.icon);
       }
-    };
-    window.addEventListener('dino-tabletop:ping', this.pingListener as any);
+    }) as EventListener;
+    window.addEventListener('dino-tabletop:ping', this.pingListener);
 
     this.render();
   }
@@ -110,11 +109,11 @@ export class DinoProjectionView extends ItemView {
       this.mapUpdateListener = null;
     }
     if (this.laserListener) {
-      window.removeEventListener('dino-tabletop:laser', this.laserListener as any);
+      window.removeEventListener('dino-tabletop:laser', this.laserListener);
       this.laserListener = null;
     }
     if (this.pingListener) {
-      window.removeEventListener('dino-tabletop:ping', this.pingListener as any);
+      window.removeEventListener('dino-tabletop:ping', this.pingListener);
       this.pingListener = null;
     }
   }
@@ -216,7 +215,7 @@ export class DinoProjectionView extends ItemView {
 
       if (map.imagePath) {
         const file = this.app.vault.getAbstractFileByPath(map.imagePath);
-        const src = file ? this.app.vault.getResourcePath(file as any) : '';
+        const src = file instanceof TFile ? this.app.vault.getResourcePath(file) : '';
         inner.createEl('img', { cls: 'dte-map-img', attr: { src } });
       }
 
@@ -276,7 +275,7 @@ export class DinoProjectionView extends ItemView {
     map: MapData,
     token: TokenData,
     camp: CampaignData,
-    viewport?: any
+    viewport?: ViewportState
   ): void {
     if (map.fog?.enabled && map.cellMap && camp.currentMapId) {
       const store = getCellStore(camp.currentMapId, this.plugin);
@@ -297,8 +296,8 @@ export class DinoProjectionView extends ItemView {
 
     const circle = el.createDiv({ cls: 'dte-token-circle' });
     const imgFile = token.imagePath ? this.app.vault.getAbstractFileByPath(token.imagePath) : null;
-    if (imgFile) {
-      const src = this.app.vault.getResourcePath(imgFile as any);
+    if (imgFile instanceof TFile) {
+      const src = this.app.vault.getResourcePath(imgFile);
       circle.style.backgroundImage = `url("${src}")`;
     } else {
       circle.style.background = token.color || '#4c8bf5';
@@ -324,7 +323,7 @@ export class DinoProjectionView extends ItemView {
     boardInner: HTMLElement,
     map: MapData,
     poi: POIData,
-    viewport?: any
+    viewport?: ViewportState
   ): void {
     if (map.fog?.enabled && map.cellMap) {
       const camp = this.getCurrentCampaign();

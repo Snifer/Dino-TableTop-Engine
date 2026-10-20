@@ -1,4 +1,5 @@
 import { TranslationKey } from '../i18n';
+import { IDinoTabletopView } from '../types';
 
 export interface EngineModule {
   id: string;
@@ -6,6 +7,6 @@ export interface EngineModule {
   descKey: TranslationKey;
   icon: string;
   defaultEnabled: boolean;
-  renderToolbarButton?(container: HTMLElement, view: any): void;
-  renderPanels?(container: HTMLElement, view: any): void;
+  renderToolbarButton?(container: HTMLElement, view: IDinoTabletopView): void;
+  renderPanels?(container: HTMLElement, view: IDinoTabletopView): void;
 }

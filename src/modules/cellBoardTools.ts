@@ -848,8 +848,9 @@ function renderFogToolbar(el: HTMLElement, ctx: ToolContext, refresh: () => void
   const slider = sliderWrap.createEl('input', {
     attr: { type: 'range', min: '10', max: '90', step: '5', value: `${Math.round((fogConfig.dmOpacity ?? 0.55) * 100)}` },
   });
-  slider.addEventListener('input', async (e: any) => {
-    const val = parseInt(e.target.value, 10) / 100;
+  slider.addEventListener('input', async (e: Event) => {
+    const target = e.target as HTMLInputElement;
+    const val = parseInt(target.value, 10) / 100;
     fogConfig.dmOpacity = val;
     ctx.map.fog = fogConfig;
     await ctx.view.plugin?.saveSettings();

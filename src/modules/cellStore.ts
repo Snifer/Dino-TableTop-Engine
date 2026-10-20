@@ -121,8 +121,8 @@ function stringToEdges(str: string | undefined): Map<string, string> {
 export class CellStore {
   private mapId: string;
   private chunks: Map<string, ChunkMemoryData> = new Map();
-  private saveTimeout: any = null;
-  private plugin: DinoPlugin;
+  private saveTimeout: number | null = null;
+  public readonly plugin: DinoPlugin;
   private isSaving: boolean = false;
   private pendingSave: boolean = false;
 
@@ -465,8 +465,8 @@ export class CellStore {
    * File path for this map's cell data.
    */
   public getFilePath(): string {
-    const configDir = this.plugin?.app?.vault?.configDir ?? '.obsidian';
-    const basePath = this.plugin?.manifest?.dir || `${configDir}/plugins/dino-tabletop-engine`;
+    const configDir = this.plugin?.app?.vault?.configDir || '';
+    const basePath = this.plugin?.manifest?.dir || (configDir ? `${configDir}/plugins/dino-tabletop-engine` : '');
     return `${basePath}/maps/${this.mapId}.json`;
   }
 
@@ -720,9 +720,9 @@ export class CellStore {
 // Global store registry per map
 const activeStores: Map<string, CellStore> = new Map();
 
-export function getCellStore(mapId: string, plugin: any): CellStore {
+export function getCellStore(mapId: string, plugin: DinoPlugin): CellStore {
   let store = activeStores.get(mapId);
-  if (!store || (store as any).plugin !== plugin) {
+  if (!store || store.plugin !== plugin) {
     store = new CellStore(mapId, plugin);
     activeStores.set(mapId, store);
   }

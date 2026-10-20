@@ -1,6 +1,6 @@
 import { App, Modal, Notice, Setting, TFile, setIcon } from 'obsidian';
 import { EngineModule } from './types';
-import { t, TranslationKey } from '../i18n';
+import { t } from '../i18n';
 import {
   CardDefinition,
   CardOnTable,
@@ -9,6 +9,7 @@ import {
   DinoSettings,
   DinoPlugin,
   MapData,
+  IDinoTabletopView,
 } from '../types';
 import { genId } from '../utils';
 import { FileSuggestModal } from '../modals/FileSuggestModal';
@@ -600,7 +601,7 @@ export class DeckManagerModal extends Modal {
 
 // ─── Toolbar button helper ─────────────────────────────────────────────────────
 
-export function renderCardsToolbarButton(container: HTMLElement, view: any): void {
+export function renderCardsToolbarButton(container: HTMLElement, view: IDinoTabletopView): void {
   const btn = container.createEl('button', {
     cls: 'dte-btn',
     title: 'Cartas y Mazos',
@@ -620,8 +621,8 @@ export function renderCardsToolbarButton(container: HTMLElement, view: any): voi
 
 export const CardsModule: EngineModule = {
   id: 'cards',
-  nameKey: 'modules.cardsName' as TranslationKey,
-  descKey: 'modules.cardsDesc' as TranslationKey,
+  nameKey: 'modules.cardsName',
+  descKey: 'modules.cardsDesc',
   icon: 'layers',
   defaultEnabled: false,
   renderToolbarButton: renderCardsToolbarButton,

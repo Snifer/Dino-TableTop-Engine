@@ -6,6 +6,7 @@ import {
   WargameUnitOnTable,
   WargameModel,
   WargameArcs,
+  IDinoTabletopView,
 } from '../types';
 import { clamp } from '../utils';
 import { getGridDimensions } from '../grid';
@@ -83,7 +84,7 @@ export function isModelOutOfCohesion(
 /**
  * Renders all wargame layers (Zones, Objectives, Models) on the board.
  */
-export function renderWargameBoard(boardInner: HTMLElement, map: MapData, view: any): void {
+export function renderWargameBoard(boardInner: HTMLElement, map: MapData, view: IDinoTabletopView): void {
   // Clean up previous wargame elements
   boardInner.querySelectorAll(
     '.dte-wargame-zones-layer, .dte-wargame-objective, .dte-wargame-model'
@@ -109,7 +110,7 @@ function renderWargameZones(
   map: MapData,
   width: number,
   height: number,
-  view: any
+  view: IDinoTabletopView
 ): void {
   const wargame = map.wargame!;
   if (!wargame.zones || wargame.zones.length === 0) return;
@@ -352,7 +353,7 @@ function renderWargameZones(
   boardInner.appendChild(svg);
 }
 
-function renderWargameObjectives(boardInner: HTMLElement, map: MapData, view: any): void {
+function renderWargameObjectives(boardInner: HTMLElement, map: MapData, view: IDinoTabletopView): void {
   const wargame = map.wargame!;
   if (!wargame.objectives || wargame.objectives.length === 0) return;
 
@@ -478,7 +479,7 @@ function renderWargameModels(
   map: MapData,
   width: number,
   height: number,
-  view: any
+  view: IDinoTabletopView
 ): void {
   const wargame = map.wargame!;
   if (!wargame.units || wargame.units.length === 0) return;
@@ -722,11 +723,11 @@ function renderWargameModels(
  * Floating Phase Tracker Panel for Wargame.
  */
 export class WargamePhaseTrackerPanel {
-  private view: any;
+  private view: IDinoTabletopView;
   private el: HTMLElement;
   private isMinimized: boolean = false;
 
-  constructor(view: any) {
+  constructor(view: IDinoTabletopView) {
     this.view = view;
     this.init();
   }
@@ -1001,7 +1002,7 @@ export const WargameModule: EngineModule = {
   descKey: 'modules.wargameDesc',
   icon: 'swords',
   defaultEnabled: false,
-  renderToolbarButton(container: HTMLElement, view: any): void {
+  renderToolbarButton(container: HTMLElement, view: IDinoTabletopView): void {
     const map = view.getCurrentMap();
     if (!map) return;
 

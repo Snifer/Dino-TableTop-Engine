@@ -1,7 +1,7 @@
 import { App, TFile, TFolder, TAbstractFile, setIcon, Notice } from 'obsidian';
 import { EngineModule } from './types';
-import { t, TranslationKey } from '../i18n';
-import { DinoSettings, CampaignData, DinoPlugin } from '../types';
+import { t } from '../i18n';
+import { DinoSettings, CampaignData, DinoPlugin, IDinoTabletopView } from '../types';
 import { formatTimeline } from './timeline';
 
 function getConfiguredFolder(app: App, campaign: CampaignData): TFolder | null {
@@ -439,7 +439,7 @@ export class CampaignDiaryPanel {
 
 // ─── Toolbar button ─────────────────────────────────────────────────────────
 
-export function renderDiaryToolbarButton(container: HTMLElement, view: any): void {
+export function renderDiaryToolbarButton(container: HTMLElement, view: IDinoTabletopView): void {
   const btn = container.createEl('button', {
     cls: 'dte-btn',
     title: t('diary.title'),
@@ -459,8 +459,8 @@ export function renderDiaryToolbarButton(container: HTMLElement, view: any): voi
 
 export const CampaignDiaryModule: EngineModule = {
   id: 'campaign-diary',
-  nameKey: 'modules.diaryName' as TranslationKey,
-  descKey: 'modules.diaryDesc' as TranslationKey,
+  nameKey: 'modules.diaryName',
+  descKey: 'modules.diaryDesc',
   icon: 'book-open',
   defaultEnabled: false,
   renderToolbarButton: renderDiaryToolbarButton,

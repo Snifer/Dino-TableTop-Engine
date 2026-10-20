@@ -1,7 +1,7 @@
 import { App, MarkdownRenderer, Menu, setIcon } from 'obsidian';
 import { EngineModule } from './types';
-import { t, TranslationKey } from '../i18n';
-import { DinoSettings, DinoPlugin } from '../types';
+import { t } from '../i18n';
+import { DinoSettings, DinoPlugin, IDinoTabletopView } from '../types';
 import { genId } from '../utils';
 import { NamePromptModal } from '../modals/NamePromptModal';
 
@@ -21,8 +21,8 @@ interface DiceRollerPluginInstance {
 
 interface AppWithPlugins extends App {
   plugins?: {
-    getPlugin?: (name: string) => unknown;
-    plugins?: Record<string, unknown>;
+    getPlugin?: (name: string) => DiceRollerPluginInstance | null | undefined;
+    plugins?: Record<string, DiceRollerPluginInstance | null | undefined>;
   };
 }
 
@@ -31,8 +31,8 @@ export function getDiceRollerPlugin(app: App): DiceRollerPluginInstance | null {
   const customWin = window as unknown as { DiceRoller?: DiceRollerPluginInstance };
   const appPlugins = app as unknown as AppWithPlugins;
   const p = customWin.DiceRoller
-    || (appPlugins.plugins?.getPlugin?.('obsidian-dice-roller') as DiceRollerPluginInstance | undefined)
-    || (appPlugins.plugins?.plugins?.['obsidian-dice-roller'] as DiceRollerPluginInstance | undefined);
+    || appPlugins.plugins?.getPlugin?.('obsidian-dice-roller')
+    || appPlugins.plugins?.plugins?.['obsidian-dice-roller'];
   return p && p._loaded !== false ? p : null;
 }
 
@@ -89,7 +89,7 @@ export async function renderDiceExpression(
         if (roller) {
           const res = typeof roller.roll === 'function' ? await roller.roll() : null;
           const el = roller.containerEl || roller.el;
-          if (el instanceof HTMLElement) {
+          if (el && el.instanceOf(HTMLElement)) {
             container.appendChild(el);
             return;
           } else if (res !== null && res !== undefined) {
@@ -576,7 +576,7 @@ export class DiceTrayPanel {
 }
 
 // ── Toolbar button ──
-export function renderDiceTrayToolbarButton(container: HTMLElement, view: any): void {
+export function renderDiceTrayToolbarButton(container: HTMLElement, view: IDinoTabletopView): void {
   const btn = container.createEl('button', {
     cls: 'dte-btn',
     title: t('diceTray.panelTitle'),
@@ -596,8 +596,8 @@ export function renderDiceTrayToolbarButton(container: HTMLElement, view: any): 
 // ── Module registration ──
 export const DiceTrayModule: EngineModule = {
   id: 'dice-tray',
-  nameKey: 'modules.diceTrayName' as TranslationKey,
-  descKey: 'modules.diceTrayDesc' as TranslationKey,
+  nameKey: 'modules.diceTrayName',
+  descKey: 'modules.diceTrayDesc',
   icon: 'dice-6',
   defaultEnabled: false,
   renderToolbarButton: renderDiceTrayToolbarButton,

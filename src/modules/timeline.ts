@@ -4,6 +4,8 @@ import { t } from '../i18n';
 import {
   ClockData,
   DinoSettings,
+  DinoPlugin,
+  IDinoTabletopView,
   TimelineAdvanceStep,
   TimelineCycle,
   TimelineCycleSegment,
@@ -206,7 +208,7 @@ export function createClockSvg(clock: ClockData, size: number = 44): SVGSVGEleme
 
 export class TimelinePanel {
   app: App;
-  plugin: any;
+  plugin: DinoPlugin;
   el: HTMLElement;
   minimized = false;
   private showClocks = true;
@@ -215,7 +217,7 @@ export class TimelinePanel {
   private isDragging = false;
   private onUpdate: () => void;
 
-  constructor(app: App, plugin: any, panelsLayer: HTMLElement, onUpdate: () => void) {
+  constructor(app: App, plugin: DinoPlugin, panelsLayer: HTMLElement, onUpdate: () => void) {
     this.app = app;
     this.plugin = plugin;
     this.onUpdate = onUpdate;
@@ -532,12 +534,12 @@ export class TimelinePanel {
 // ─── Calendars & Clocks Manager Modal (Sleek Redesign) ─────────────────────────
 
 export class TimelineManagerModal extends Modal {
-  plugin: any;
+  plugin: DinoPlugin;
   onRefresh: () => void;
   private activeTab: 'timelines' | 'clocks' | 'templates' = 'timelines';
   private selectedTimelineId: string | null = null;
 
-  constructor(app: App, plugin: any, onRefresh: () => void) {
+  constructor(app: App, plugin: DinoPlugin, onRefresh: () => void) {
     super(app);
     this.plugin = plugin;
     this.onRefresh = onRefresh;
@@ -1095,13 +1097,26 @@ export class TimelineManagerModal extends Modal {
     });
     importBtn.addEventListener('click', async () => {
       try {
-        const parsed = JSON.parse(textarea.value);
-        if (!parsed.name || !parsed.unit) {
+        const parsed: unknown = JSON.parse(textarea.value);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          throw new Error('Falta el nombre o la unidad en la plantilla JSON');
+        }
+        const timelineObj = parsed as Partial<TimelineData>;
+        if (!timelineObj.name || !timelineObj.unit) {
           throw new Error('Falta el nombre o la unidad en la plantilla JSON');
         }
         const id = genId();
-        parsed.id = id;
-        s.timelines[id] = parsed;
+        const newTimeline: TimelineData = {
+          id,
+          name: timelineObj.name,
+          unit: timelineObj.unit,
+          counter: typeof timelineObj.counter === 'number' ? timelineObj.counter : 0,
+          cycles: Array.isArray(timelineObj.cycles) ? timelineObj.cycles : [],
+          format: timelineObj.format || '{unit} {counter}',
+          steps: Array.isArray(timelineObj.steps) ? timelineObj.steps : [],
+          events: Array.isArray(timelineObj.events) ? timelineObj.events : [],
+        };
+        s.timelines[id] = newTimeline;
         this.selectedTimelineId = id;
         s.currentTimelineId = id;
         await this.save();
@@ -1123,14 +1138,14 @@ export class TimelineManagerModal extends Modal {
 // ─── Clock Edit Modal ─────────────────────────────────────────────────────────
 
 export class ClockEditModal extends Modal {
-  plugin: any;
+  plugin: DinoPlugin;
   clock: ClockData | null;
   defaultTimelineId: string | null;
   onSave: () => void;
 
   constructor(
     app: App,
-    plugin: any,
+    plugin: DinoPlugin,
     clock: ClockData | null,
     defaultTimelineId: string | null,
     onSave: () => void
@@ -1266,7 +1281,7 @@ export const TimelineModule: EngineModule = {
   icon: 'calendar',
   defaultEnabled: false,
 
-  renderToolbarButton(container: HTMLElement, view: any): void {
+  renderToolbarButton(container: HTMLElement, view: IDinoTabletopView): void {
     const btn = container.createEl('button', {
       cls: 'clickable-icon dte-btn-icon',
       attr: { 'aria-label': t('modules.timelineName') },

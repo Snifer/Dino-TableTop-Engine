@@ -9,7 +9,7 @@ import {
 } from '../types';
 import { clamp, genId } from '../utils';
 import { getGridDimensions } from '../grid';
-import { t } from '../i18n';
+import { t, TranslationKey } from '../i18n';
 import { Menu, setIcon } from 'obsidian';
 import { GridConfigModal } from '../modals/GridConfigModal';
 import { getArc } from './wargame';
@@ -137,7 +137,7 @@ export function getWargameArcPrefix(
         let deg = (rad * 180) / Math.PI + 90;
         deg = ((deg % 360) + 360) % 360;
         const arc = getArc(model.facing || 0, deg, unit.arcs);
-        const arcKey =
+        const arcKey: TranslationKey =
           arc === 'front'
             ? 'wargame.arcFrontLabel'
             : arc === 'flank-right'
@@ -145,7 +145,7 @@ export function getWargameArcPrefix(
             : arc === 'flank-left'
             ? 'wargame.arcFlankLeftLabel'
             : 'wargame.arcRearLabel';
-        return `[${t(arcKey as any)}] `;
+        return `[${t(arcKey)}] `;
       }
     }
   }

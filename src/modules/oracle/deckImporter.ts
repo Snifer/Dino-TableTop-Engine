@@ -1,5 +1,5 @@
 import { App, TFile, TFolder, normalizePath } from 'obsidian';
-import { OracleCard, OracleDeck } from './types';
+import { InterpretationRule, OracleCard, OracleDeck } from './types';
 import { HIEROFANTE_RULES } from './ruleEngine';
 import { genId } from '../../utils';
 
@@ -79,13 +79,14 @@ export function parseCardsScriptOrJson(content: string): RawCardData[] {
   // Remove trailing commas before } or ]
   arrayText = arrayText.replace(/,\s*([}\]])/g, '$1');
 
-  const parsed = JSON.parse(arrayText);
+  const parsed: unknown = JSON.parse(arrayText);
   if (!Array.isArray(parsed)) {
     throw new Error('El contenido analizado no es un arreglo.');
   }
 
-  for (let i = 0; i < parsed.length; i++) {
-    const item = parsed[i];
+  const items = parsed as Array<Record<string, unknown>>;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
     if (!item || typeof item !== 'object' || !item.name) {
       throw new Error(`El elemento #${i + 1} no tiene un campo 'name' válido.`);
     }
@@ -176,7 +177,7 @@ export function createHierofanteDeck(deckName = 'Hierofante', cards?: OracleCard
     orientationMode: 'upDown',
     reversedChance: 0.5,
     cards: initialCards,
-    rules: JSON.parse(JSON.stringify(HIEROFANTE_RULES)),
+    rules: JSON.parse(JSON.stringify(HIEROFANTE_RULES)) as InterpretationRule[],
     varValues: {
       difficulty: 5,
     },

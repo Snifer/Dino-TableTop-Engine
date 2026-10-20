@@ -1,4 +1,4 @@
-import { ItemView, Menu, Notice, TAbstractFile, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
+import { EventRef, ItemView, Menu, Notice, TAbstractFile, TFile, WorkspaceLeaf, setIcon } from 'obsidian';
 import {
   VIEW_TYPE_DINO,
   HP_KEYS,
@@ -81,7 +81,7 @@ export interface InventoryPanelHandle {
 export class DinoTabletopView extends ItemView implements IDinoTabletopView {
   plugin: DinoPlugin;
   zoom: number;
-  metaListener: any;
+  metaListener: EventRef | null;
   panelsLayer: HTMLElement;
   notePanels: Record<string, NotePanelHandle>;
   inventoryPanels: Record<string, InventoryPanelHandle>;
@@ -1601,7 +1601,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
             this.renderCardsLayer(boardInner, map);
           })
       );
-      menu.showAtMouseEvent(e as unknown as MouseEvent);
+      menu.showAtMouseEvent(e);
     });
   }
 

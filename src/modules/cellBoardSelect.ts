@@ -1,4 +1,4 @@
-import { MapData, POIData, TokenData, ToolContext, UndoStep } from '../types';
+import { DinoPlugin, MapData, POIData, TokenData, ToolContext, UndoStep } from '../types';
 import { toCss, worldToCell } from './cellCoordinates';
 import { getCellStore } from './cellStore';
 import { globalHistoryManager, globalToolManager } from './cellBoardCore';
@@ -98,7 +98,7 @@ export function updateSelectionDOM(): void {
 /**
  * Copies active selection into clipboard.
  */
-export function copySelection(map: MapData, mapId: string, plugin: any): boolean {
+export function copySelection(map: MapData, mapId: string, plugin: DinoPlugin): boolean {
   if (!hasSelection()) return false;
 
   const copiedTokens: TokenData[] = [];
@@ -106,13 +106,13 @@ export function copySelection(map: MapData, mapId: string, plugin: any): boolean
 
   map.tokens.forEach((t) => {
     if (multiSelectionState.selectedTokenIds.has(t.id)) {
-      copiedTokens.push(JSON.parse(JSON.stringify(t)));
+      copiedTokens.push(JSON.parse(JSON.stringify(t)) as TokenData);
     }
   });
 
   map.pois.forEach((p) => {
     if (multiSelectionState.selectedPoiIds.has(p.id)) {
-      copiedPois.push(JSON.parse(JSON.stringify(p)));
+      copiedPois.push(JSON.parse(JSON.stringify(p)) as POIData);
     }
   });
 
