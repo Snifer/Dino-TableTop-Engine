@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9] - 2026-10-25
+
+### 🇬🇧 English
+
+#### Changed
+- **Obsidian API Compatibility (`obsidianmd/no-unsupported-api`):** Bumped `minAppVersion` to `1.13.0` in `manifest.json` ensuring full support for modern destructive button APIs (`setDestructive()`).
+- **Command Registration Standards:** Removed redundant plugin ID prefix from command identifier in `main.ts` (`open-view` instead of `open-dino-tabletop-engine`), preventing duplicate namespacing in Obsidian's command palette.
+- **Dependency Modernization:** Replaced external `builtin-modules` package with native `node:module` import in `esbuild.config.mjs`, eliminating unnecessary npm dependency.
+- **Cross-Window Safe DOM Type Checking:** Replaced cross-window unsafe `instanceof HTMLElement` with Obsidian's native `.instanceOf(HTMLElement)` helper in `diceTray.ts`.
+- **Config Directory Compliance:** Replaced hardcoded `.obsidian` path fallback with dynamic `app.vault.configDir` retrieval in `cellStore.ts`.
+- **Strict TypeScript Typing & Linter Compliance (`no-unsafe-*`):**
+  - Resolved unnecessary type assertions (`as TranslationKey`, `as unknown as MouseEvent`) across module registrations and view handlers.
+  - Replaced `any` with strong `IDinoTabletopView` and `DinoPlugin` typings across modules (`campaignDiary`, `cards`, `diceTray`, `measure`, `missions`, `oracle`, `playerView`, `timeline`, `wargame`).
+  - Fixed unsafe arguments and return types in `cellBoardSelect`, `BestiaryModals`, and `OraclePanel`.
+  - Accurately typed event listeners as `EventListener` and `EventRef` to eliminate unsafe argument conversions.
+
+### 🇪🇸 Español
+
+#### Modificado
+- **Compatibilidad con API de Obsidian (`obsidianmd/no-unsupported-api`):** Se actualizó `minAppVersion` a `1.13.0` en `manifest.json` para garantizar soporte nativo de botones destructivos (`setDestructive()`).
+- **Estandarización de Comandos:** Se eliminó el prefijo redundante del ID del plugin en `main.ts` (`open-view` en lugar de `open-dino-tabletop-engine`), evitando duplicación en la paleta de comandos de Obsidian.
+- **Modernización de Dependencias:** Se reemplazó el paquete externo `builtin-modules` por la API nativa de Node `node:module` en `esbuild.config.mjs`, removiendo la dependencia innecesaria.
+- **Comprobación de Tipos DOM Segura entre Ventanas:** Se reemplazó `instanceof HTMLElement` por el helper nativo de Obsidian `.instanceOf(HTMLElement)` en `diceTray.ts`.
+- **Directorio de Configuración Dinámico:** Se eliminó la ruta harcodeada `.obsidian` usando `app.vault.configDir` en `cellStore.ts`.
+- **Tipado Estricto y Resolución de Warnings (`no-unsafe-*`):**
+  - Se eliminaron aserciones innecesarias (`as TranslationKey`, `as unknown as MouseEvent`) en el registro de módulos y manejadores de vistas.
+  - Se reemplazó `any` por tipos estrictos (`IDinoTabletopView`, `DinoPlugin`) en todos los módulos principales (`campaignDiary`, `cards`, `diceTray`, `measure`, `missions`, `oracle`, `playerView`, `timeline`, `wargame`).
+  - Se corrigieron retornos y argumentos inseguros en `cellBoardSelect`, `BestiaryModals` y `OraclePanel`.
+  - Se tiparon correctamente los listeners de eventos como `EventListener` y `EventRef`.
+
 ## [0.1.8] - 2026-10-17
 
 ### 🇬🇧 English
