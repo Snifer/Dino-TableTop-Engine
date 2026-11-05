@@ -41,6 +41,12 @@ import { POIEditModal } from '../modals/POIEditModal';
 import { GridConfigModal } from '../modals/GridConfigModal';
 import { NewDrawnMapModal, DrawingEditorModal } from '../modals/DrawingModals';
 import { BestiaryListModal } from '../modals/BestiaryModals';
+import { PartyModal } from '../modals/PartyModals';
+import {
+  syncTokenToCampaignCharacter,
+  promoteTokenToCampaignCharacter,
+  unlinkTokenFromCampaignCharacter,
+} from '../modules/party';
 import { CampaignExportModal } from '../modals/CampaignExportModal';
 import { CampaignImportModal } from '../modals/CampaignImportModal';
 import { ModulesModal } from '../modals/ModulesModal';
@@ -55,6 +61,7 @@ import { renderWargameBoard, WargamePhaseTrackerPanel } from '../modules/wargame
 import { DiceTrayPanel } from '../modules/diceTray';
 import { MissionListPanel } from '../modules/missions';
 import { OraclePanel } from '../modules/oracle';
+import { RandomTablesPanel } from '../modules/randomTables';
 import { toCss, fromPointer, snapWorldToCell } from '../modules/cellCoordinates';
 import { getCellStore } from '../modules/cellStore';
 import { globalViewportManager, globalHistoryManager, globalToolManager } from '../modules/cellBoardCore';
@@ -92,6 +99,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
   diceTrayPanel: DiceTrayPanel | null;
   missionsPanel: MissionListPanel | null;
   oraclePanel: OraclePanel | null;
+  randomTablesPanel: RandomTablesPanel | null;
   measureManager: MeasureManager | null;
   wargamePanel: WargamePhaseTrackerPanel | null;
   lateralToolbar: CellBoardLateralToolbar | null;
@@ -110,6 +118,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
     this.diceTrayPanel = null;
     this.missionsPanel = null;
     this.oraclePanel = null;
+    this.randomTablesPanel = null;
     this.measureManager = new MeasureManager(this);
     this.wargamePanel = null;
     this.lateralToolbar = null;
@@ -142,6 +151,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
     if (this.diceTrayPanel) this.diceTrayPanel.destroy();
     if (this.missionsPanel) this.missionsPanel.destroy();
     if (this.oraclePanel) this.oraclePanel.destroy();
+    if (this.randomTablesPanel) this.randomTablesPanel.destroy();
     if (this.wargamePanel) this.wargamePanel.destroy();
     if (this.lateralToolbar) this.lateralToolbar.destroy();
     if (this.keydownListener) {
@@ -375,6 +385,21 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
     } else if (this.oraclePanel) {
       this.oraclePanel.destroy();
       this.oraclePanel = null;
+    }
+
+    if (moduleRegistry.isEnabled(data, 'random-tables')) {
+      if (!this.randomTablesPanel) {
+        this.randomTablesPanel = new RandomTablesPanel(
+          this.app,
+          this.plugin,
+          this.panelsLayer || container
+        );
+      } else {
+        this.randomTablesPanel.build();
+      }
+    } else if (this.randomTablesPanel) {
+      this.randomTablesPanel.destroy();
+      this.randomTablesPanel = null;
     }
 
     const camp = this.getCurrentCampaign();
@@ -660,6 +685,20 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
     bestiaryPill.addEventListener('click', () => {
       new BestiaryListModal(this.app, this.plugin, this).open();
     });
+
+    if (camp && moduleRegistry.isEnabled(this.plugin.settings, 'persistent-characters')) {
+      const partyCount = Object.keys(camp.characters || {}).length;
+      const partyPill = headerLeft.createEl('button', {
+        cls: 'dte-btn dte-pill-btn dte-party-pill',
+        attr: { 'aria-label': t('party.panelTitle') },
+      });
+      const partyIcon = partyPill.createSpan({ cls: 'dte-btn-icon-prefix' });
+      setIcon(partyIcon, 'users');
+      partyPill.createSpan({ text: `${t('party.pillTitle')} (${partyCount})` });
+      partyPill.addEventListener('click', () => {
+        new PartyModal(this.app, this.plugin, this).open();
+      });
+    }
 
     // ──────────────────────────────────────────
     // CENTRO: DOCK SUPERIOR (si layout === 'top')
@@ -1780,6 +1819,12 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
 
   /* ---------------- Tokens ---------------- */
 
+  syncTokenIfPersistent(token: TokenData): void {
+    if (token.characterId) {
+      syncTokenToCampaignCharacter(this.getCurrentCampaign(), token);
+    }
+  }
+
   applyTokenDelta(map: MapData, token: TokenData, delta: number): void {
     const newHp = clamp((token.hp ?? 0) + delta, 0, token.maxHp || 0);
     token.hp = newHp;
@@ -1795,6 +1840,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
           .catch(() => {});
       }
     }
+    this.syncTokenIfPersistent(token);
     this.plugin.saveSettings();
     this.render();
   }
@@ -1804,6 +1850,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
     newVal = Math.max(0, newVal);
     if (counter.max !== null && counter.max !== undefined) newVal = Math.min(counter.max, newVal);
     counter.value = newVal;
+    this.syncTokenIfPersistent(token);
     this.plugin.saveSettings();
     this.render();
   }
@@ -1818,6 +1865,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
       Object.assign({}, token),
       (saved) => {
         Object.assign(token, saved);
+        this.syncTokenIfPersistent(token);
         this.plugin.saveSettings();
         this.render();
       },
@@ -1860,6 +1908,10 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
     el.style.height = (token.size || 44) + 'px';
 
     const circle = el.createDiv({ cls: 'dte-token-circle' });
+    if (token.characterId) {
+      const partyBadge = el.createDiv({ cls: 'dte-token-party-badge', text: '⭐' });
+      partyBadge.title = t('party.panelTitle');
+    }
     const imgFile = token.imagePath ? this.app.vault.getAbstractFileByPath(token.imagePath) : null;
     if (imgFile) {
       const src = this.app.vault.getResourcePath(imgFile as TFile);
@@ -1945,6 +1997,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
                 combatant.conditions = [...(token.conditions || [])];
               }
             }
+            this.syncTokenIfPersistent(token);
             this.plugin.saveSettings();
             this.render();
             if (this.combatPanel) this.combatPanel.render();
@@ -2082,6 +2135,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
                   combatant.conditions = [...token.conditions];
                 }
               }
+              this.syncTokenIfPersistent(token);
               this.plugin.saveSettings();
               this.render();
               if (this.combatPanel) this.combatPanel.render();
@@ -2130,6 +2184,33 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
               if (f) this.openNotePanel(f as TFile);
             })
         );
+      }
+      if (camp) {
+        if (token.characterId) {
+          menu.addItem((i) =>
+            i
+              .setTitle(t('party.unlinkTokenMenu'))
+              .setIcon('user-minus')
+              .onClick(() => {
+                unlinkTokenFromCampaignCharacter(token);
+                this.plugin.saveSettings();
+                this.render();
+                new Notice(t('party.tokenUnlinkedNotice', { name: token.name || t('common.unnamed') }));
+              })
+          );
+        } else if (moduleRegistry.isEnabled(this.plugin.settings, 'persistent-characters')) {
+          menu.addItem((i) =>
+            i
+              .setTitle(t('party.promoteTokenMenu'))
+              .setIcon('user-check')
+              .onClick(() => {
+                promoteTokenToCampaignCharacter(camp, token);
+                this.plugin.saveSettings();
+                this.render();
+                new Notice(t('party.tokenLinkedNotice', { name: token.name || t('common.unnamed') }));
+              })
+          );
+        }
       }
       menu.addItem((i) =>
         i
@@ -2367,6 +2448,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
               item,
               async (savedItem) => {
                 Object.assign(item, savedItem);
+                this.syncTokenIfPersistent(token);
                 await this.plugin.saveSettings();
                 handle.rebuild();
                 this.render();
@@ -2374,6 +2456,7 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
               async (delId) => {
                 if (token.inventory) {
                   token.inventory.items = token.inventory.items.filter((it) => it.id !== delId);
+                  this.syncTokenIfPersistent(token);
                   await this.plugin.saveSettings();
                   handle.rebuild();
                   this.render();

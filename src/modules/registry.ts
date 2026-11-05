@@ -8,6 +8,8 @@ import { WargameModule } from './wargame';
 import { DiceTrayModule } from './diceTray';
 import { MissionsModule } from './missions';
 import { OracleModule } from './oracle';
+import { PartyModule } from './party';
+import { RandomTablesModule } from './randomTables';
 import { DinoSettings } from '../types';
 
 class ModuleRegistry {
@@ -23,6 +25,8 @@ class ModuleRegistry {
     this.register(DiceTrayModule);
     this.register(MissionsModule);
     this.register(OracleModule);
+    this.register(PartyModule);
+    this.register(RandomTablesModule);
   }
 
   register(module: EngineModule): void {

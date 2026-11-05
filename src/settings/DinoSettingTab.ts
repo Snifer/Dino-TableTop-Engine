@@ -111,6 +111,25 @@ export class DinoSettingTab extends PluginSettingTab {
         );
     }
 
+    // --- Sección: Tablas Aleatorias / Random Tables ---
+    if (moduleRegistry.isEnabled(this.plugin.settings, 'random-tables')) {
+      new Setting(containerEl).setName(t('tables.panelTitle')).setHeading();
+      new Setting(containerEl)
+        .setName('Prefijo de etiqueta (Tag Prefix)')
+        .setDesc('Prefijo de tag para detectar notas de tablas (ej: dte-table, dte-table/<campaña>).')
+        .addText((text) =>
+          text
+            .setValue(this.plugin.settings.randomTables?.tagPrefix || 'dte-table')
+            .onChange(async (val) => {
+              if (!this.plugin.settings.randomTables) {
+                this.plugin.settings.randomTables = { tagPrefix: 'dte-table', folders: [], noRepeat: {} };
+              }
+              this.plugin.settings.randomTables.tagPrefix = val.trim() || 'dte-table';
+              await this.plugin.saveSettings();
+            })
+        );
+    }
+
     // --- Sección: Acerca de / About ---
     new Setting(containerEl).setName(t('settings.aboutSection')).setHeading();
 
@@ -118,7 +137,7 @@ export class DinoSettingTab extends PluginSettingTab {
 
     const titleRow = aboutBox.createDiv({ cls: 'dte-settings-about-header' });
     titleRow.createEl('strong', { text: 'Dino Tabletop Engine' });
-    titleRow.createSpan({ cls: 'dte-settings-badge', text: `ALPHA v${this.plugin.manifest?.version || '0.1.9'}` });
+    titleRow.createSpan({ cls: 'dte-settings-badge', text: `ALPHA v${this.plugin.manifest?.version || '0.1.10'}` });
 
     const descEl = aboutBox.createDiv({ cls: 'dte-settings-about-desc' });
     descEl.createEl('p', {

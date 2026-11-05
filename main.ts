@@ -14,6 +14,8 @@ import { setLanguage, t } from './src/i18n';
 import { DinoTabletopView } from './src/views/DinoTabletopView';
 import { DinoSettingTab } from './src/settings/DinoSettingTab';
 import { VIEW_TYPE_DINO_PROJECTION, DinoProjectionView, openProjectionWindow } from './src/modules/playerView';
+import { RandomTablesPanel } from './src/modules/randomTables';
+import { RegisterTableModal } from './src/modals/RegisterTableModal';
 
 interface LegacyCounterItem {
   id: string;
@@ -118,6 +120,47 @@ export default class DinoTabletopEnginePlugin extends Plugin implements DinoPlug
       id: 'open-player-projection-view',
       name: 'Abrir ventana de proyección / Vista de jugador (Testeo)',
       callback: () => openProjectionWindow(this.app, this),
+    });
+
+    this.addCommand({
+      id: 'open-random-tables',
+      name: 'Abrir Tablas Aleatorias',
+      callback: () => {
+        const view = this.getOpenDinoView();
+        if (view) {
+          if (!view.randomTablesPanel) {
+            view.randomTablesPanel = new RandomTablesPanel(
+              this.app,
+              this,
+              view.panelsLayer || view.containerEl
+            );
+          }
+          (view.randomTablesPanel as RandomTablesPanel).open();
+        } else {
+          this.activateView().then(() => {
+            const openView = this.getOpenDinoView();
+            if (openView) {
+              if (!openView.randomTablesPanel) {
+                openView.randomTablesPanel = new RandomTablesPanel(
+                  this.app,
+                  this,
+                  openView.panelsLayer || openView.containerEl
+                );
+              }
+              (openView.randomTablesPanel as RandomTablesPanel).open();
+            }
+          });
+        }
+      },
+    });
+
+    this.addCommand({
+      id: 'register-note-as-table',
+      name: 'Registrar nota activa como tabla aleatoria',
+      callback: () => {
+        const activeFile = this.app.workspace.getActiveFile();
+        new RegisterTableModal(this.app, this, activeFile || undefined).open();
+      },
     });
 
     this.addCommand({

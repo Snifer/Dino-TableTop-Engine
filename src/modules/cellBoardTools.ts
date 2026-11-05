@@ -1,4 +1,4 @@
-import { CellEdgeStyle, CellMapData, CellPaletteColor, ToolContext, UndoStep } from '../types';
+import { CellMapData, CellPaletteColor, ToolContext, UndoStep } from '../types';
 import { worldToCell } from './cellCoordinates';
 import { CellStore, getCellStore } from './cellStore';
 import { globalHistoryManager, globalToolManager, globalViewportManager } from './cellBoardCore';
@@ -17,17 +17,11 @@ export const DEFAULT_CELL_PALETTE: CellPaletteColor[] = [
   { color: '#70a1ff', label: 'Mágico / Éter' },
 ];
 
-export const DEFAULT_EDGE_STYLES: CellEdgeStyle[] = [
-  { id: 'wall_stone', name: 'Muro de piedra', color: '#2f3542', thickness: 4, blocksVision: true, blocksMovement: true },
-  { id: 'door_wood', name: 'Puerta', color: '#d35400', thickness: 3, blocksVision: true, blocksMovement: true },
-  { id: 'window_grate', name: 'Ventana / Reja', color: '#3498db', thickness: 2, blocksVision: false, blocksMovement: true },
-  { id: 'curtain_smoke', name: 'Cortina / Humo', color: '#95a5a6', thickness: 2, blocksVision: true, blocksMovement: false },
-];
+
 
 // Active tool settings state
 export interface CellToolState {
   activeColorIndex: number; // 1-based index (1..9)
-  activeEdgeStyleId: string;
   isPanning: boolean;
   panStart: { x: number; y: number };
   fogMode: 'reveal' | 'hide';
@@ -39,7 +33,6 @@ export interface CellToolState {
 
 export const cellToolState: CellToolState = {
   activeColorIndex: 1,
-  activeEdgeStyleId: 'wall_stone',
   isPanning: false,
   panStart: { x: 0, y: 0 },
   fogMode: 'reveal',
@@ -53,7 +46,7 @@ export function initDefaultCellMapData(): CellMapData {
   return {
     cellSizePx: 48,
     palette: JSON.parse(JSON.stringify(DEFAULT_CELL_PALETTE)) as CellPaletteColor[],
-    edgeStyles: JSON.parse(JSON.stringify(DEFAULT_EDGE_STYLES)) as CellEdgeStyle[],
+    edgeStyles: [],
     backgroundImagePath: null,
     backgroundOffsetX: 0,
     backgroundOffsetY: 0,
@@ -114,7 +107,6 @@ function floodFillCells(
 
 // Temporary stroke changes for Undo recording
 let currentStrokeCellChanges: Array<{ cellX: number; cellY: number; before: number; after: number }> = [];
-let currentStrokeEdgeChanges: Array<{ cellX: number; cellY: number; isHorizontal: boolean; before: string | undefined; after: string | undefined }> = [];
 let isPointerActive = false;
 
 export function registerCellBoardTools(): void {
@@ -348,69 +340,6 @@ export function registerCellBoardTools(): void {
     },
   });
 
-  // ─── 5. EDGE / BORDER TOOL ───
-  globalToolManager.registerTool({
-    id: 'edge',
-    label: 'Bordes y Muros',
-    icon: 'lucide-square-dashed',
-    group: 'draw',
-    cursor: 'crosshair',
-    available: (map) => map.coordSpace === 'world' || !!map.cellMap,
-    onPointerDown: (e, worldPos, ctx) => {
-      if (e.button !== 0) return;
-      if (!ctx.map.cellMap) return;
-      isPointerActive = true;
-      currentStrokeEdgeChanges = [];
-
-      applyEdgeAtWorldPos(worldPos, ctx);
-    },
-    onPointerMove: (e, worldPos, ctx) => {
-      if (!isPointerActive || !ctx.map.cellMap) return;
-      applyEdgeAtWorldPos(worldPos, ctx);
-    },
-    onPointerUp: (e, worldPos, ctx) => {
-      if (!isPointerActive) return;
-      isPointerActive = false;
-
-      if (currentStrokeEdgeChanges.length > 0) {
-        const changes = [...currentStrokeEdgeChanges];
-        const mapId = ctx.mapId;
-        const plugin = ctx.view.plugin;
-
-        const undoStep: UndoStep = {
-          label: 'Bordes / Muros',
-          undo: () => {
-            const store = getCellStore(mapId, plugin);
-            changes.forEach((c) => {
-              if (c.isHorizontal) {
-                store.setHorizontalEdge(c.cellX, c.cellY, c.before);
-              } else {
-                store.setVerticalEdge(c.cellX, c.cellY, c.before);
-              }
-            });
-            if (ctx.view?.requestRender) ctx.view.requestRender();
-          },
-          redo: () => {
-            const store = getCellStore(mapId, plugin);
-            changes.forEach((c) => {
-              if (c.isHorizontal) {
-                store.setHorizontalEdge(c.cellX, c.cellY, c.after);
-              } else {
-                store.setVerticalEdge(c.cellX, c.cellY, c.after);
-              }
-            });
-            if (ctx.view?.requestRender) ctx.view.requestRender();
-          },
-        };
-        globalHistoryManager.push(mapId, undoStep);
-      }
-      currentStrokeEdgeChanges = [];
-    },
-    renderOptions: (el, ctx, refresh) => {
-      renderEdgeStylesToolbar(el, ctx, refresh);
-    },
-  });
-
   // ─── 6. FOG OF WAR TOOL ───
   let currentStrokeFogChanges: Array<{ cellX: number; cellY: number; before: number }> = [];
 
@@ -531,19 +460,20 @@ export function registerCellBoardTools(): void {
     onPointerMove: (e, worldPos, ctx) => {
       if (!rectActive || !rectStartWorld || !ctx.map.cellMap) return;
 
-      // Show visual preview rectangle
+      // Show visual preview rectangle — snapped to cell grid
       let previewEl = ctx.containerEl.querySelector('.dte-rect-paint-preview') as HTMLElement | null;
       if (!previewEl) {
         previewEl = ctx.containerEl.createDiv({ cls: 'dte-rect-paint-preview' });
       }
-      const minX = Math.min(rectStartWorld.x, worldPos.x);
-      const minY = Math.min(rectStartWorld.y, worldPos.y);
-      const w = Math.abs(worldPos.x - rectStartWorld.x);
-      const h = Math.abs(worldPos.y - rectStartWorld.y);
-      previewEl.style.left = `${minX}px`;
-      previewEl.style.top = `${minY}px`;
-      previewEl.style.width = `${w}px`;
-      previewEl.style.height = `${h}px`;
+      const cellSize = ctx.map.cellMap?.cellSizePx || 48;
+      const snapX1 = Math.floor(Math.min(rectStartWorld.x, worldPos.x) / cellSize) * cellSize;
+      const snapY1 = Math.floor(Math.min(rectStartWorld.y, worldPos.y) / cellSize) * cellSize;
+      const snapX2 = (Math.floor(Math.max(rectStartWorld.x, worldPos.x) / cellSize) + 1) * cellSize;
+      const snapY2 = (Math.floor(Math.max(rectStartWorld.y, worldPos.y) / cellSize) + 1) * cellSize;
+      previewEl.style.left = `${snapX1}px`;
+      previewEl.style.top = `${snapY1}px`;
+      previewEl.style.width = `${snapX2 - snapX1}px`;
+      previewEl.style.height = `${snapY2 - snapY1}px`;
 
       const palette = ctx.map.cellMap?.palette || [];
       const colorIdx = cellToolState.activeColorIndex;
@@ -666,56 +596,6 @@ function applyFogAtWorldPos(
   }
 }
 
-function applyEdgeAtWorldPos(worldPos: { x: number; y: number }, ctx: ToolContext): void {
-  if (!ctx.map.cellMap) return;
-  const store = getCellStore(ctx.mapId, ctx.view.plugin);
-  const cellSize = ctx.map.cellMap.cellSizePx || 48;
-
-  const cellX = Math.floor(worldPos.x / cellSize);
-  const cellY = Math.floor(worldPos.y / cellSize);
-  const relX = (worldPos.x - cellX * cellSize) / cellSize;
-  const relY = (worldPos.y - cellY * cellSize) / cellSize;
-
-  // Determine closest boundary: Top, Bottom, Left, or Right
-  const distTop = relY;
-  const distBottom = 1 - relY;
-  const distLeft = relX;
-  const distRight = 1 - relX;
-
-  const minDist = Math.min(distTop, distBottom, distLeft, distRight);
-  const styleId = cellToolState.activeEdgeStyleId;
-
-  if (minDist === distTop) {
-    // Horizontal edge at top of cell (cellX, cellY)
-    const before = store.getHorizontalEdge(cellX, cellY);
-    if (before !== styleId && store.setHorizontalEdge(cellX, cellY, styleId)) {
-      currentStrokeEdgeChanges.push({ cellX, cellY, isHorizontal: true, before, after: styleId });
-      if (ctx.view?.requestRender) ctx.view.requestRender();
-    }
-  } else if (minDist === distBottom) {
-    // Horizontal edge at bottom of cell (cellX, cellY + 1)
-    const before = store.getHorizontalEdge(cellX, cellY + 1);
-    if (before !== styleId && store.setHorizontalEdge(cellX, cellY + 1, styleId)) {
-      currentStrokeEdgeChanges.push({ cellX, cellY: cellY + 1, isHorizontal: true, before, after: styleId });
-      if (ctx.view?.requestRender) ctx.view.requestRender();
-    }
-  } else if (minDist === distLeft) {
-    // Vertical edge at left of cell (cellX, cellY)
-    const before = store.getVerticalEdge(cellX, cellY);
-    if (before !== styleId && store.setVerticalEdge(cellX, cellY, styleId)) {
-      currentStrokeEdgeChanges.push({ cellX, cellY, isHorizontal: false, before, after: styleId });
-      if (ctx.view?.requestRender) ctx.view.requestRender();
-    }
-  } else {
-    // Vertical edge at right of cell (cellX + 1, cellY)
-    const before = store.getVerticalEdge(cellX + 1, cellY);
-    if (before !== styleId && store.setVerticalEdge(cellX + 1, cellY, styleId)) {
-      currentStrokeEdgeChanges.push({ cellX: cellX + 1, cellY, isHorizontal: false, before, after: styleId });
-      if (ctx.view?.requestRender) ctx.view.requestRender();
-    }
-  }
-}
-
 /**
  * Renders the color palette selector in bottom toolbar.
  */
@@ -740,33 +620,6 @@ function renderPaletteToolbar(el: HTMLElement, ctx: ToolContext, refresh: () => 
 
     swatch.addEventListener('click', () => {
       cellToolState.activeColorIndex = colorIdx;
-      refresh();
-    });
-  });
-}
-
-/**
- * Renders the edge style selector in bottom toolbar.
- */
-function renderEdgeStylesToolbar(el: HTMLElement, ctx: ToolContext, refresh: () => void): void {
-  el.empty();
-  const styles = ctx.map.cellMap?.edgeStyles || DEFAULT_EDGE_STYLES;
-
-  const container = el.createDiv({ cls: 'dte-edge-styles-bar' });
-  styles.forEach((style) => {
-    const isSelected = cellToolState.activeEdgeStyleId === style.id;
-    const btn = container.createDiv({
-      cls: `dte-edge-style-btn ${isSelected ? 'is-selected' : ''}`,
-    });
-
-    const preview = btn.createSpan({ cls: 'dte-edge-preview' });
-    preview.style.borderColor = style.color;
-    preview.style.borderWidth = `${Math.min(4, style.thickness)}px`;
-
-    btn.createSpan({ cls: 'dte-edge-name', text: style.name });
-
-    btn.addEventListener('click', () => {
-      cellToolState.activeEdgeStyleId = style.id;
       refresh();
     });
   });

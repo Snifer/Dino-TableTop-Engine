@@ -354,6 +354,13 @@ export class OraclePanel {
 
     drawBtn.addEventListener('click', () => this.drawCard());
 
+    // Hide the normal Draw button when a mode is active without extra config
+    // (the mode button already says "draw with this mode")
+    const modeIsActiveWithoutConfig = this.activeRuleId !== null && !this.isConfigOpen;
+    if (modeIsActiveWithoutConfig) {
+      drawBtn.style.display = 'none';
+    }
+
     const shuffleBtn = mainControls.createEl('button', {
       cls: 'dte-btn dte-oracle-shuffle-btn',
     });
@@ -367,7 +374,9 @@ export class OraclePanel {
 
     for (const rule of deck.rules) {
       const isThisActive = this.activeRuleId === rule.id;
-      const modeBtn = modesRow.createEl('button', {
+      const modeWrapper = modesRow.createDiv({ cls: 'dte-oracle-mode-wrapper' });
+
+      const modeBtn = modeWrapper.createEl('button', {
         cls: `dte-btn dte-oracle-mode-btn ${isThisActive ? 'is-active' : ''}`,
       });
       const icon = modeBtn.createSpan({ cls: 'dte-btn-icon-prefix' });
@@ -376,18 +385,38 @@ export class OraclePanel {
 
       modeBtn.addEventListener('click', () => {
         if (this.activeRuleId === rule.id) {
-          // Toggle off
-          this.activeRuleId = null;
-          this.isConfigOpen = false;
-          new Notice(`Modo ${rule.label} desactivado`, 3000);
+          const hasConfig = rule.askQuestion || rule.vars.length > 0;
+          if (hasConfig) {
+            // Toggle config panel open/close
+            this.isConfigOpen = !this.isConfigOpen;
+            this.build();
+          } else {
+            // No config needed: clicking active mode draws immediately
+            void this.drawCard();
+          }
         } else {
-          // Toggle on (exclusive)
+          // Toggle on (exclusive), deactivate other mode if any
           this.activeRuleId = rule.id;
           new Notice(`Modo ${rule.label} activado`, 3000);
           this.isConfigOpen = rule.askQuestion || rule.vars.length > 0;
+          this.build();
         }
-        this.build();
       });
+
+      // Deactivate button — only shown when this mode is active
+      if (isThisActive) {
+        const deactivateBtn = modeWrapper.createEl('button', {
+          cls: 'dte-btn dte-oracle-mode-deactivate',
+          attr: { 'aria-label': `Desactivar modo ${rule.label}` },
+        });
+        setIcon(deactivateBtn, 'x');
+        deactivateBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          this.activeRuleId = null;
+          this.isConfigOpen = false;
+          this.build();
+        });
+      }
     }
 
     // Configuration popover for active rule
@@ -609,8 +638,8 @@ export class OraclePanel {
           entry.eventDescription = evalResult.eventDescription;
         }
 
-        // Deactivate active rule after single use, exactly as original app
-        this.activeRuleId = null;
+        // Sticky mode: keep activeRuleId so the user doesn't have to re-select it every draw.
+        // Reset config popover but keep the mode active.
         this.isConfigOpen = false;
 
         const s = this.plugin.settings as DinoSettings;

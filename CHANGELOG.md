@@ -5,6 +5,54 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.10] - 2026-10-25
+
+### 🇬🇧 English
+
+#### Added
+- **Persistent Campaign Characters (Party System):**
+  - **Global Campaign Characters Registry:** Added `CampaignCharacter` entity stored at the campaign level, enabling persistent characters across any map or canvas.
+  - **Party Management Modal (`PartyModal`):** Search, create, edit, delete, and deploy party members with real-time stats overview (HP bar, active conditions, inventory badges, and current map location).
+  - **Character Editor (`PartyCharacterEditModal`):** Direct configuration of character name, token color, size, HP/Max HP, RPG icon picker, token avatar image, note links with frontmatter stat reading, and live counters editor.
+  - **State Inheritance Selection (`PartyInheritModal`):** When placing a persistent character onto a new map, users can choose between transferring current state (remaining HP, conditions, inventory) or starting fresh (reset to full HP and cleared conditions).
+  - **Configurable Inheritance Modes:** Added campaign-level setting `characterSyncMode` (`prompt` | `always` | `never`), allowing groups to automatically inherit, always reset, or ask every time.
+  - **Two-Way Live Synchronization:** Any modification made on a map token (damage, healing, counter changes, conditions, inventory adjustments, and edit modal saves) immediately writes back to the campaign character.
+  - **Token Quick Actions & Visual Badges:** Persistent tokens display a star badge (`⭐`), with token context menu options to link any existing map token into the Campaign Party or unlink it.
+  - **Campaign Export & Import Compatibility (v2 Package Manifest):** Fully bundles campaign party characters, remapping and packing their avatar images, linked notes, and inventory item assets in `.dinovtt` files.
+  - **Modular Toggle in Settings:** Registered under Optional Modules (`persistent-characters`) with integrated toolbar pill and dock button.
+- **Random Tables Engine (`random-tables`):**
+  - **Markdown Table Parser & Validator:** Full parsing support for numeric ranges (`1`, `2-4`, `01-05`), weighted distribution (`Peso`, `%`), and uniform lists, along with extra metadata columns. Deep validation detects overlapping ranges, missing numeric gaps according to dice formulas, and invalid bounds.
+  - **Multi-Table Markdown Hierarchy:** Recognizes multiple tables within the same note demarcated by Markdown headers (`#`, `##`, etc.) and reads frontmatter configuration (`dte-table`, `dte-tags`, `dte-name`, `dte-roll`, `dte-campaign`).
+  - **Campaign & Global Scopes:** Note tagging `#dte-table` sets global scope, while `#dte-table/<campaign>` scopes tables to specific campaigns.
+  - **Reactive Vault Indexer:** Real-time indexing powered by `metadataCache.on('changed')` and vault event listeners, keeping tables updated upon edit without saving stale duplicates to `data.json`.
+  - **Flexible Roll Engine & No-Repeat:** Evaluates dice formulas (`1d6`, `1d20`, `2d6+2`, `d100`), weighted probabilities, or uniform distributions. Includes a toggleable "No Repeat" (without replacement) mode that tracks used entries, flags exhaustion, and provides one-click resetting.
+  - **Nested Rolls & Chained Tables:** Automatically evaluates embedded dice rolls (e.g. `2d6 coins` -> `7 (2d6) coins`) and recursively rolls chained tables referenced via `[[Table Name]]` wikilinks.
+  - **Floating Interactive Panel (`RandomTablesPanel`):** Draggable and minimizable floating panel featuring real-time search, tag filtering, campaign/global categorization, inline quick-roll (`⟳`), table row previews with warning badges, result action cards (re-roll, copy markdown, open source note, insert into active note editor), and campaign-scoped persistent history with editable annotations.
+  - **Settings & Command Integration:** Configurable tag prefix setting in Dino Tabletop options, command palette entry (`open-random-tables`), and dock toolbar integration.
+
+### 🇪🇸 Español
+
+#### Agregado
+- **Personajes Persistentes de Campaña (Sistema de Party):**
+  - **Registro Global de Personajes de Campaña:** Nueva entidad `CampaignCharacter` a nivel de campaña, permitiendo tener PJs y PNJs persistentes a través de cualquier lienzo o mapa.
+  - **Panel de Gestión de Party (`PartyModal`):** Interfaz para buscar, crear, editar, eliminar y colocar miembros del grupo con visualización en tiempo real (barra de vida, condiciones activas, insignias de inventario y ubicación actual en el mapa).
+  - **Editor de Personaje (`PartyCharacterEditModal`):** Configuración de nombre, color de token, tamaño, vida actual y máxima, selector de iconos RPG, retrato de token, notas vinculadas con lectura de frontmatter y editor de contadores.
+  - **Transferencia y Herencia de Estados (`PartyInheritModal`):** Al colocar un personaje persistente en un nuevo mapa, permite elegir entre heredar el estado actual (vida restante, condiciones, inventario) o iniciar fresco (vida completa y sin condiciones).
+  - **Modos de Sincronización Configurables:** Ajuste por campaña `characterSyncMode` (`prompt` | `always` | `never`) para heredar automáticamente, reiniciar siempre o consultar en cada colocación.
+  - **Sincronización Bidireccional en Tiempo Real:** Cualquier modificación sobre el token en el mapa (daño, curación, contadores, condiciones, inventario o guardado del editor) se actualiza al instante en el personaje de campaña.
+  - **Insignias Visuales y Menú Contextual:** Los tokens persistentes cuentan con una insignia (`⭐`), y el menú contextual permite vincular cualquier token existente a la Party o desvincularlo.
+  - **Exportación e Importación Completa (Manifest v2):** Empaqueta y remapea automáticamente retratos, notas vinculadas y activos de inventario de los personajes en archivos `.dinovtt`.
+  - **Módulo Opcional en Ajustes:** Integrado en la lista de módulos opcionales (`persistent-characters`) con botón en la barra de herramientas y píldora en la cabecera.
+- **Motor de Tablas Aleatorias (`random-tables`):**
+  - **Parser de Tablas Markdown y Validación:** Soporte completo para rangos numéricos (`1`, `2-4`, `01-05`), selección ponderada (`Peso`, `%`) y listas uniformes, además de columnas de metadatos adicionales. Validación profunda que detecta solapamientos de rangos, huecos numéricos según la fórmula de dados y límites no válidos.
+  - **Múltiples Tablas por Nota:** Reconoce varias tablas en una misma nota delimitadas por encabezados Markdown (`#`, `##`, etc.) y lee metadatos desde el frontmatter (`dte-table`, `dte-tags`, `dte-name`, `dte-roll`, `dte-campaign`).
+  - **Alcance Global y por Campaña:** La etiqueta `#dte-table` asigna alcance global, mientras que `#dte-table/<campaña>` restringe la tabla a la campaña indicada.
+  - **Indexador Reactivo:** Indexación en tiempo real impulsada por `metadataCache.on('changed')` y eventos del vault, manteniendo las tablas actualizadas en vivo sin almacenar copias redundantes en `data.json`.
+  - **Motor de Tiradas y Modo Sin Reposición:** Resuelve fórmulas de dados (`1d6`, `1d20`, `2d6+2`, `d100`), pesos proporcionales y azar uniforme. Incluye modo opcional "Sin reposición" que lleva registro de filas usadas, alerta cuando la tabla se agota y permite reiniciarla.
+  - **Tiradas Anidadas y Tablas Encadenadas:** Resuelve automáticamente fórmulas de dados incrustadas en el resultado (ej. `2d6 monedas` -> `7 (2d6) monedas`) y encadena recursivamente tablas vinculadas mediante enlaces `[[Nombre de Tabla]]`.
+  - **Panel Flotante Interactivo (`RandomTablesPanel`):** Panel flotante arrastrable y minimizable con buscador en tiempo real, filtro por etiquetas, categorización de tablas de campaña y globales, tirada directa (`⟳`), vista previa de filas con avisos de advertencia, tarjeta de último resultado (tirar de nuevo, copiar en markdown, abrir nota fuente e insertar en la nota activa) e historial persistente por campaña con notas editables.
+  - **Ajustes y Comandos:** Prefijo de tag configurable desde la pestaña de ajustes de Dino Tabletop, comando en la paleta de Obsidian (`open-random-tables`) e integración en la barra de herramientas del tablero.
+
 ## [0.1.9] - 2026-10-25
 
 ### 🇬🇧 English

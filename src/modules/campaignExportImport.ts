@@ -140,6 +140,21 @@ export function collectCampaignDependencies(
     }
   }
 
+  // Escanear personajes de campaña (Party)
+  if (campaign.characters) {
+    for (const charId in campaign.characters) {
+      const char = campaign.characters[charId];
+      if (char.imagePath) imagePaths.add(char.imagePath);
+      if (char.linkedNote) notePaths.add(char.linkedNote);
+      if (char.inventory && char.inventory.items) {
+        for (const item of char.inventory.items) {
+          if (item.imagePath) imagePaths.add(item.imagePath);
+          if (item.note) notePaths.add(item.note);
+        }
+      }
+    }
+  }
+
   // 2. Diario de campaña (notas dentro de la carpeta del diario)
   if (options.includeDiary && campaign.diaryFolderPath) {
     const folder = plugin.app.vault.getAbstractFileByPath(campaign.diaryFolderPath);
@@ -267,7 +282,7 @@ export async function exportCampaignToFile(
 
   // Manifest del paquete
   const manifest: CampaignPackageManifest = {
-    version: 1,
+    version: 2,
     appName: 'Dino Tabletop Engine',
     exportedAt: new Date().toISOString(),
     campaignName: campaign.name,
@@ -438,6 +453,21 @@ export async function importCampaignFromBuffer(
       if (map.wargame && map.wargame.units) {
         for (const u of map.wargame.units) {
           u.imagePath = remapAsset(u.imagePath);
+        }
+      }
+    }
+  }
+
+  // Remapear personajes de la campaña (Party)
+  if (campaign.characters) {
+    for (const charId in campaign.characters) {
+      const char = campaign.characters[charId];
+      char.imagePath = remapAsset(char.imagePath);
+      char.linkedNote = remapNote(char.linkedNote);
+      if (char.inventory && char.inventory.items) {
+        for (const item of char.inventory.items) {
+          item.imagePath = remapAsset(item.imagePath);
+          item.note = remapNote(item.note);
         }
       }
     }

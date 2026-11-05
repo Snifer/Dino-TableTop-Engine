@@ -512,17 +512,20 @@ export function registerSelectTool(): void {
         let dy = worldPos.y - multiSelectionState.dragStartWorld.y;
 
         const cellSize = ctx.map.cellMap?.cellSizePx || 48;
-        if (multiSelectionState.snapToGrid && ctx.map.coordSpace === 'world') {
-          dx = Math.round(dx / cellSize) * cellSize;
-          dy = Math.round(dy / cellSize) * cellSize;
-        }
 
         ctx.map.tokens.forEach((t) => {
           if (multiSelectionState.selectedTokenIds.has(t.id)) {
             const init = multiSelectionState.initialEntityPositions.get(t.id);
             if (init) {
-              t.x = Math.round(init.x + dx);
-              t.y = Math.round(init.y + dy);
+              let nx = init.x + dx;
+              let ny = init.y + dy;
+              if (multiSelectionState.snapToGrid && ctx.map.coordSpace === 'world') {
+                // Snap to cell CENTER, not cell edge
+                nx = Math.floor(nx / cellSize) * cellSize + cellSize / 2;
+                ny = Math.floor(ny / cellSize) * cellSize + cellSize / 2;
+              }
+              t.x = Math.round(nx);
+              t.y = Math.round(ny);
               const el = ctx.containerEl.querySelector(`.dte-token[data-token-id="${t.id}"]`) as HTMLElement | null;
               if (el) {
                 const css = toCss(ctx.map, t, ctx.viewport);

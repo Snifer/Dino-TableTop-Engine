@@ -17,6 +17,9 @@ export interface IPanel {
   minimized?: boolean;
 }
 
+import type { RandomTablesSettings, TableHistoryEntry } from './modules/randomTables/types';
+export type { RandomTablesSettings, TableHistoryEntry };
+
 export interface IDinoTabletopView {
   app: App;
   leaf: WorkspaceLeaf;
@@ -38,6 +41,7 @@ export interface IDinoTabletopView {
   diceTrayPanel?: IPanel | null;
   missionsPanel?: IPanel | null;
   oraclePanel?: IPanel | null;
+  randomTablesPanel?: IPanel | null;
   wargamePanel?: IPanel | null;
   playerViewPanel?: IPanel | null;
 }
@@ -106,6 +110,7 @@ export interface TokenData {
   conditions?: ConditionData[];
   dmOnly?: boolean;
   revealsFog?: { radiusCells: number } | null;
+  characterId?: string | null;
 }
 
 export interface POIData {
@@ -557,7 +562,28 @@ export interface CampaignData {
   missions?: Record<string, MissionData>;
   playerHpDisplay?: 'exact' | 'bar' | 'hidden';
   oracleHistory?: OracleReadingEntry[];
+  tableHistory?: TableHistoryEntry[];
   calendar?: { currentDay?: number; unit?: string };
+  characters?: Record<string, CampaignCharacter>;
+  characterSyncMode?: 'prompt' | 'always' | 'never';
+}
+
+export interface CampaignCharacter {
+  id: string;
+  name: string;
+  color: string;
+  size: number;
+  hp: number;
+  maxHp: number;
+  linkedNote: string | null;
+  imagePath: string | null;
+  icon?: string | null;
+  inventory?: TokenInventory;
+  counters?: CounterData[];
+  conditions?: ConditionData[];
+  dmOnly?: boolean;
+  revealsFog?: { radiusCells: number } | null;
+  currentMapId?: string | null;
 }
 
 
@@ -624,6 +650,9 @@ export interface DinoSettings {
   enableCustomFont?: boolean;
   customFontPrefix?: string;
   _orphanOracleHistory?: OracleReadingEntry[];
+  randomTables?: RandomTablesSettings;
+  randomTablesPanelPosition?: { x: number; y: number };
+  _orphanTableHistory?: TableHistoryEntry[];
 }
 
 export const DEFAULT_SETTINGS: DinoSettings = {
@@ -639,6 +668,8 @@ export const DEFAULT_SETTINGS: DinoSettings = {
     'dice-tray': false,
     'missions': false,
     'oracle': false,
+    'random-tables': false,
+    'persistent-characters': false,
   },
   campaigns: {},
   currentCampaignId: null,
@@ -658,6 +689,13 @@ export const DEFAULT_SETTINGS: DinoSettings = {
   activeOracleDeckId: null,
   oracleResetQuestionOnDraw: true,
   oraclePanelPosition: { x: 120, y: 120 },
+  randomTables: {
+    tagPrefix: 'dte-table',
+    folders: [],
+    noRepeat: {},
+  },
+  randomTablesPanelPosition: { x: 140, y: 140 },
+  _orphanTableHistory: [],
 };
 
 export interface IconPack {
