@@ -1,4 +1,4 @@
-import { App, Notice, TFile, TFolder } from 'obsidian';
+import { App, getAllTags, Notice, TFile, TFolder } from 'obsidian';
 import JSZip from 'jszip';
 import {
   CampaignData,
@@ -7,6 +7,7 @@ import {
   TimelineData,
   ClockData,
   DinoPlugin,
+  SheetTemplate,
 } from '../types';
 import { genId } from '../utils';
 import { t } from '../i18n';
@@ -15,6 +16,7 @@ export interface CampaignExportOptions {
   includeImages: boolean;
   includeNotes: boolean;
   includeDiary: boolean;
+  includeTableNotes: boolean;
   bestiaryMode: 'none' | 'used' | 'selected' | 'all';
   selectedPacks: string[];
 }
@@ -29,17 +31,18 @@ export interface CampaignPackageManifest {
   decks?: Record<string, DeckData>;
   timelines?: Record<string, TimelineData>;
   clocks?: Record<string, ClockData>;
+  sheetTemplates?: SheetTemplate[];
   assetMap: Record<string, string>; // originalVaultPath -> zipRelativePath
   noteMap: Record<string, string>;  // originalVaultPath -> zipRelativePath
 }
 
 /** Helper para sanitizar nombres de archivo o carpeta */
-function sanitizeFileName(name: string): string {
+export function sanitizeFileName(name: string): string {
   return name.replace(/[\\/:*?"<>|]/g, '_').trim();
 }
 
 /** Asegura recursivamente que una carpeta exista en el Vault */
-async function ensureFolder(app: App, folderPath: string): Promise<void> {
+export async function ensureFolder(app: App, folderPath: string): Promise<void> {
   const cleanPath = folderPath.replace(/\/+$/, '').trim();
   if (!cleanPath) return;
   const parts = cleanPath.split('/');
@@ -66,10 +69,12 @@ export function collectCampaignDependencies(
   imagePaths: Set<string>;
   notePaths: Set<string>;
   bestiaryEntries: BestiaryEntry[];
+  sheetTemplates: SheetTemplate[];
 } {
   const imagePaths = new Set<string>();
   const notePaths = new Set<string>();
   const bestiaryEntries: BestiaryEntry[] = [];
+  const sheetTemplates: SheetTemplate[] = [];
 
   // 1. Escanear mapas de la campaña
   if (campaign.maps) {
@@ -167,6 +172,45 @@ export function collectCampaignDependencies(
     }
   }
 
+  // 2b. Notas de tablas aleatorias de esta campaña
+  if (options.includeTableNotes) {
+    const settings = plugin.settings;
+    const tagPrefix = (settings.randomTables?.tagPrefix || 'dte-table').toLowerCase().replace(/^#/, '');
+
+    // Find the campaignId for the exported campaign
+    let exportedCampaignId: string | null = null;
+    for (const [id, c] of Object.entries(settings.campaigns || {})) {
+      if (c === campaign) {
+        exportedCampaignId = id;
+        break;
+      }
+    }
+
+    if (exportedCampaignId) {
+      const campaignTag = `${tagPrefix}/${exportedCampaignId}`;
+      for (const file of plugin.app.vault.getMarkdownFiles()) {
+        const cache = plugin.app.metadataCache.getFileCache(file);
+        if (!cache) continue;
+
+        // Check via tags
+        const fileTags = (getAllTags(cache) || []).map((t: string) => t.toLowerCase().replace(/^#/, ''));
+        if (fileTags.includes(campaignTag)) {
+          notePaths.add(file.path);
+          continue;
+        }
+
+        // Check via frontmatter dte-campaign
+        const fm = cache.frontmatter || {};
+        if (
+          (fm['dte-table'] === true || fm['dteTable'] === true) &&
+          (fm['dte-campaign'] === exportedCampaignId || fm['dteCampaign'] === exportedCampaignId)
+        ) {
+          notePaths.add(file.path);
+        }
+      }
+    }
+  }
+
   // 3. Bestiario según el modo y paquetes
   const allBestiary = Object.values(plugin.settings.bestiary || {});
   if (options.bestiaryMode === 'all') {
@@ -212,7 +256,29 @@ export function collectCampaignDependencies(
     }
   }
 
-  return { imagePaths, notePaths, bestiaryEntries };
+  // Recolectar plantillas de hoja usadas por los personajes/tokens
+  const propKey = plugin.settings.characterSheets?.property || 'dte-sheet';
+  const allTemplates = plugin.settings.sheetTemplates || [];
+
+  for (const notePath of notePaths) {
+    const file = plugin.app.vault.getAbstractFileByPath(notePath);
+    if (file instanceof TFile) {
+      const cache = plugin.app.metadataCache.getFileCache(file);
+      const tplNameOrId = cache?.frontmatter?.[propKey];
+      if (tplNameOrId) {
+        const found = allTemplates.find((t) => t.name === tplNameOrId || t.id === tplNameOrId);
+        if (found && !sheetTemplates.some((ut) => ut.id === found.id)) {
+          sheetTemplates.push(found);
+          if (found.background?.path) imagePaths.add(found.background.path);
+          for (const w of found.widgets) {
+            if (w.imagePath) imagePaths.add(w.imagePath);
+          }
+        }
+      }
+    }
+  }
+
+  return { imagePaths, notePaths, bestiaryEntries, sheetTemplates };
 }
 
 /**
@@ -229,7 +295,7 @@ export async function exportCampaignToFile(
     return;
   }
 
-  const { imagePaths, notePaths, bestiaryEntries } = collectCampaignDependencies(
+  const { imagePaths, notePaths, bestiaryEntries, sheetTemplates } = collectCampaignDependencies(
     campaign,
     plugin,
     options
@@ -288,6 +354,7 @@ export async function exportCampaignToFile(
     campaignName: campaign.name,
     campaign: JSON.parse(JSON.stringify(campaign)) as CampaignData,
     bestiaryEntries: bestiaryEntries.length ? bestiaryEntries : undefined,
+    sheetTemplates: sheetTemplates.length ? sheetTemplates : undefined,
     assetMap,
     noteMap,
   };
@@ -502,6 +569,25 @@ export async function importCampaignFromBuffer(
       if (clonedEntry.pack && !existingPacks.has(clonedEntry.pack)) {
         existingPacks.add(clonedEntry.pack);
         plugin.settings.bestiaryPacks.push(clonedEntry.pack);
+      }
+    }
+  }
+
+  // 4b. Importar plantillas de hoja si vienen incluidas
+  if (manifest.sheetTemplates && manifest.sheetTemplates.length > 0) {
+    if (!plugin.settings.sheetTemplates) plugin.settings.sheetTemplates = [];
+    for (const impTpl of manifest.sheetTemplates) {
+      const clonedTpl = JSON.parse(JSON.stringify(impTpl)) as SheetTemplate;
+      if (clonedTpl.background?.path) {
+        clonedTpl.background.path = remapAsset(clonedTpl.background.path);
+      }
+      for (const w of clonedTpl.widgets) {
+        if (w.imagePath) w.imagePath = remapAsset(w.imagePath);
+      }
+
+      const existingIdx = plugin.settings.sheetTemplates.findIndex((t) => t.id === clonedTpl.id || t.name === clonedTpl.name);
+      if (existingIdx === -1) {
+        plugin.settings.sheetTemplates.push(clonedTpl);
       }
     }
   }

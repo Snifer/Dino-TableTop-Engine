@@ -23,6 +23,8 @@ export class RandomTablesPanel {
   private lastRolledTable: RandomTable | null = null;
   private isHistoryOpen = false;
   private expandedTableIds = new Set<string>();
+  private isMaximized = false;
+  private preMaximizedRect: { x: number; y: number; w: number; h: number } | null = null;
 
   constructor(app: App, plugin: DinoPlugin, container: HTMLElement, indexer?: TableIndexer) {
     this.app = app;
@@ -87,6 +89,31 @@ export class RandomTablesPanel {
     this.el.style.display = 'flex';
     this.minimized = false;
     this.el.removeClass('is-minimized');
+    const s = this.plugin.settings as DinoSettings;
+    const size = s.randomTablesPanelSize || { width: 440, height: 680 };
+    this.el.style.width = `${size.width}px`;
+    this.el.style.height = `${size.height}px`;
+    this.build();
+  }
+
+  public restoreFromMinimized(): void {
+    this.minimized = false;
+    this.el.removeClass('is-minimized');
+    const s = this.plugin.settings as DinoSettings;
+    const size = s.randomTablesPanelSize || { width: 440, height: 680 };
+    this.el.style.width = `${size.width}px`;
+    this.el.style.height = `${size.height}px`;
+    this.build();
+  }
+
+  public minimize(): void {
+    if (this.isMaximized) {
+      this.toggleMaximize();
+    }
+    this.minimized = true;
+    this.el.addClass('is-minimized');
+    this.el.style.width = 'auto';
+    this.el.style.height = 'auto';
     this.build();
   }
 
@@ -105,11 +132,128 @@ export class RandomTablesPanel {
   private setupPosition(): void {
     const s = this.plugin.settings as DinoSettings;
     const pos = s.randomTablesPanelPosition || { x: 140, y: 140 };
+    const size = s.randomTablesPanelSize || { width: 440, height: 680 };
     this.el.setCssStyles({
       position: 'absolute',
       left: `${pos.x}px`,
       top: `${pos.y}px`,
+      width: `${size.width}px`,
+      height: `${size.height}px`,
     });
+  }
+
+  private toggleMaximize(btn?: HTMLElement): void {
+    this.isMaximized = !this.isMaximized;
+    if (this.isMaximized) {
+      this.preMaximizedRect = {
+        x: parseInt(this.el.style.left || '140', 10),
+        y: parseInt(this.el.style.top || '140', 10),
+        w: this.el.offsetWidth || 440,
+        h: this.el.offsetHeight || 680,
+      };
+      this.el.addClass('is-maximized');
+      this.el.style.left = '20px';
+      this.el.style.top = '20px';
+      this.el.style.width = 'calc(100% - 40px)';
+      this.el.style.height = 'calc(100% - 40px)';
+      if (btn) {
+        setIcon(btn, 'minimize-2');
+        btn.title = 'Restaurar tamaño';
+      }
+    } else {
+      this.el.removeClass('is-maximized');
+      const prev = this.preMaximizedRect || { x: 140, y: 140, w: 440, h: 680 };
+      this.el.style.left = `${prev.x}px`;
+      this.el.style.top = `${prev.y}px`;
+      this.el.style.width = `${prev.w}px`;
+      this.el.style.height = `${prev.h}px`;
+      if (btn) {
+        setIcon(btn, 'maximize-2');
+        btn.title = 'Maximizar';
+      }
+    }
+    this.setupResizeHandles();
+  }
+
+  private setupResizeHandles(): void {
+    this.el.querySelectorAll('.dte-panel-resizer').forEach((el) => el.remove());
+    if (this.minimized || this.isMaximized) return;
+
+    const createResizer = (type: 'r' | 'b' | 'l' | 'br' | 'bl') => {
+      const handle = this.el.createDiv({ cls: `dte-panel-resizer dte-resizer-${type}` });
+      if (type === 'br') {
+        const icon = handle.createSpan({ cls: 'dte-resize-grip-icon' });
+        setIcon(icon, 'chevrons-down');
+      }
+
+      let isResizing = false;
+      let startX = 0;
+      let startY = 0;
+      let startW = 0;
+      let startH = 0;
+      let startLeft = 0;
+
+      const onMouseDown = (e: MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        isResizing = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        startW = this.el.offsetWidth;
+        startH = this.el.offsetHeight;
+        startLeft = this.el.offsetLeft;
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      };
+
+      const onMouseMove = (moveEvt: MouseEvent) => {
+        if (!isResizing) return;
+        const dx = moveEvt.clientX - startX;
+        const dy = moveEvt.clientY - startY;
+
+        if (type === 'r' || type === 'br') {
+          const newW = Math.max(340, startW + dx);
+          this.el.style.width = `${newW}px`;
+        }
+        if (type === 'l' || type === 'bl') {
+          const newW = Math.max(340, startW - dx);
+          const newLeft = startLeft + (startW - newW);
+          this.el.style.width = `${newW}px`;
+          this.el.style.left = `${newLeft}px`;
+        }
+        if (type === 'b' || type === 'br' || type === 'bl') {
+          const newH = Math.max(350, startH + dy);
+          this.el.style.height = `${newH}px`;
+        }
+      };
+
+      const onMouseUp = () => {
+        if (!isResizing) return;
+        isResizing = false;
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+
+        const s = this.plugin.settings as DinoSettings;
+        s.randomTablesPanelSize = {
+          width: this.el.offsetWidth,
+          height: this.el.offsetHeight,
+        };
+        s.randomTablesPanelPosition = {
+          x: parseInt(this.el.style.left || '140', 10),
+          y: parseInt(this.el.style.top || '140', 10),
+        };
+        this.plugin.saveSettings();
+      };
+
+      handle.addEventListener('mousedown', onMouseDown);
+    };
+
+    createResizer('r');
+    createResizer('b');
+    createResizer('l');
+    createResizer('br');
+    createResizer('bl');
   }
 
   private setupDrag(handleEl: HTMLElement): void {
@@ -120,6 +264,7 @@ export class RandomTablesPanel {
     let origTop = 0;
 
     const onMouseDown = (e: MouseEvent) => {
+      if (this.isMaximized) return;
       if ((e.target as HTMLElement).closest('button, select, input, textarea')) {
         return;
       }
@@ -168,17 +313,47 @@ export class RandomTablesPanel {
 
     if (this.minimized) {
       this.el.addClass('is-minimized');
-      const minBtn = this.el.createEl('button', {
-        cls: 'dte-minimized-handle',
+      this.el.style.width = 'auto';
+      this.el.style.height = 'auto';
+
+      const header = this.el.createDiv({ cls: 'dte-panel-header dte-panel-header--minimized' });
+      this.setupDrag(header);
+
+      const title = header.createDiv({ cls: 'dte-panel-title dte-drag-handle' });
+      const titleIcon = title.createSpan({ cls: 'dte-panel-icon' });
+      setIcon(titleIcon, 'dice-6');
+      title.createSpan({ text: t('tables.panelTitle'), cls: 'dte-panel-title-text' });
+
+      // Double click header to restore
+      header.addEventListener('dblclick', (e) => {
+        if ((e.target as HTMLElement).closest('button')) return;
+        this.restoreFromMinimized();
       });
-      const icon = minBtn.createSpan();
-      setIcon(icon, 'dice-6');
-      minBtn.createSpan({ text: t('tables.panelTitle') });
-      minBtn.addEventListener('click', () => {
-        this.minimized = false;
-        this.el.removeClass('is-minimized');
-        this.build();
+
+      const headerControls = header.createDiv({ cls: 'dte-panel-header-controls' });
+
+      // Expand button
+      const expandBtn = headerControls.createEl('button', {
+        cls: 'dte-icon-btn',
+        title: 'Expandir',
       });
+      setIcon(expandBtn, 'chevron-up');
+      expandBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.restoreFromMinimized();
+      });
+
+      // Close button
+      const closeBtn = headerControls.createEl('button', {
+        cls: 'dte-icon-btn',
+        title: 'Cerrar',
+      });
+      setIcon(closeBtn, 'x');
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.close();
+      });
+
       return;
     }
 
@@ -219,6 +394,16 @@ export class RandomTablesPanel {
       new Notice('Tablas reindexadas con éxito.', 2000);
     });
 
+    // Maximize / Restore button
+    const maxBtn = headerControls.createEl('button', {
+      cls: 'dte-icon-btn',
+      title: this.isMaximized ? 'Restaurar tamaño' : 'Maximizar',
+    });
+    setIcon(maxBtn, this.isMaximized ? 'minimize-2' : 'maximize-2');
+    maxBtn.addEventListener('click', () => {
+      this.toggleMaximize(maxBtn);
+    });
+
     // Minimize button
     const minBtn = headerControls.createEl('button', {
       cls: 'dte-icon-btn',
@@ -226,8 +411,7 @@ export class RandomTablesPanel {
     });
     setIcon(minBtn, 'chevron-down');
     minBtn.addEventListener('click', () => {
-      this.minimized = true;
-      this.build();
+      this.minimize();
     });
 
     // Close button
@@ -241,17 +425,20 @@ export class RandomTablesPanel {
     // Search and filters
     this.renderSearchAndFilters();
 
-    // Table lists
-    const content = this.el.createDiv({ cls: 'dte-panel-content' });
+    // Table lists (scrollable main area)
+    const content = this.el.createDiv({ cls: 'dte-panel-content dte-tables-panel-scroll' });
     this.renderTableLists(content);
 
-    // Last result card
+    // Last result card (anchored visible footer, never cut off!)
     if (this.lastResult) {
-      this.renderLastResult(content);
+      this.renderLastResult(this.el);
     }
 
     // History drawer
-    this.renderHistory(content);
+    this.renderHistory(this.el);
+
+    // Setup edge & corner resizers
+    this.setupResizeHandles();
   }
 
   private renderSearchAndFilters(): void {

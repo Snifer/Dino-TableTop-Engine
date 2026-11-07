@@ -20,6 +20,13 @@ export interface IPanel {
 import type { RandomTablesSettings, TableHistoryEntry } from './modules/randomTables/types';
 export type { RandomTablesSettings, TableHistoryEntry };
 
+import type { CharacterSheetSettings, SheetTemplate } from './modules/characterSheet/types';
+export type { CharacterSheetSettings, SheetTemplate };
+
+import type { StoreSettings } from './modules/store/types';
+import { DEFAULT_STORE_SETTINGS } from './modules/store/types';
+export type { StoreSettings };
+
 export interface IDinoTabletopView {
   app: App;
   leaf: WorkspaceLeaf;
@@ -652,13 +659,18 @@ export interface DinoSettings {
   _orphanOracleHistory?: OracleReadingEntry[];
   randomTables?: RandomTablesSettings;
   randomTablesPanelPosition?: { x: number; y: number };
+  randomTablesPanelSize?: { width: number; height: number };
   _orphanTableHistory?: TableHistoryEntry[];
+  characterSheets?: CharacterSheetSettings;
+  sheetTemplates?: SheetTemplate[];
+  store?: StoreSettings;
 }
 
 export const DEFAULT_SETTINGS: DinoSettings = {
   language: 'auto',
   toolbarLayout: 'top',
   floatingToolbarPosition: { x: 16, y: 16 },
+  store: DEFAULT_STORE_SETTINGS,
   enabledModules: {
     'combat-tracker': false,
     'cards': false,
@@ -670,6 +682,7 @@ export const DEFAULT_SETTINGS: DinoSettings = {
     'oracle': false,
     'random-tables': false,
     'persistent-characters': false,
+    'character-sheet': false,
   },
   campaigns: {},
   currentCampaignId: null,
@@ -695,7 +708,13 @@ export const DEFAULT_SETTINGS: DinoSettings = {
     noRepeat: {},
   },
   randomTablesPanelPosition: { x: 140, y: 140 },
+  randomTablesPanelSize: { width: 440, height: 680 },
   _orphanTableHistory: [],
+  characterSheets: {
+    property: 'dte-sheet',
+    templates: [],
+  },
+  sheetTemplates: [],
 };
 
 export interface IconPack {

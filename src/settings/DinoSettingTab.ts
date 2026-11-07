@@ -3,6 +3,7 @@ import { SupportedLanguage, DinoPlugin, ToolbarLayout } from '../types';
 import { setLanguage, t } from '../i18n';
 import { moduleRegistry } from '../modules/registry';
 import { DinoTabletopView } from '../views/DinoTabletopView';
+import { TemplateManagerModal } from '../modules/characterSheet';
 
 export class DinoSettingTab extends PluginSettingTab {
   plugin: DinoPlugin;
@@ -130,6 +131,34 @@ export class DinoSettingTab extends PluginSettingTab {
         );
     }
 
+    // --- Sección: Hojas de Personaje / Character Sheets ---
+    if (moduleRegistry.isEnabled(this.plugin.settings, 'character-sheet')) {
+      new Setting(containerEl).setName(t('modules.characterSheetName') || 'Hojas de Personaje').setHeading();
+      new Setting(containerEl)
+        .setName('Propiedad Frontmatter (Property)')
+        .setDesc('Clave frontmatter que vincula una nota con su plantilla (por defecto: dte-sheet).')
+        .addText((text) =>
+          text
+            .setValue(this.plugin.settings.characterSheets?.property || 'dte-sheet')
+            .onChange(async (val) => {
+              if (!this.plugin.settings.characterSheets) {
+                this.plugin.settings.characterSheets = { property: 'dte-sheet', templates: [] };
+              }
+              this.plugin.settings.characterSheets.property = val.trim() || 'dte-sheet';
+              await this.plugin.saveSettings();
+            })
+        );
+
+      new Setting(containerEl)
+        .setName('Plantillas de Hoja')
+        .setDesc('Diseña, edita o importa plantillas visuales con widgets.')
+        .addButton((btn) =>
+          btn.setButtonText('Gestionar Plantillas').onClick(() => {
+            new TemplateManagerModal(this.app, this.plugin).open();
+          })
+        );
+    }
+
     // --- Sección: Acerca de / About ---
     new Setting(containerEl).setName(t('settings.aboutSection')).setHeading();
 
@@ -137,7 +166,7 @@ export class DinoSettingTab extends PluginSettingTab {
 
     const titleRow = aboutBox.createDiv({ cls: 'dte-settings-about-header' });
     titleRow.createEl('strong', { text: 'Dino Tabletop Engine' });
-    titleRow.createSpan({ cls: 'dte-settings-badge', text: `ALPHA v${this.plugin.manifest?.version || '0.1.10'}` });
+    titleRow.createSpan({ cls: 'dte-settings-badge', text: `ALPHA v${this.plugin.manifest?.version || '0.1.11'}` });
 
     const descEl = aboutBox.createDiv({ cls: 'dte-settings-about-desc' });
     descEl.createEl('p', {

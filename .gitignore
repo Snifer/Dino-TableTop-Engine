@@ -1,4 +1,8 @@
 node_modules/
 main.js
 *.js.map
-.DS_Store 
+.DS_Store
+
+# Store catalog — lives in its own repository
+store/
+

@@ -10,6 +10,7 @@ import { MissionsModule } from './missions';
 import { OracleModule } from './oracle';
 import { PartyModule } from './party';
 import { RandomTablesModule } from './randomTables';
+import { CharacterSheetModule } from './characterSheet';
 import { DinoSettings } from '../types';
 
 class ModuleRegistry {
@@ -27,6 +28,7 @@ class ModuleRegistry {
     this.register(OracleModule);
     this.register(PartyModule);
     this.register(RandomTablesModule);
+    this.register(CharacterSheetModule);
   }
 
   register(module: EngineModule): void {

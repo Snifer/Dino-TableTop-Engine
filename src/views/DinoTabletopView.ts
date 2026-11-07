@@ -50,6 +50,7 @@ import {
 import { CampaignExportModal } from '../modals/CampaignExportModal';
 import { CampaignImportModal } from '../modals/CampaignImportModal';
 import { ModulesModal } from '../modals/ModulesModal';
+import { StoreModal } from '../modals/StoreModal';
 import { NewCellMapModal } from '../modals/CellMapModals';
 import { moduleRegistry } from '../modules/registry';
 import { CombatTrackerPanel, AdjustConditionModal, AddConditionModal } from '../modules/combatTracker';
@@ -62,6 +63,7 @@ import { DiceTrayPanel } from '../modules/diceTray';
 import { MissionListPanel } from '../modules/missions';
 import { OraclePanel } from '../modules/oracle';
 import { RandomTablesPanel } from '../modules/randomTables';
+import { openCharacterSheet, changeCharacterSheet, removeCharacterSheet, activeSheetPanels } from '../modules/characterSheet';
 import { toCss, fromPointer, snapWorldToCell } from '../modules/cellCoordinates';
 import { getCellStore } from '../modules/cellStore';
 import { globalViewportManager, globalHistoryManager, globalToolManager } from '../modules/cellBoardCore';
@@ -153,6 +155,8 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
     if (this.oraclePanel) this.oraclePanel.destroy();
     if (this.randomTablesPanel) this.randomTablesPanel.destroy();
     if (this.wargamePanel) this.wargamePanel.destroy();
+    activeSheetPanels.forEach((panel) => panel.destroy());
+    activeSheetPanels.clear();
     if (this.lateralToolbar) this.lateralToolbar.destroy();
     if (this.keydownListener) {
       window.removeEventListener('keydown', this.keydownListener);
@@ -870,6 +874,16 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
     setIcon(modulesBtn, 'puzzle');
     modulesBtn.addEventListener('click', () => {
       new ModulesModal(this.app, this.plugin, this).open();
+    });
+
+    // Botón Tienda de Paquetes
+    const storeBtn = dock.createEl('button', {
+      cls: 'clickable-icon dte-btn-icon dte-tool-btn',
+      attr: { 'aria-label': 'Tienda Comunitaria' },
+    });
+    setIcon(storeBtn, 'package');
+    storeBtn.addEventListener('click', () => {
+      new StoreModal(this.app, this.plugin).open();
     });
 
     // Módulos activos con botón en barra
@@ -2148,6 +2162,32 @@ export class DinoTabletopView extends ItemView implements IDinoTabletopView {
           .setIcon('pencil')
           .onClick(() => this.openTokenEditor(map, token))
       );
+      if (token.linkedNote) {
+        menu.addItem((i) =>
+          i
+            .setTitle(t('sheet.openSheet') || 'Abrir hoja de personaje')
+            .setIcon('file-text')
+            .onClick(() => {
+              openCharacterSheet(this.app, this.plugin, token.linkedNote!, this);
+            })
+        );
+        menu.addItem((i) =>
+          i
+            .setTitle(t('sheet.changeTemplate') || 'Cambiar plantilla de hoja')
+            .setIcon('repeat')
+            .onClick(() => {
+              changeCharacterSheet(this.app, this.plugin, token.linkedNote!, this);
+            })
+        );
+        menu.addItem((i) =>
+          i
+            .setTitle(t('sheet.removeSheet') || 'Retirar hoja de personaje')
+            .setIcon('file-minus')
+            .onClick(() => {
+              removeCharacterSheet(this.app, this.plugin, token.linkedNote!);
+            })
+        );
+      }
       if (!token.inventory) {
         menu.addItem((i) =>
           i

@@ -5,6 +5,130 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.12] - 2026-11-07
+
+### 🇬🇧 English
+
+#### Added
+- **Character Sheet – Template Editor: Typography Controls:** New **Typography** section in the sidebar inspector available for all text-displaying widgets (label, text, counter, frame, calculated, button, check, list, grid). Includes:
+  - **Bold / Italic toggle buttons** (`B` / `I`) with active-state highlight.
+  - **Underline / Strikethrough toggle buttons** (`U` / `S̶`) with active-state highlight.
+  - **Text alignment 3-button toggle** (Left / Center / Right) with active-state highlight.
+  - **Font size** numeric input (pixels, optional).
+  - **Text color** color picker.
+  - All properties persisted in `WidgetStyle` (`fontWeight`, `fontStyle`, `textDecoration`, `textAlign`, `fontSize`, `textColor`) and applied to the rendered sheet.
+
+#### Fixed
+- **Character Sheet – JSON Import (`Paste JSON` button):** Replaced native `window.prompt()` (unsupported in Electron/Obsidian) with a full Obsidian `Modal` containing a `<textarea>`, resolving `Uncaught Error: prompt() is not supported` on paste.
+- **Character Sheet – Counter widget unlimited max:** Counter widgets now support a true unlimited max (no `/9999` label, no progress bar, no value clamping) when no max is defined. The editor sidebar shows a **Max Limit** toggle — OFF defaults new counters to unlimited; ON reveals the max value input.
+- **Character Sheet – Active-state highlight on typography buttons:** `.dte-editor-btn.is-active` CSS rule added so Bold, Italic, Underline, Strikethrough, and Alignment buttons visually indicate the current state using `--interactive-accent`.
+
+#### Changed
+- **Character Sheet – Token context menu:** Added **Change Template** (`changeCharacterSheet`) and **Remove Sheet** (`removeCharacterSheet`) options to the token right-click menu and to the floating `CharacterSheetPanel` header (repeat / file-minus icons).
+- **`SelectTemplateModal`:** Detects when a template is already assigned (`isChange = true`), pre-selects the current template, and exposes a **Remove Sheet** button for quick detachment.
+- **Character Sheet – Sidebar inspector:** Widget click no longer causes a full re-render. Only CSS selection classes are updated and `renderSidebar()` is called, eliminating flicker and preserving panel scroll position.
+- **`WidgetStyle` type:** Added `fontStyle?: 'normal' | 'italic'` and `textDecoration?: 'none' | 'underline' | 'line-through'`.
+- **`CharacterSheetRenderer.renderWidget()`:** All typography properties (`fontSize`, `fontWeight`, `fontStyle`, `textDecoration`, `textAlign`) now applied in the shared wrapper block so they affect every widget type consistently.
+
+---
+
+### 🇪🇸 Español
+
+#### Agregado
+- **Hoja de Personaje – Editor de Plantillas: Controles de Tipografía:** Nueva sección **Tipografía** en el inspector lateral, disponible para todos los widgets que muestran texto (literal, texto, contador, recuadro, calculado, botón, casilla, lista, cuadrícula). Incluye:
+  - **Botones Negrita / Cursiva** (`B` / `I`) con resaltado de estado activo.
+  - **Botones Subrayado / Tachado** (`U` / `S̶`) con resaltado de estado activo.
+  - **Selector de alineación** de 3 botones (Izquierda / Centrado / Derecha) con resaltado del seleccionado.
+  - **Tamaño de fuente** (campo numérico en píxeles, opcional).
+  - **Color de texto** (selector de color).
+  - Todas las propiedades persistidas en `WidgetStyle` y aplicadas al renderizado de la hoja.
+
+#### Corregido
+- **Hoja de Personaje – Importar JSON (botón "Pegar JSON"):** Reemplazo de `window.prompt()` (no soportado en Electron/Obsidian) por un `Modal` de Obsidian con `<textarea>`, resolviendo el error `Uncaught Error: prompt() is not supported` al pegar.
+- **Hoja de Personaje – Contador sin límite máximo:** Los contadores ahora admiten un máximo verdaderamente ilimitado (sin etiqueta `/9999`, sin barra de progreso, sin recorte de valor) cuando no se define un tope. El inspector del editor muestra un toggle **Límite máximo** — desactivado deja el contador libre; activado revela el campo de valor máximo.
+- **Hoja de Personaje – Resaltado de botones de tipografía activos:** Se agregó la regla CSS `.dte-editor-btn.is-active` para que los botones de Negrita, Cursiva, Subrayado, Tachado y Alineación indiquen visualmente su estado usando `--interactive-accent`.
+
+#### Modificado
+- **Hoja de Personaje – Menú contextual de token:** Se añadieron las opciones **Cambiar plantilla de hoja** (`changeCharacterSheet`) y **Retirar hoja de personaje** (`removeCharacterSheet`) al menú contextual del token y al encabezado del panel flotante `CharacterSheetPanel` (iconos de repetir y de quitar archivo).
+- **`SelectTemplateModal`:** Detecta si ya hay una plantilla asignada (`isChange = true`), preselecciona la plantilla actual y expone un botón **Retirar Hoja** para desvincularla rápidamente.
+- **Hoja de Personaje – Inspector lateral:** El clic sobre un widget ya no causa un re-render completo. Solo se actualizan las clases CSS de selección y se llama a `renderSidebar()`, eliminando el parpadeo y preservando la posición de scroll del panel.
+- **Tipo `WidgetStyle`:** Se agregaron `fontStyle?: 'normal' | 'italic'` y `textDecoration?: 'none' | 'underline' | 'line-through'`.
+- **`CharacterSheetRenderer.renderWidget()`:** Todas las propiedades tipográficas (`fontSize`, `fontWeight`, `fontStyle`, `textDecoration`, `textAlign`) se aplican ahora en el bloque compartido del wrapper, afectando consistentemente a todos los tipos de widget.
+
+---
+
+## [0.1.11] - 2026-11-04
+
+### 🇬🇧 English
+
+#### Added
+- **Interactive Character Sheets Module (`character-sheet`):**
+  - **Decoupled Architecture:** Sheet templates live in `settings.sheetTemplates` (and plugin data), while character data lives directly in note YAML frontmatter and body headings, ensuring the note remains the single source of truth.
+  - **Visual Template Editor (`TemplateEditorModal`):** Full-screen visual designer with canvas, 50%–200% zoom, 10px grid snapping, drag-and-drop widget placement, corner resize handles, Z-index layer management (bring to front / send to back), and live preview mode with test fixtures.
+  - **10 Core Widgets:**
+    - **Background (`Fondo`):** Full-sheet vault image with configurable fit (cover / contain) and opacity.
+    - **Image / Portrait (`Imagen`):** Vault-backed image linked to frontmatter key or static path with square or circular shapes.
+    - **Frame / Box (`Recuadro`):** Decorative container with custom border, fill color, corner radius, and title.
+    - **Label (`Literal`):** Static text for headers, titles, and labels with customizable typography, color, and alignment.
+    - **Text Field (`Texto`):** Single-line or multi-line editable field with real-time 400ms debounced auto-save, supporting bindings to both frontmatter keys and markdown body headings (e.g. `## Biography`).
+    - **Counter (`Contador`):** Numeric tracker with increment/decrement buttons, min/max limits supporting dynamic `@key` references (e.g. `max: @maxHp`), number and/or progress bar display, and click-to-roll formula shortcuts.
+    - **Checkbox (`Casilla`):** Boolean toggle directly updating frontmatter.
+    - **Button (`Botón`):** Interactive action button executing dice roll formulas with `@key` resolution, optional 3D Dice Roller integration, and inline bubble result display.
+    - **List (`Lista`):** Dynamic YAML array editor for items with add, edit, and delete controls.
+    - **Grid / Table (`Cuadrícula`):** Multi-column structured data table supporting text, number, and checkbox columns with dynamic rows.
+    - **Calculated Field (`Calculado`):** Read-only auto-computed field evaluating math expressions and functions (`floor`, `ceil`, `round`, `abs`, `min`, `max`) derived from `@key` properties in real time.
+  - **Dice Roller Integration & Formula Engine:** Substitutes `@key` variables from frontmatter before rolling, supports safe mathematical evaluations, bridges with `window.DiceRoller` (with 3D animation) and internal PRNG fallback, and automatically records rolls into Dice Tray history.
+  - **Floating Gameplay Panel (`CharacterSheetPanel`):** Persistent draggable and minimizable panel with zoom controls, real-time two-way synchronization with note frontmatter, external modification detection via `metadataCache`, and direct template editor shortcut. Multiple sheets can be opened simultaneously for different characters.
+  - **Token Integration & Auto-Sync:** Added "Open Character Sheet" to token context menu when a note is linked. Modifying HP, Max HP, or portrait in the sheet automatically syncs with the token on the tactical map. If a note lacks the sheet property, prompts with `SelectTemplateModal` to assign a template.
+  - **Template Manager Modal (`TemplateManagerModal`):** Complete template administration interface to create, edit, duplicate, delete, and manage templates. Added 1-click **Export as `.dinovtt` Package** (`ExportSheetPackageModal`) which bundles the template (`sheet.json`), internal manifest, and vault background images into a distributable archive with SHA-256 calculation, as well as a 1-click GitHub Store PR bundle generator. Added a file picker to import standalone `.dinovtt` or JSON template files directly.
+  - **Campaign Export & Import Bundle:** Seamlessly packages used sheet templates and referenced vault images into `.dinovtt` campaign bundles.
+- **Random Tables Panel Resizing & Maximize Mode:** Added interactive edge and corner drag handles (right, bottom, left, corners) with persistent size saving in settings (`randomTablesPanelSize`). Added a 1-click Maximize/Restore toggle button in the header, increased default width to 440px, and decoupled the scrollable table list from the result card so roll results and action buttons are always fully visible without clipping.
+- **Modernized Modules Modal & Categorized Grid (`ModulesModal`):** Redesigned the 12-module flat list into a 760px responsive two-column grid organized into 3 purpose-driven categories (Combat & Tactical Board, Campaign & Characters, Tabletop & Chance). Added quick filter pills (`[All]`, `[Combat]`, `[Campaign]`, `[Dice / Chance]`), active module count badges, real-time search filtering, quick actions (`Enable all`, `Disable all`, `⚡ Lightweight preset`), full-card click-to-toggle interaction, and distinctive category accent borders when active.
+- **Dino Community Store & Package Client (`StoreModal`):**
+  - **Zero-Backend Architecture:** Decentralized package catalog fetched directly from GitHub (`catalog.json`) via `raw.githubusercontent.com` using Obsidian's `requestUrl`, avoiding CORS limits and maintaining full privacy without intermediate servers.
+  - **Single-Archive Atomic Package Format (`.dinovtt`):** All store packages (campaigns, character sheets, random tables, oracle decks, wargame rosters, and all-in-one bundles) distribute as `.dinovtt` containers (standard ZIP DEFLATE). Downloads are atomic and verified using cryptographic SHA-256 digests before extracting with `JSZip`.
+  - **Store Client UI (`StoreModal`):**
+    - **Explore Tab:** Real-time search across title, tags, description, and author. Type filter pills (`[All]`, `[Campaigns]`, `[Sheets]`, `[Tables]`, `[Oracle]`, `[Wargame]`, `[All-in-one]`), package cards with preview thumbnails, version badges, size metrics, and required module checks.
+    - **Package Inspector / Detail View:** Dedicated detail page with preview image, metadata breakdown (author, version, license, language, SHA-256 hash), one-click missing module enabler, external purchase/store link for commercial creator content, and full package `README.md` rendered via Obsidian's `MarkdownRenderer`.
+    - **Installed Tab:** Overview of all installed packages in the current vault with version tracking, install dates, vault paths, and clean uninstallation.
+    - **Sources Tab:** Configurable catalog sources allowing community groups or custom servers to provide alternative `catalog.json` feeds alongside the official repository.
+  - **Store Repository Infrastructure (`store/`):** Automated catalog compilation tool (`store/scripts/build-catalog.mjs`), CI GitHub Action workflow (`validate-and-build-catalog.yml`), community submission guidelines, and starter example package (`aventura-ejemplo`). Dedicated toolbar button and command palette entry (`open-store`).
+
+### 🇪🇸 Español
+
+#### Agregado
+- **Módulo de Hojas de Personaje Interactivas (`character-sheet`):**
+  - **Arquitectura Desacoplada:** Las plantillas viven en `settings.sheetTemplates`, mientras que los datos residen en el frontmatter YAML y encabezados de la nota del personaje, preservándola como la única fuente de verdad.
+  - **Editor Visual de Plantillas (`TemplateEditorModal`):** Diseñador visual con lienzo, zoom 50%–200%, ajuste magnético a cuadrícula de 10px, arrastre y redimensionado de widgets, gestión de capas por Z-index y modo de previsualización interactiva con datos de prueba.
+  - **10 Widgets Integrados:**
+    - **Fondo:** Imagen de fondo desde el vault con ajuste (cubrir / contener) y opacidad regulable.
+    - **Imagen / Retrato:** Retrato vinculado a clave de frontmatter o ruta estática, en forma cuadrada o circular.
+    - **Recuadro:** Marco decorativo o contenedor con borde, fondo, radio y título configurable.
+    - **Literal:** Texto fijo para etiquetas y títulos con formato tipográfico personalizable.
+    - **Texto:** Campo editable de una o múltiples líneas con guardado en segundo plano (debounce 400ms), enlazable a claves frontmatter o encabezados del cuerpo Markdown (`## Historia`).
+    - **Contador:** Control numérico con botones +/−, rangos mínimos y máximos estáticos o dinámicos mediante `@clave` (ej. `max: @vidaMax`), visualización numérica y barra de progreso, y tiradas al hacer clic.
+    - **Casilla:** Interruptor booleano sincronizado con el frontmatter.
+    - **Botón:** Botón de acción con tiradas de dados, resolución de `@clave`, render 3D opcional con Dice Roller y burbuja de resultado temporal.
+    - **Lista:** Editor dinámico de listas en formato de arreglo YAML con añadir, editar y eliminar ítems.
+    - **Cuadrícula:** Tabla estructurada con columnas de texto, número o casilla y filas dinámicas.
+    - **Calculado:** Campo de solo lectura que evalúa en tiempo real operaciones matemáticas y funciones (`floor`, `ceil`, `round`, `abs`, `min`, `max`) basadas en `@clave`.
+  - **Integración con Dice Roller y Sustitución de Variables:** Reemplazo automático de variables `@clave` antes de tirar, evaluación matemática segura, puente con `window.DiceRoller` (render 3D) y respaldo aleatorio interno, con guardado en el historial de la bandeja de dados.
+  - **Panel Flotante de Juego (`CharacterSheetPanel`):** Panel persistente arrastrable y minimizable con zoom regulable, sincronización bidireccional inmediata, actualización reactiva ante cambios externos de la nota y acceso directo al editor de plantillas. Admite múltiples fichas abiertas simultáneamente.
+  - **Integración con Tokens de Mapa:** Opción "Abrir hoja de personaje" en el menú contextual de tokens con nota vinculada. Cambios en vida o imagen se sincronizan en vivo con el token en el tablero. Modal `SelectTemplateModal` para asignar plantilla si la nota aún no la tiene.
+  - **Template Manager Modal (`TemplateManagerModal`):** Interfaz para crear, duplicar, eliminar y gestionar plantillas. Incorpora **Exportar paquete `.dinovtt`** (`ExportSheetPackageModal`) que comprime la plantilla (`sheet.json`), el manifiesto interno y las imágenes de fondo asociadas con cálculo de SHA-256, junto a un generador de paquetes listos para PR en GitHub. Añade selector de archivos para importar directamente plantillas en formato `.dinovtt` o JSON.
+  - **Exportación e Importación de Campaña:** Incluye automáticamente las plantillas de hoja utilizadas y sus imágenes de fondo en los archivos `.dinovtt`.
+- **Redimensionamiento y Modo Maximizar en Tablas Aleatorias:** Tiradores interactivos en bordes y esquinas (derecho, inferior, izquierdo, esquinas) para redimensionar el panel arrastrando directamente, con persistencia de tamaño en ajustes (`randomTablesPanelSize`). Nuevo botón de Maximizar/Restaurar en la cabecera, ancho base ampliado a 440px y anclaje al pie de la tarjeta de resultado para evitar recortes.
+- **Rediseño y Categorización del Modal de Módulos (`ModulesModal`):** Modernización completa de la lista plana de 12 módulos en una cuadrícula responsive de 2 columnas de 760px, agrupada en 3 categorías temáticas (Combate y Tablero Táctico, Campaña y Personajes, Mesa de Juego y Azar). Incorpora buscador en tiempo real, píldoras de filtro rápido (`[Todos]`, `[Combate]`, `[Campaña]`, `[Dados / Azar]`), contador dinámico de módulos activos, acciones rápidas (`Activar todos`, `Desactivar todos`, `⚡ Perfil ligero`), alternancia al pulsar en cualquier parte de la tarjeta y bordes de acento coloreados según categoría activa.
+- **Tienda Comunitaria y Cliente de Paquetes (`StoreModal`):**
+  - **Arquitectura sin Servidor Central:** Catálogo descentralizado consumido directamente desde GitHub (`catalog.json`) mediante `requestUrl` de Obsidian, eludiendo problemas de CORS y garantizando privacidad sin requerir servidores intermediarios.
+  - **Formato Atómico de Paquete `.dinovtt`:** Distribución integral en archivos comprimidos `.dinovtt` (ZIP DEFLATE) para campañas, fichas de personaje, tablas aleatorias, mazos de oráculo y sistemas completos. Descargas atómicas con verificación criptográfica obligatoria de integridad (SHA-256) antes de la extracción con `JSZip`.
+  - **Interfaz de Usuario (`StoreModal`):**
+    - **Pestaña Explorar:** Buscador en tiempo real por título, autor, descripción y etiquetas; píldoras de filtrado por categoría (`[Todos]`, `[Campañas]`, `[Hojas]`, `[Tablas]`, `[Oráculo]`, `[Wargame]`, `[Todo en uno]`), tarjetas con miniaturas, versión, tamaño formateado y chequeo de dependencias de módulos.
+    - **Inspector de Paquete / Vista de Detalle:** Vista pormenorizada con imagen de portada, ficha técnica (autor, versión, licencia, idioma, hash SHA-256), activación con un clic de módulos requeridos no activos, enlaces a tiendas externas para creadores comerciales y lectura del `README.md` renderizado nativamente con `MarkdownRenderer`.
+    - **Pestaña Instalados:** Listado de paquetes presentes en la bóveda con versión, fecha de instalación, ruta de almacenamiento y desinstalación limpia con un solo clic.
+    - **Pestaña Fuentes:** Gestión modular de repositorios permitiendo añadir fuentes personalizadas de comunidades o servidores estáticos independientes.
+  - **Infraestructura del Repositorio de la Tienda (`store/`):** Script compilador de catálogo (`store/scripts/build-catalog.mjs`), flujo de integración continua con GitHub Actions (`validate-and-build-catalog.yml`), guía de publicación para la comunidad y paquete de ejemplo ("La Cripta del Nigromante"). Acceso directo desde botón en la barra del tablero e instrucción en la paleta de comandos (`open-store`).
+
 ## [0.1.10] - 2026-10-25
 
 ### 🇬🇧 English

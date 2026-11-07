@@ -95,6 +95,18 @@ export const en = {
   // Modules System
   'modules.modalTitle': 'Integrated Modules',
   'modules.modalDesc': 'Enable or disable optional tools for your tabletop without cluttering the main interface.',
+  'modules.filterAll': 'All',
+  'modules.filterCombat': 'Combat',
+  'modules.filterCampaign': 'Campaign',
+  'modules.filterTabletop': 'Dice / Chance',
+  'modules.categoryCombat': 'Combat & Tactical Board',
+  'modules.categoryCampaign': 'Campaign & Characters',
+  'modules.categoryTabletop': 'Tabletop & Chance',
+  'modules.enableAll': 'Enable all',
+  'modules.disableAll': 'Disable all',
+  'modules.profileLight': 'Lightweight preset',
+  'modules.activeCount': '{active} of {total} active',
+  'modules.searchPlaceholder': 'Filter by name or description...',
   'modules.combatTrackerName': 'Initiative & Combat Tracker',
   'modules.combatTrackerShort': 'Combat',
   'modules.combatTrackerDesc': 'Persistent floating combat panel with initiative order, rounds, HP sync, and active token highlighting.',
@@ -615,6 +627,8 @@ export const en = {
   'exportImport.includeNotesDesc': 'Include Markdown notes linked to tokens, POIs, and items.',
   'exportImport.includeDiary': 'Include campaign diary notes',
   'exportImport.includeDiaryDesc': 'Include all markdown session notes found in "{folder}".',
+  'exportImport.includeTableNotes': 'Include campaign table notes',
+  'exportImport.includeTableNotesDesc': 'Include all notes tagged as random tables for this campaign (dte-table + dte-campaign).',
   'exportImport.bestiarySection': 'Bestiary Pack Bundling',
   'exportImport.bestiaryExportMode': 'Bestiary Inclusion Mode',
   'exportImport.bestiaryExportModeDesc': 'Select which Bestiary creatures and packs to export with this campaign.',
@@ -788,6 +802,17 @@ export const en = {
   'party.tokenLinkedNotice': 'Linked token "{name}" to campaign party.',
   'party.tokenUnlinkedNotice': 'Unlinked token "{name}" from campaign party.',
   'party.filterPlaceholder': 'Search characters...',
+
+  // Character Sheet Module
+  'modules.characterSheetName': 'Character Sheets',
+  'modules.characterSheetShort': 'Sheets',
+  'modules.characterSheetDesc': 'Interactive visual character sheets linked to note frontmatter and dice rolls.',
+  'sheet.openSheet': 'Open Character Sheet',
+  'sheet.templateManager': 'Sheet Templates Manager',
+  'sheet.changeTemplate': 'Change Sheet Template',
+  'sheet.removeSheet': 'Remove Character Sheet',
+  'sheet.sheetRemoved': 'Character sheet removed from "{name}".',
+  'sheet.templateChanged': 'Template changed to "{template}".',
 };
 
 export type TranslationKey = keyof typeof en;

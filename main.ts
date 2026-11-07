@@ -16,6 +16,8 @@ import { DinoSettingTab } from './src/settings/DinoSettingTab';
 import { VIEW_TYPE_DINO_PROJECTION, DinoProjectionView, openProjectionWindow } from './src/modules/playerView';
 import { RandomTablesPanel } from './src/modules/randomTables';
 import { RegisterTableModal } from './src/modals/RegisterTableModal';
+import { TemplateManagerModal, openCharacterSheet } from './src/modules/characterSheet';
+import { StoreModal } from './src/modals/StoreModal';
 
 interface LegacyCounterItem {
   id: string;
@@ -160,6 +162,35 @@ export default class DinoTabletopEnginePlugin extends Plugin implements DinoPlug
       callback: () => {
         const activeFile = this.app.workspace.getActiveFile();
         new RegisterTableModal(this.app, this, activeFile || undefined).open();
+      },
+    });
+
+    this.addCommand({
+      id: 'open-character-sheet-templates',
+      name: 'Abrir gestor de plantillas de hoja de personaje',
+      callback: () => {
+        new TemplateManagerModal(this.app, this).open();
+      },
+    });
+
+    this.addCommand({
+      id: 'open-active-note-sheet',
+      name: 'Abrir hoja de personaje de la nota activa',
+      callback: () => {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (activeFile) {
+          openCharacterSheet(this.app, this, activeFile.path);
+        } else {
+          new Notice('No hay ninguna nota activa abierta.');
+        }
+      },
+    });
+
+    this.addCommand({
+      id: 'open-store',
+      name: 'Abrir Tienda de Paquetes Dino / Store',
+      callback: () => {
+        new StoreModal(this.app, this).open();
       },
     });
 

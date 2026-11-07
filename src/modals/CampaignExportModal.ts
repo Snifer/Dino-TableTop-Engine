@@ -13,6 +13,7 @@ export class CampaignExportModal extends Modal {
     includeImages: true,
     includeNotes: true,
     includeDiary: true,
+    includeTableNotes: true,
     bestiaryMode: 'used',
     selectedPacks: [],
   };
@@ -77,7 +78,17 @@ export class CampaignExportModal extends Modal {
         });
     }
 
-    // 4. Modo de exportación de Bestiario
+    // 4. Incluir notas de tablas de esta campaña
+    new Setting(contentEl)
+      .setName(t('exportImport.includeTableNotes'))
+      .setDesc(t('exportImport.includeTableNotesDesc'))
+      .addToggle((toggle) => {
+        toggle.setValue(this.options.includeTableNotes).onChange((v) => {
+          this.options.includeTableNotes = v;
+        });
+      });
+
+    // 5. Modo de exportación de Bestiario
     const bestiarySection = contentEl.createDiv({ cls: 'dte-export-bestiary-section' });
     bestiarySection.createEl('h3', { text: t('exportImport.bestiarySection') });
 

@@ -97,6 +97,18 @@ export const es: Record<TranslationKey, string> = {
   // Modules System
   'modules.modalTitle': 'Módulos Opcionales Integrados',
   'modules.modalDesc': 'Habilita o deshabilita herramientas opcionales para tus partidas sin sobrecargar la interfaz principal.',
+  'modules.filterAll': 'Todos',
+  'modules.filterCombat': 'Combate',
+  'modules.filterCampaign': 'Campaña',
+  'modules.filterTabletop': 'Dados / Azar',
+  'modules.categoryCombat': 'Combate y Tablero Táctico',
+  'modules.categoryCampaign': 'Campaña y Personajes',
+  'modules.categoryTabletop': 'Mesa de Juego y Azar',
+  'modules.enableAll': 'Activar todos',
+  'modules.disableAll': 'Desactivar todos',
+  'modules.profileLight': 'Perfil ligero',
+  'modules.activeCount': '{active} de {total} activos',
+  'modules.searchPlaceholder': 'Buscar por nombre o descripción...',
   'modules.combatTrackerName': 'Iniciativa y Rastreador de Combate',
   'modules.combatTrackerShort': 'Combate',
   'modules.combatTrackerDesc': 'Panel flotante persistente de combate con iniciativa, rondas, sincronización de HP y resaltado de token activo en el mapa.',
@@ -617,6 +629,8 @@ export const es: Record<TranslationKey, string> = {
   'exportImport.includeNotesDesc': 'Incluye las notas Markdown vinculadas a tokens, POIs e ítems de inventario.',
   'exportImport.includeDiary': 'Incluir notas del diario de campaña',
   'exportImport.includeDiaryDesc': 'Incluye todas las notas de sesiones encontradas en "{folder}".',
+  'exportImport.includeTableNotes': 'Incluir notas de tablas de campaña',
+  'exportImport.includeTableNotesDesc': 'Incluye todas las notas etiquetadas como tablas aleatorias de esta campaña (dte-table + dte-campaign).',
   'exportImport.bestiarySection': 'Empaquetado de Paquetes del Bestiario',
   'exportImport.bestiaryExportMode': 'Modo de inclusión del Bestiario',
   'exportImport.bestiaryExportModeDesc': 'Selecciona qué criaturas y paquetes del Bestiario exportar junto a la campaña.',
@@ -790,6 +804,17 @@ export const es: Record<TranslationKey, string> = {
   'party.tokenLinkedNotice': 'Token "{name}" vinculado a la party de campaña.',
   'party.tokenUnlinkedNotice': 'Token "{name}" desvinculado de la party.',
   'party.filterPlaceholder': 'Buscar personajes...',
+
+  // Character Sheet Module
+  'modules.characterSheetName': 'Hojas de Personaje',
+  'modules.characterSheetShort': 'Fichas',
+  'modules.characterSheetDesc': 'Hojas de personaje visuales e interactivas vinculadas al frontmatter de las notas y tiradas de dados.',
+  'sheet.openSheet': 'Abrir hoja de personaje',
+  'sheet.templateManager': 'Gestor de Plantillas de Hoja',
+  'sheet.changeTemplate': 'Cambiar plantilla de hoja',
+  'sheet.removeSheet': 'Retirar hoja de personaje',
+  'sheet.sheetRemoved': 'Hoja de personaje retirada de "{name}".',
+  'sheet.templateChanged': 'Plantilla cambiada a "{template}".',
 };
 
 
