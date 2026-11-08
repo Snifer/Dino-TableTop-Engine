@@ -11,6 +11,7 @@ import {
 } from '../types';
 import { genId } from '../utils';
 import { t } from '../i18n';
+import { computeSha256 } from './store/storeClient';
 
 export interface CampaignExportOptions {
   includeImages: boolean;
@@ -19,6 +20,7 @@ export interface CampaignExportOptions {
   includeTableNotes: boolean;
   bestiaryMode: 'none' | 'used' | 'selected' | 'all';
   selectedPacks: string[];
+  selectedPlugins?: string[];
 }
 
 export interface CampaignPackageManifest {
@@ -32,6 +34,7 @@ export interface CampaignPackageManifest {
   timelines?: Record<string, TimelineData>;
   clocks?: Record<string, ClockData>;
   sheetTemplates?: SheetTemplate[];
+  requiresPlugins?: string[];
   assetMap: Record<string, string>; // originalVaultPath -> zipRelativePath
   noteMap: Record<string, string>;  // originalVaultPath -> zipRelativePath
 }
@@ -39,6 +42,17 @@ export interface CampaignPackageManifest {
 /** Helper para sanitizar nombres de archivo o carpeta */
 export function sanitizeFileName(name: string): string {
   return name.replace(/[\\/:*?"<>|]/g, '_').trim();
+}
+
+/** Helper para convertir cadenas en slugs válidos para paquetes */
+export function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 /** Asegura recursivamente que una carpeta exista en el Vault */
@@ -282,17 +296,23 @@ export function collectCampaignDependencies(
 }
 
 /**
- * Exporta la campaña activa empaquetando todo en un archivo .dinovtt
+ * Empaqueta la campaña activa en memoria y calcula metadatos para exportación o tienda
  */
-export async function exportCampaignToFile(
+export async function buildCampaignPackageBlob(
   plugin: DinoPlugin,
   campaignId: string,
   options: CampaignExportOptions
-): Promise<void> {
+): Promise<{
+  blob: Blob;
+  buffer: ArrayBuffer;
+  sha256: string;
+  size: number;
+  safeCampaignName: string;
+  detectedModules: string[];
+}> {
   const campaign = plugin.settings.campaigns[campaignId];
   if (!campaign) {
-    new Notice(t('exportImport.campaignNotFound'));
-    return;
+    throw new Error(t('exportImport.campaignNotFound'));
   }
 
   const { imagePaths, notePaths, bestiaryEntries, sheetTemplates } = collectCampaignDependencies(
@@ -355,21 +375,66 @@ export async function exportCampaignToFile(
     campaign: JSON.parse(JSON.stringify(campaign)) as CampaignData,
     bestiaryEntries: bestiaryEntries.length ? bestiaryEntries : undefined,
     sheetTemplates: sheetTemplates.length ? sheetTemplates : undefined,
+    requiresPlugins: options.selectedPlugins?.length ? options.selectedPlugins : undefined,
     assetMap,
     noteMap,
   };
 
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
 
-  // Generar el archivo .dinovtt (ZIP)
-  const blob = await zip.generateAsync({
-    type: 'blob',
+  // Generar el archivo .dinovtt (ArrayBuffer y Blob)
+  const buffer = await zip.generateAsync({
+    type: 'arraybuffer',
     compression: 'DEFLATE',
     compressionOptions: { level: 6 },
   });
 
-  // Disparar descarga en el navegador / Obsidian
+  const blob = new Blob([buffer], { type: 'application/zip' });
+  const sha256 = await computeSha256(buffer);
+  const size = buffer.byteLength;
   const safeCampaignName = sanitizeFileName(campaign.name) || 'campaign';
+
+  // Detectar módulos requeridos
+  const detectedModules: string[] = ['combat'];
+  if (sheetTemplates && sheetTemplates.length > 0) {
+    detectedModules.push('character-sheet');
+  }
+  if (campaign.characters && Object.keys(campaign.characters).length > 0) {
+    if (!detectedModules.includes('character-sheet')) detectedModules.push('character-sheet');
+    detectedModules.push('persistent-characters');
+  }
+  if ((campaign.tableHistory && campaign.tableHistory.length > 0) || options.includeTableNotes) {
+    detectedModules.push('random-tables');
+  }
+  if (campaign.oracleHistory && campaign.oracleHistory.length > 0) {
+    detectedModules.push('oracles');
+  }
+
+  return {
+    blob,
+    buffer,
+    sha256,
+    size,
+    safeCampaignName,
+    detectedModules,
+  };
+}
+
+/**
+ * Exporta la campaña activa empaquetando todo en un archivo .dinovtt
+ */
+export async function exportCampaignToFile(
+  plugin: DinoPlugin,
+  campaignId: string,
+  options: CampaignExportOptions
+): Promise<void> {
+  const campaign = plugin.settings.campaigns[campaignId];
+  if (!campaign) {
+    new Notice(t('exportImport.campaignNotFound'));
+    return;
+  }
+
+  const { blob, safeCampaignName } = await buildCampaignPackageBlob(plugin, campaignId, options);
   const fileName = `${safeCampaignName}.dinovtt`;
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

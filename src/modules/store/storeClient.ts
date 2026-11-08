@@ -22,6 +22,9 @@ export function ensureStoreSettings(plugin: DinoPlugin): StoreSettings {
   if (!s.store.installFolder) {
     s.store.installFolder = 'DTE/Store';
   }
+  if (!s.store.submitFormUrl) {
+    s.store.submitFormUrl = DEFAULT_STORE_SETTINGS.submitFormUrl;
+  }
   return s.store;
 }
 

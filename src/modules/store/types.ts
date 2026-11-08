@@ -19,6 +19,7 @@ export interface StorePackage {
   language: string;
   dteMinVersion?: string;
   requiresModules?: string[];
+  requiresPlugins?: string[]; // Obsidian community plugin IDs (e.g. 'obsidian-dice-roller', 'dataview')
   size?: number;
   sha256?: string;
   downloadUrl: string;
@@ -64,6 +65,7 @@ export interface StoreSettings {
   installFolder: string;
   cacheMinutes: number;
   installed: Record<string, StoreInstalledReceipt>;
+  submitFormUrl: string;
 }
 
 export const DEFAULT_STORE_SETTINGS: StoreSettings = {
@@ -78,5 +80,6 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   installFolder: 'DTE/Store',
   cacheMinutes: 60,
   installed: {},
+  submitFormUrl: 'https://forms.gle/QafjhDjpHxTYrahw8',
 };
 

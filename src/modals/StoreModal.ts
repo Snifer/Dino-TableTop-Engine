@@ -107,6 +107,18 @@ export class StoreModal extends Modal {
       this.render();
     });
 
+    // Botón para enviar paquetes a la comunidad
+    const submitBtn = tabsRow.createEl('button', {
+      cls: 'dte-store-tab-btn dte-store-submit-btn',
+      text: '📤 Publicar paquete',
+      title: 'Envía tu campaña o plantilla para ser incluida en la tienda comunitaria',
+    });
+    submitBtn.style.marginLeft = 'auto';
+    submitBtn.addEventListener('click', () => {
+      const submitUrl = storeSettings.submitFormUrl || 'https://forms.gle/QafjhDjpHxTYrahw8';
+      window.open(submitUrl, '_blank');
+    });
+
     // ── Body ──
     const body = this.contentEl.createDiv({ cls: 'dte-store-body' });
 
@@ -518,6 +530,20 @@ export class StoreModal extends Modal {
       }
     }
 
+    // Plugins comunitarios de Obsidian requeridos / compatibles
+    if (pkg.requiresPlugins && pkg.requiresPlugins.length > 0) {
+      const missingPlugins = this.getMissingPlugins(pkg.requiresPlugins);
+      const plugBox = leftCol.createDiv({ cls: 'dte-store-detail-requires' });
+      plugBox.createEl('h4', { text: 'Plugins de Obsidian compatibles / requeridos:' });
+      pkg.requiresPlugins.forEach((plugId) => {
+        const isMissing = missingPlugins.includes(plugId);
+        plugBox.createDiv({
+          cls: `dte-store-req-pill ${isMissing ? 'is-missing' : 'is-ok'}`,
+          text: `${isMissing ? '⚠️' : '✓'} ${plugId}`,
+        });
+      });
+    }
+
     // Acciones principales
     const actionsBox = leftCol.createDiv({ cls: 'dte-store-detail-actions' });
 
@@ -575,6 +601,16 @@ export class StoreModal extends Modal {
     row.createSpan({ cls: 'dte-store-meta-val', text: value });
   }
 
+  private getMissingPlugins(requiresPlugins?: string[]): string[] {
+    if (!requiresPlugins || requiresPlugins.length === 0) return [];
+    const pluginsObj = (this.app as any).plugins;
+    const enabledSet = (pluginsObj?.enabledPlugins instanceof Set)
+      ? pluginsObj.enabledPlugins
+      : new Set<string>();
+
+    return requiresPlugins.filter((pId) => !enabledSet.has(pId));
+  }
+
   // ══════════════════════════════════════════════════════════
   // LÓGICA DE INSTALACIÓN
   // ══════════════════════════════════════════════════════════
@@ -592,6 +628,14 @@ export class StoreModal extends Modal {
         s.enabledModules[m] = true;
       });
       await this.plugin.saveSettings();
+    }
+
+    const missingPlugins = this.getMissingPlugins(pkg.requiresPlugins);
+    if (missingPlugins.length > 0) {
+      new Notice(
+        `Nota de compatibilidad: Esta campaña está diseñada para funcionar junto a los siguientes plugins de Obsidian:\n• ${missingPlugins.join('\n• ')}\n\nPuedes instalarlos desde Ajustes > Plugins de la comunidad.`,
+        10000
+      );
     }
 
     this.isInstalling = true;

@@ -4,6 +4,8 @@ import { setLanguage, t } from '../i18n';
 import { moduleRegistry } from '../modules/registry';
 import { DinoTabletopView } from '../views/DinoTabletopView';
 import { TemplateManagerModal } from '../modules/characterSheet';
+import { ensureStoreSettings } from '../modules/store/storeClient';
+import { StoreModal } from '../modals/StoreModal';
 
 export class DinoSettingTab extends PluginSettingTab {
   plugin: DinoPlugin;
@@ -159,6 +161,32 @@ export class DinoSettingTab extends PluginSettingTab {
         );
     }
 
+    // --- Sección: Tienda Comunitaria / Community Store ---
+    const storeSettings = ensureStoreSettings(this.plugin);
+    new Setting(containerEl).setName('Tienda Comunitaria (DTE Store)').setHeading();
+
+    new Setting(containerEl)
+      .setName('Explorar Tienda')
+      .setDesc('Descarga e instala campañas, fichas y tablas compartidas por la comunidad.')
+      .addButton((btn) =>
+        btn.setButtonText('Abrir Tienda').setCta().onClick(() => {
+          new StoreModal(this.app, this.plugin).open();
+        })
+      );
+
+    new Setting(containerEl)
+      .setName('URL del Formulario de Envío de Paquetes')
+      .setDesc('Enlace al formulario donde los creadores pueden enviar paquetes para publicación comunitaria sin usar GitHub.')
+      .addText((txt) =>
+        txt
+          .setPlaceholder('https://forms.gle/...')
+          .setValue(storeSettings.submitFormUrl || 'https://forms.gle/QafjhDjpHxTYrahw8')
+          .onChange(async (val) => {
+            storeSettings.submitFormUrl = val.trim() || 'https://forms.gle/QafjhDjpHxTYrahw8';
+            await this.plugin.saveSettings();
+          })
+      );
+
     // --- Sección: Acerca de / About ---
     new Setting(containerEl).setName(t('settings.aboutSection')).setHeading();
 
@@ -166,7 +194,7 @@ export class DinoSettingTab extends PluginSettingTab {
 
     const titleRow = aboutBox.createDiv({ cls: 'dte-settings-about-header' });
     titleRow.createEl('strong', { text: 'Dino Tabletop Engine' });
-    titleRow.createSpan({ cls: 'dte-settings-badge', text: `ALPHA v${this.plugin.manifest?.version || '0.1.11'}` });
+    titleRow.createSpan({ cls: 'dte-settings-badge', text: `ALPHA v${this.plugin.manifest?.version || '0.1.13'}` });
 
     const descEl = aboutBox.createDiv({ cls: 'dte-settings-about-desc' });
     descEl.createEl('p', {

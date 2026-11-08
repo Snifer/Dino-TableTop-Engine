@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.13] - 2026-11-07
+
+### 🇬🇧 English
+
+#### Added
+- **Campaign Export – Store Package Bundle (`CampaignExportModal`):** Added a dedicated **📦 Store Package (.zip)** export action. Generates `<pkgId>-store-package.zip` enclosing the campaign `.dinovtt`, computed SHA-256 and size, dynamic `package.json` store manifest, and markdown `README.md` ready to submit as a Pull Request to `dino-tabletop-engine-store`. Includes expandable store metadata editor (slug, author, version, license, language, description, tags) and auto-detection of required modules (`combat`, `character-sheet`, `persistent-characters`, `random-tables`, `oracles`).
+- **Campaign Export – Obsidian Plugin Compatibility Requirements:** The export modal now detects all community plugins installed in the vault (excluding DTE) and provides an interactive checklist allowing authors to mark which plugins are required or recommended for the campaign (e.g. `obsidian-dice-roller`, `dataview`). Persisted in the `.dinovtt` manifest and store `package.json` (`requiresPlugins`), documented automatically in the generated `README.md`, surfaced in the store client with status pills (`✓` / `⚠️`), and warned upon install if missing.
+- **Community Package Submission Form (`forms.gle/QafjhDjpHxTYrahw8`):** Added a frictionless, no-Git package submission workflow. In both Campaign and Character Sheet export modals, users can click **📤 Submit to Community (Form)** to download their `<id>-store-package.zip` and automatically open the submission form in their browser. Also added a dedicated **Submit Package** button to the store modal header and configurable submission URL under Settings.
+- **Store Settings & Management (`DinoSettingTab`):** Added a dedicated Community Store section in settings to explore the store and customize the submission form URL.
+
+---
+
+### 🇪🇸 Español
+
+#### Agregado
+- **Exportación de Campaña – Paquete para la Tienda (`CampaignExportModal`):** Se incorporó el botón **📦 Paquete para Tienda (.zip)**. Genera automáticamente un archivo `<id>-store-package.zip` conteniendo el archivo `.dinovtt`, cálculo automático de SHA-256 y tamaño, manifiesto `package.json` para la tienda y `README.md` listo para subir como Pull Request a `dino-tabletop-engine-store`. Incluye sección desplegable para personalizar metadatos (slug, autor, versión, licencia, idioma, descripción, etiquetas) y autodetección inteligente de módulos requeridos (`combat`, `character-sheet`, `persistent-characters`, `random-tables`, `oracles`).
+- **Exportación de Campaña – Requisitos de Compatibilidad con Plugins de Obsidian:** El modal de exportación detecta automáticamente todos los plugins comunitarios instalados en la bóveda (excluyendo a DTE) y presenta una lista de verificación interactiva para que el creador seleccione qué plugins son necesarios o recomendados para jugar la campaña (ej. `obsidian-dice-roller`, `dataview`). Se almacena en el manifiesto interno y en el `package.json` de la tienda (`requiresPlugins`), se documenta en el `README.md`, se visualiza en la tienda comunitaria con insignias de estado (`✓` / `⚠️`) y notifica al usuario si le falta alguno al instalar.
+- **Formulario de Envío Comunitario sin GitHub (`forms.gle/QafjhDjpHxTYrahw8`):** Flujo de publicación sin fricciones ni necesidad de usar Git. Tanto en la exportación de Campañas como de Hojas de Personaje, se agregó el botón **📤 Enviar a la Comunidad (Formulario)** que descarga el archivo `<id>-store-package.zip` y abre automáticamente el formulario de Google en el navegador. Se incorporó además acceso directo en la cabecera de la tienda ("Publicar paquete") y ajuste de URL configurable en Ajustes.
+- **Ajustes de la Tienda Comunitaria (`DinoSettingTab`):** Nueva sección en los ajustes del plugin para abrir la tienda directamente y personalizar el enlace al formulario de recepción de paquetes.
+
+---
+
 ## [0.1.12] - 2026-11-07
 
 ### 🇬🇧 English

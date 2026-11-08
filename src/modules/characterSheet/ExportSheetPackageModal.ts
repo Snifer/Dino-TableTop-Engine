@@ -180,6 +180,15 @@ export class ExportSheetPackageModal extends Modal {
     downloadFullStoreZipBtn.addEventListener('click', async () => {
       await this.exportFullStoreZip();
     });
+
+    const submitFormBtn = actions.createEl('button', {
+      cls: 'dte-btn dte-btn-secondary',
+      text: '📤 Enviar a la Comunidad (Formulario)',
+      title: 'Descarga el paquete .zip y abre el formulario web en tu navegador para adjuntarlo sin usar GitHub',
+    });
+    submitFormBtn.addEventListener('click', async () => {
+      await this.exportAndOpenForm();
+    });
   }
 
   private createField(
@@ -324,7 +333,7 @@ export class ExportSheetPackageModal extends Modal {
    * - package.json (con sha256 y size calculados)
    * - README.md
    */
-  private async exportFullStoreZip(): Promise<void> {
+  private async exportFullStoreZip(): Promise<string | null> {
     this.isExporting = true;
     this.render();
 
@@ -371,12 +380,23 @@ export class ExportSheetPackageModal extends Modal {
 
       new Notice(`¡Paquete completo "${downloadName}" generado para Pull Request!`, 5000);
       this.close();
+      return downloadName;
     } catch (e) {
       console.error('[DTE] Error generando store package zip:', e);
       new Notice(`Error al generar paquete de tienda: ${String(e)}`, 5000);
+      return null;
     } finally {
       this.isExporting = false;
     }
+  }
+
+  private async exportAndOpenForm(): Promise<void> {
+    const downloadName = await this.exportFullStoreZip();
+    if (!downloadName) return;
+
+    const submitUrl = (this.plugin.settings as any)?.store?.submitFormUrl || 'https://forms.gle/QafjhDjpHxTYrahw8';
+    window.open(submitUrl, '_blank');
+    new Notice(`¡Paquete "${downloadName}" descargado! Se abrió el formulario en tu navegador para adjuntarlo.`, 8000);
   }
 
   private triggerDownload(blob: Blob, filename: string): void {
