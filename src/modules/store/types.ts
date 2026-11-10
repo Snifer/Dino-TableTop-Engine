@@ -58,6 +58,7 @@ export interface StoreInstalledReceipt {
   sha256?: string;
   installedPath?: string;
   campaignId?: string;
+  templateId?: string;
 }
 
 export interface StoreSettings {

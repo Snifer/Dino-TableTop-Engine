@@ -15,6 +15,7 @@ import { computeSha256 } from './store/storeClient';
 
 export interface CampaignExportOptions {
   includeImages: boolean;
+  optimizeImages?: boolean;
   includeNotes: boolean;
   includeDiary: boolean;
   includeTableNotes: boolean;
@@ -53,6 +54,106 @@ export function slugify(text: string): string {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Optimiza y comprime un ArrayBuffer de imagen a WebP con límite proporcional de resolución
+ */
+export async function optimizeImageBuffer(
+  buffer: ArrayBuffer,
+  originalExt: string,
+  options: { maxDimension?: number; quality?: number } = {}
+): Promise<{ buffer: ArrayBuffer; ext: string }> {
+  const ext = originalExt.toLowerCase().replace(/^\./, '');
+  // No procesar SVGs ni GIFs animados para preservar vectores y cuadros de animación
+  if (ext === 'svg' || ext === 'gif') {
+    return { buffer, ext };
+  }
+
+  const maxDim = options.maxDimension || 2800;
+  const quality = options.quality ?? 0.82;
+
+  try {
+    const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : `image/${ext}`;
+    const blob = new Blob([buffer], { type: mime });
+
+    let imgWidth = 0;
+    let imgHeight = 0;
+    let imageSource: ImageBitmap | HTMLImageElement;
+
+    if (typeof createImageBitmap === 'function') {
+      const bitmap = await createImageBitmap(blob);
+      imgWidth = bitmap.width;
+      imgHeight = bitmap.height;
+      imageSource = bitmap;
+    } else {
+      const img = new Image();
+      const url = URL.createObjectURL(blob);
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = (e) => reject(e);
+        img.src = url;
+      });
+      URL.revokeObjectURL(url);
+      imgWidth = img.naturalWidth || img.width;
+      imgHeight = img.naturalHeight || img.height;
+      imageSource = img;
+    }
+
+    if (!imgWidth || !imgHeight) {
+      return { buffer, ext };
+    }
+
+    // Calcular dimensiones proporcionales si supera el límite máximo
+    let targetWidth = imgWidth;
+    let targetHeight = imgHeight;
+    const maxSide = Math.max(imgWidth, imgHeight);
+
+    if (maxSide > maxDim) {
+      const ratio = maxDim / maxSide;
+      targetWidth = Math.round(imgWidth * ratio);
+      targetHeight = Math.round(imgHeight * ratio);
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return { buffer, ext };
+    }
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(imageSource as any, 0, 0, targetWidth, targetHeight);
+
+    if ('close' in imageSource && typeof (imageSource as any).close === 'function') {
+      (imageSource as any).close();
+    }
+
+    const webpBlob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((b) => resolve(b), 'image/webp', quality);
+    });
+
+    if (!webpBlob) {
+      return { buffer, ext };
+    }
+
+    const optimizedArrayBuffer = await webpBlob.arrayBuffer();
+
+    // Si el WebP no redujo tamaño respecto a un JPG ya comprimido, mantener original
+    if (optimizedArrayBuffer.byteLength >= buffer.byteLength && ext !== 'png') {
+      return { buffer, ext };
+    }
+
+    return {
+      buffer: optimizedArrayBuffer,
+      ext: 'webp',
+    };
+  } catch (err) {
+    console.warn(`[DinoVTT] No se pudo optimizar imagen .${ext}, usando archivo original:`, err);
+    return { buffer, ext };
+  }
 }
 
 /** Asegura recursivamente que una carpeta exista en el Vault */
@@ -333,14 +434,25 @@ export async function buildCampaignPackageBlob(
 
   // Empaquetar imágenes
   if (options.includeImages && assetsFolder) {
+    const shouldOptimize = options.optimizeImages !== false;
     for (const imgPath of imagePaths) {
       const file = plugin.app.vault.getAbstractFileByPath(imgPath);
       if (file instanceof TFile) {
         try {
-          const buffer = await plugin.app.vault.readBinary(file);
-          const ext = file.extension || 'png';
-          const safeName = `asset_${assetIndex++}_${sanitizeFileName(file.basename)}.${ext}`;
-          assetsFolder.file(safeName, buffer);
+          const rawBuffer = await plugin.app.vault.readBinary(file);
+          const rawExt = file.extension || 'png';
+
+          let finalBuffer = rawBuffer;
+          let finalExt = rawExt;
+
+          if (shouldOptimize) {
+            const opt = await optimizeImageBuffer(rawBuffer, rawExt);
+            finalBuffer = opt.buffer;
+            finalExt = opt.ext;
+          }
+
+          const safeName = `asset_${assetIndex++}_${sanitizeFileName(file.basename)}.${finalExt}`;
+          assetsFolder.file(safeName, finalBuffer);
           assetMap[imgPath] = `assets/${safeName}`;
         } catch (e) {
           console.error(`[DinoVTT] Error leyendo asset: ${imgPath}`, e);
@@ -470,9 +582,10 @@ export async function importCampaignFromBuffer(
     throw new Error(t('exportImport.invalidManifest'));
   }
 
+  const defaultBase = ((plugin.settings as any)?.store?.installFolder || 'DTE/Store').replace(/\/+$/, '');
   const baseFolder = customTargetFolder
     ? customTargetFolder.replace(/\/+$/, '')
-    : `DinoVTT/Campaigns/${sanitizeFileName(campaign.name)}`;
+    : `${defaultBase}/${sanitizeFileName(campaign.name)}`;
 
   const assetsTargetFolder = `${baseFolder}/assets`;
   const notesTargetFolder = `${baseFolder}/notes`;

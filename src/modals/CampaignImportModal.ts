@@ -78,12 +78,13 @@ export class CampaignImportModal extends Modal {
     });
 
     // Carpeta destino opcional en el vault
+    const defaultStoreFolder = (this.plugin.settings as any)?.store?.installFolder || 'DTE/Store';
     new Setting(contentEl)
       .setName(t('exportImport.targetFolder'))
       .setDesc(t('exportImport.targetFolderDesc'))
       .addText((text) => {
         text
-          .setPlaceholder('DinoVTT/Campaigns')
+          .setPlaceholder(`${defaultStoreFolder}/<Campaña>`)
           .setValue(this.customFolder)
           .onChange((v) => {
             this.customFolder = v.trim();

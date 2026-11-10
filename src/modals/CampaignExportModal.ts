@@ -26,6 +26,7 @@ export class CampaignExportModal extends Modal {
   // Opciones de exportación de contenido
   options: CampaignExportOptions = {
     includeImages: true,
+    optimizeImages: true,
     includeNotes: true,
     includeDiary: true,
     includeTableNotes: true,
@@ -104,6 +105,16 @@ export class CampaignExportModal extends Modal {
       .addToggle((toggle) => {
         toggle.setValue(this.options.includeImages).onChange((v) => {
           this.options.includeImages = v;
+        });
+      });
+
+    // 1b. Optimizar y comprimir imágenes (WebP)
+    new Setting(contentEl)
+      .setName(t('exportImport.optimizeImages'))
+      .setDesc(t('exportImport.optimizeImagesDesc'))
+      .addToggle((toggle) => {
+        toggle.setValue(this.options.optimizeImages !== false).onChange((v) => {
+          this.options.optimizeImages = v;
         });
       });
 

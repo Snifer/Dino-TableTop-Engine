@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.14] - 2026-11-08
+
+### 🇬🇧 English
+
+#### Added
+- **Configurable Package Import & Installation Directory:** Added settings option under **DTE Store** to customize the default destination directory for imported/installed packages and campaigns (defaults to `DTE/Store`).
+  - **Organized Structure:** Clearly explains how packages are installed in the vault with structured subfolders: `notes/` (Markdown notes, logs, lore, and sheets) and `assets/` (battlemaps, tokens, and media).
+  - **Export Workflow Explanation:** Documented in settings how packages are packaged by default and how media is optimized.
+- **Destructive Uninstall Confirmation Modal (`UninstallPackageModal`):** Replaced native `confirm()` with a dedicated, informative warning modal in the Community Store:
+  - **Explicit Note & File Loss Notice:** Explicitly warns the user that uninstalling a campaign or character sheet will move all created Obsidian notes (lore, journals, NPCs) and media files in the package folder to the trash.
+  - **Template & Campaign Cleanup:** Automatically removes campaign records or sheet templates from plugin settings.
+- **Automatic Asset & Map Optimization (`optimizeImageBuffer`):** Added native WebP image optimization and compression during package export for both campaigns and character sheets.
+  - **Up to 90% Package Size Reduction:** Converts uncompressed PNG and JPG assets into high-efficiency WebP format (82% quality), allowing heavy campaigns with large battlemaps (previously >100 MB) to fit well within GitHub's file size limits without visual loss.
+  - **Intelligent Proportional Downscaling:** Caps oversized battlemaps exceeding 2800px while preserving pixel-perfect grid clarity.
+  - **Graceful Fallbacks:** Preserves animated GIFs and vector SVGs untouched.
+  - **UI Toggle:** Added **⚡ Optimize & compress images (WebP)** toggle in the campaign export modal (enabled by default).
+
+---
+
+### 🇪🇸 Español
+
+#### Agregado
+- **Directorio Configurable de Instalación e Importación:** Nueva opción en la configuración de **Tienda DTE** para personalizar la carpeta de destino al instalar paquetes o importar campañas (por defecto: `DTE/Store`).
+  - **Estructura Organizada:** Clarifica cómo se distribuyen los archivos en la bóveda creando subcarpetas dedicadas: `notes/` (para notas Markdown, bitácoras y fichas) y `assets/` (para mapas tácticos, imágenes y tokens).
+  - **Explicación del Proceso de Exportación:** Añadida descripción en ajustes sobre cómo se empaquetan las campañas y cómo se procesan los medios de forma predeterminada.
+- **Modal de Confirmación Destructiva al Desinstalar (`UninstallPackageModal`):** Sustitución del diálogo nativo por un modal detallado de advertencia en la Tienda Comunitaria:
+  - **Aviso Explícito de Eliminación de Notas y Archivos:** Notifica con claridad al usuario que al desinstalar una campaña u hoja de personaje se enviarán a la PAPELERA todas las notas de Obsidian (lore, diarios, personajes, PNJ) y medios creados en la carpeta del paquete.
+  - **Limpieza de Plantillas y Campañas:** Elimina de forma limpia las plantillas de fichas y registros de campaña de los ajustes del plugin.
+- **Optimización y Compresión Automática de Imágenes (`optimizeImageBuffer`):** Incorporación de compresión nativa a WebP en el proceso de empaquetado y exportación de campañas y hojas de personaje.
+  - **Reducción de hasta un 90% del tamaño del paquete:** Transforma imágenes y mapas pesados (PNG/JPG) a formato WebP optimizado (calidad 82%), permitiendo que campañas de gran envergadura con múltiples mapas tácticos (antes >100 MB) pesen menos de 20–30 MB y se puedan compartir sin superar el límite de GitHub.
+  - **Escalado inteligente proporcional:** Limita imágenes sobredimensionadas a un máximo de 2800px manteniendo la nitidez de la cuadrícula táctica.
+  - **Compatibilidad con formatos especiales:** Mantiene intactos GIFs animados y gráficos vectoriales SVG.
+  - **Control en la interfaz:** Nuevo interruptor **⚡ Optimizar y comprimir imágenes (WebP)** en el modal de exportación (activado por defecto).
+
+---
+
 ## [0.1.13] - 2026-11-07
 
 ### 🇬🇧 English

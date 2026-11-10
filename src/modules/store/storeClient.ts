@@ -158,6 +158,7 @@ export async function installPackage(
   const zip = await JSZip.loadAsync(dataBuffer);
 
   let installedCampaignId: string | undefined;
+  let installedTemplateId: string | undefined;
   let targetPath = `${storeSettings.installFolder}/${sanitizeFileName(pkg.name)}`;
 
   // 2. Extracción según el tipo de paquete
@@ -171,6 +172,7 @@ export async function installPackage(
     if (templateFile) {
       const templateStr = await templateFile.async('string');
       const templateData = JSON.parse(templateStr) as SheetTemplate;
+      installedTemplateId = templateData.id;
       const s = plugin.settings as DinoSettings;
       if (!s.sheetTemplates) s.sheetTemplates = [];
       const idx = s.sheetTemplates.findIndex(t => t.id === templateData.id);
@@ -234,6 +236,7 @@ export async function installPackage(
     sha256: pkg.sha256,
     installedPath: targetPath,
     campaignId: installedCampaignId,
+    templateId: installedTemplateId,
   };
 
   storeSettings.installed[pkg.id] = receipt;
@@ -258,6 +261,13 @@ export async function uninstallPackage(plugin: DinoPlugin, packageId: string): P
     if (s.currentCampaignId === receipt.campaignId) {
       s.currentCampaignId = null;
     }
+  }
+
+  // Si es plantilla de hoja de personaje, desregistrarla
+  if (receipt.type === 'sheet' && s.sheetTemplates) {
+    s.sheetTemplates = s.sheetTemplates.filter(
+      (t) => t.id !== receipt.packageId && (!receipt.templateId || t.id !== receipt.templateId)
+    );
   }
 
   // Si tiene carpeta en el vault, podemos intentar removerla

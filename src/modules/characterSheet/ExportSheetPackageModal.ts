@@ -2,7 +2,7 @@ import { App, Modal, Notice, setIcon, TFile } from 'obsidian';
 import JSZip from 'jszip';
 import { DinoPlugin } from '../../types';
 import { SheetTemplate } from './types';
-import { sanitizeFileName } from '../campaignExportImport';
+import { sanitizeFileName, optimizeImageBuffer } from '../campaignExportImport';
 import { computeSha256 } from '../store/storeClient';
 
 export interface SheetPackageManifest {
@@ -245,10 +245,11 @@ export class ExportSheetPackageModal extends Modal {
         const origPath = templateCopy.background.path;
         const file = this.app.vault.getAbstractFileByPath(origPath);
         if (file instanceof TFile) {
-          const ext = file.extension || 'png';
-          const zipName = `assets/background_${assetIndex}.${ext}`;
-          const data = await this.app.vault.readBinary(file);
-          zip.file(zipName, data);
+          const rawExt = file.extension || 'png';
+          const rawData = await this.app.vault.readBinary(file);
+          const { buffer: optData, ext: finalExt } = await optimizeImageBuffer(rawData, rawExt);
+          const zipName = `assets/background_${assetIndex}.${finalExt}`;
+          zip.file(zipName, optData);
           assetMap[origPath] = zipName;
           templateCopy.background.path = zipName;
           assetIndex++;
@@ -261,10 +262,11 @@ export class ExportSheetPackageModal extends Modal {
           const origPath = w.imagePath;
           const file = this.app.vault.getAbstractFileByPath(origPath);
           if (file instanceof TFile) {
-            const ext = file.extension || 'png';
-            const zipName = `assets/widget_${assetIndex}.${ext}`;
-            const data = await this.app.vault.readBinary(file);
-            zip.file(zipName, data);
+            const rawExt = file.extension || 'png';
+            const rawData = await this.app.vault.readBinary(file);
+            const { buffer: optData, ext: finalExt } = await optimizeImageBuffer(rawData, rawExt);
+            const zipName = `assets/widget_${assetIndex}.${finalExt}`;
+            zip.file(zipName, optData);
             assetMap[origPath] = zipName;
             w.imagePath = zipName;
             assetIndex++;

@@ -8,6 +8,7 @@ import {
   installPackage,
   uninstallPackage,
 } from '../modules/store/storeClient';
+import { UninstallPackageModal } from './UninstallPackageModal';
 import { t } from '../i18n';
 
 type StoreTab = 'explore' | 'installed' | 'sources';
@@ -354,10 +355,10 @@ export class StoreModal extends Modal {
         cls: 'dte-btn dte-btn-danger',
         text: 'Desinstalar',
       });
-      uninstallBtn.addEventListener('click', async () => {
-        if (!confirm(`¿Estás seguro de que querés desinstalar "${receipt.name}"?`)) return;
-        await uninstallPackage(this.plugin, receipt.packageId);
-        this.render();
+      uninstallBtn.addEventListener('click', () => {
+        new UninstallPackageModal(this.app, this.plugin, receipt, () => {
+          this.render();
+        }).open();
       });
     });
   }
@@ -564,10 +565,19 @@ export class StoreModal extends Modal {
           cls: 'dte-btn dte-btn-danger dte-btn-full',
           text: 'Desinstalar de este Vault',
         });
-        uninstallBtn.addEventListener('click', async () => {
-          if (!confirm(`¿Desinstalar "${pkg.name}"?`)) return;
-          await uninstallPackage(this.plugin, pkg.id);
-          this.render();
+        uninstallBtn.addEventListener('click', () => {
+          const receipt = storeSettings.installed[pkg.id] || {
+            packageId: pkg.id,
+            name: pkg.name,
+            type: pkg.type,
+            version: pkg.version,
+            sourceId: pkg.sourceId || 'official',
+            installedAt: new Date().toISOString(),
+            installedPath: `${storeSettings.installFolder}/${pkg.name}`,
+          };
+          new UninstallPackageModal(this.app, this.plugin, receipt, () => {
+            this.render();
+          }).open();
         });
       }
 

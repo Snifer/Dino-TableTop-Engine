@@ -175,6 +175,28 @@ export class DinoSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName('Carpeta de Importación e Instalación de Paquetes')
+      .setDesc('Ruta en tu bóveda donde se guardan automáticamente las notas, mapas y activos al instalar paquetes de la tienda o importar campañas (por defecto: DTE/Store). Se creará una carpeta para cada paquete con subcarpetas separadas: "notes/" (para notas Markdown, bitácoras y fichas) y "assets/" (para mapas tácticos, imágenes y tokens).')
+      .addText((txt) =>
+        txt
+          .setPlaceholder('DTE/Store')
+          .setValue(storeSettings.installFolder || 'DTE/Store')
+          .onChange(async (val) => {
+            storeSettings.installFolder = val.trim() || 'DTE/Store';
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName('Exportación de Paquetes y Campañas')
+      .setDesc('Al exportar (.dinovtt), DTE recopila automáticamente las notas y mapas asociados, optimizando las imágenes (WebP) para mantener el archivo comprimido y por debajo de 100 MB. Al importarse en otra bóveda, se extraerán en la estructura "notes/" y "assets/" dentro del directorio configurado arriba.')
+      .addButton((btn) =>
+        btn.setButtonText('Comunidad DTE').onClick(() => {
+          window.open('https://github.com/Snifer/dino-tabletop-engine-store', '_blank');
+        })
+      );
+
+    new Setting(containerEl)
       .setName('URL del Formulario de Envío de Paquetes')
       .setDesc('Enlace al formulario donde los creadores pueden enviar paquetes para publicación comunitaria sin usar GitHub.')
       .addText((txt) =>
@@ -194,7 +216,7 @@ export class DinoSettingTab extends PluginSettingTab {
 
     const titleRow = aboutBox.createDiv({ cls: 'dte-settings-about-header' });
     titleRow.createEl('strong', { text: 'Dino Tabletop Engine' });
-    titleRow.createSpan({ cls: 'dte-settings-badge', text: `ALPHA v${this.plugin.manifest?.version || '0.1.13'}` });
+    titleRow.createSpan({ cls: 'dte-settings-badge', text: `ALPHA v${this.plugin.manifest?.version || '0.1.14'}` });
 
     const descEl = aboutBox.createDiv({ cls: 'dte-settings-about-desc' });
     descEl.createEl('p', {
